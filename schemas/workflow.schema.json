@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-software-company/schemas/workflow.schema.json",
+  "title": "Workflow Definition",
+  "description": "An ordered, gated lifecycle executed by the future runtime. Every workflow that can reach production MUST contain a human_approval step before any production step.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "purpose", "trigger", "risk_level", "steps", "produces", "invariants"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+    "name": { "type": "string" },
+    "purpose": { "type": "string", "minLength": 20 },
+    "trigger": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "risk_level": { "type": "integer", "minimum": 0, "maximum": 5 },
+    "reaches_production": { "type": "boolean" },
+    "steps": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "owner", "action", "on_pass", "on_fail"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z][a-z0-9_-]*$" },
+          "name": { "type": "string" },
+          "owner": {
+            "type": "string",
+            "pattern": "^([a-z][a-z0-9-]*|human-founder|system|external)$"
+          },
+          "action": { "type": "string" },
+          "project_state": { "$ref": "project-state.schema.json#/$defs/stateName" },
+          "gate": { "type": "boolean" },
+          "human_approval": { "type": "boolean" },
+          "risk_level": { "type": "integer", "minimum": 0, "maximum": 5 },
+          "on_pass": { "type": "string" },
+          "on_fail": { "type": "string" },
+          "audit_event": { "type": "boolean" }
+        }
+      }
+    },
+    "produces": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "invariants": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "notes": { "type": "string" }
+  }
+}

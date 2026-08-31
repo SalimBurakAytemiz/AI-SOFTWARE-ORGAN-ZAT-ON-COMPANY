@@ -1,0 +1,193 @@
+id: bugfix
+name: Bug Fix
+purpose: >
+  Resolve a confirmed, non-urgent product defect with root cause analysis,
+  independent review, regression coverage, and Human Founder approval before
+  production.
+trigger:
+  - A defect is confirmed and triaged as non-urgent
+  - QA or a user reports reproducible incorrect behavior
+risk_level: 3
+reaches_production: true
+steps:
+  - id: triage
+    name: Triage
+    owner: incident-debug-engineer
+    action: Confirm the report, deduplicate, capture environment and expected vs actual.
+    project_state: SPEC
+    on_pass: reproduce
+    on_fail: abort
+    audit_event: true
+  - id: reproduce
+    name: Reproduce
+    owner: incident-debug-engineer
+    action: Reproduce deterministically or document why not with evidence.
+    project_state: SPEC
+    gate: true
+    on_pass: severity
+    on_fail: triage
+    audit_event: true
+  - id: severity
+    name: Severity and risk
+    owner: engineering-director
+    action: Assign severity and risk level; route to hotfix or incident if urgency was underestimated.
+    project_state: SPEC
+    gate: true
+    on_pass: root_cause
+    on_fail: triage
+    audit_event: true
+  - id: root_cause
+    name: Root cause analysis
+    owner: incident-debug-engineer
+    action: Identify the underlying cause, not the symptom.
+    project_state: PLAN
+    gate: true
+    on_pass: fix_plan
+    on_fail: reproduce
+    audit_event: true
+  - id: fix_plan
+    name: Fix plan
+    owner: engineering-director
+    action: Decide the fix approach and the owning engineer; define the regression test that must fail today.
+    project_state: PLAN
+    on_pass: implement
+    on_fail: root_cause
+    audit_event: true
+  - id: implement
+    name: Implement
+    owner: backend-engineer
+    action: Implement the fix on a branch with a regression test that fails without it.
+    project_state: BUILD
+    on_pass: self_test
+    on_fail: fix_plan
+    audit_event: true
+  - id: self_test
+    name: Self test
+    owner: backend-engineer
+    action: Build, lint, SAST, unit/integration tests, verification checklist.
+    project_state: BUILD
+    gate: true
+    on_pass: code_review
+    on_fail: implement
+    audit_event: true
+  - id: code_review
+    name: Independent code review
+    owner: senior-code-reviewer
+    action: Review the fix and its test; confirm the reviewer is not the implementer.
+    project_state: REVIEW
+    gate: true
+    on_pass: regression_test
+    on_fail: implement
+    audit_event: true
+  - id: regression_test
+    name: Regression testing
+    owner: test-automation-engineer
+    action: Run the full regression suite for affected areas plus the new regression test.
+    project_state: TEST
+    gate: true
+    on_pass: qa
+    on_fail: implement
+    audit_event: true
+  - id: qa
+    name: QA gate
+    owner: qa-lead
+    action: Verify the defect is fixed and nothing regressed; issue QA PASS/FAIL.
+    project_state: TEST
+    gate: true
+    on_pass: security_if_required
+    on_fail: implement
+    audit_event: true
+  - id: security_if_required
+    name: Security review (if required)
+    owner: application-security-engineer
+    action: If the fix touches auth, payments, customer data, or a security surface, run the SECURITY gate; otherwise pass through with a recorded rationale.
+    project_state: SECURITY
+    gate: true
+    on_pass: staging
+    on_fail: implement
+    audit_event: true
+  - id: staging
+    name: Staging deploy
+    owner: devops-platform-engineer
+    action: Deploy to staging.
+    project_state: STAGING
+    on_pass: staging_verify
+    on_fail: security_if_required
+    audit_event: true
+  - id: staging_verify
+    name: Staging verification
+    owner: qa-lead
+    action: Confirm the fix on staging; assemble evidence.
+    project_state: STAGING
+    gate: true
+    on_pass: release_review
+    on_fail: implement
+    audit_event: true
+  - id: release_review
+    name: Release verification
+    owner: release-manager
+    action: Verify all applicable Release Gate checks; assemble the release package and rollback plan; mark READY_FOR_HUMAN_APPROVAL.
+    project_state: APPROVAL
+    gate: true
+    on_pass: human_approval
+    on_fail: implement
+    audit_event: true
+  - id: human_approval
+    name: Human Founder approval
+    owner: human-founder
+    action: Approve or reject the production deployment of the fix.
+    project_state: APPROVAL
+    gate: true
+    human_approval: true
+    risk_level: 5
+    on_pass: production
+    on_fail: implement
+    audit_event: true
+  - id: production
+    name: Production deployment
+    owner: human-founder
+    action: Execute or authorize the production deployment.
+    project_state: PRODUCTION
+    risk_level: 5
+    on_pass: production_verify
+    on_fail: rollback
+    audit_event: true
+  - id: production_verify
+    name: Production verification
+    owner: release-manager
+    action: Confirm the fix in production and no new errors.
+    project_state: PRODUCTION
+    gate: true
+    on_pass: close
+    on_fail: rollback
+    audit_event: true
+  - id: rollback
+    name: Rollback
+    owner: human-founder
+    action: Execute the rollback plan; escalate to incident if there is customer impact.
+    project_state: PRODUCTION
+    risk_level: 5
+    on_pass: close
+    on_fail: abort
+    audit_event: true
+  - id: close
+    name: Close
+    owner: incident-debug-engineer
+    action: Update the defect record, link the fix and tests, note any follow-ups.
+    project_state: MONITORING
+    on_pass: end
+    on_fail: abort
+    audit_event: true
+produces:
+  - Reproduction and root cause analysis
+  - Fix on a PR with a regression test
+  - Review, regression, QA, and (if required) security evidence
+  - Release package and rollback plan
+  - Closed defect record
+invariants:
+  - Human Founder approval precedes the first PRODUCTION step.
+  - The code_review owner is never the implement owner.
+  - A root cause is identified before a fix is implemented.
+  - The fix ships with a test that fails without it.
+  - Every gate step emits an audit event.
+notes: Implements build spec section 14.

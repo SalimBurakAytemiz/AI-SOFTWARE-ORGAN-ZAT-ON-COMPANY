@@ -1,0 +1,940 @@
+# Tool Registry
+#
+# Every external tool the company uses, or has evaluated. Status is decided by
+# research (see ../research/repositories/), NOT by appearing in the build prompt.
+#
+#   ADOPTED   - in use now for this organization repository or committed for the
+#               next phase with no open questions
+#   OPTIONAL  - approved for use where a team/agent chooses it; not mandatory
+#   DEFERRED  - we will adopt it later; the design already accounts for it
+#   REJECTED  - evaluated and not adopted, with a recorded reason
+#   RESEARCH  - still under evaluation
+#
+# Per-tool narrative evaluations: ../research/repositories/<id>.md
+# Capability decomposition: ./capabilities.yml
+
+version: "1.0"
+
+tools:
+  - id: git
+    name: Git
+    category: vcs
+    purpose: Distributed version control; the substrate for all change management.
+    official_source: https://git-scm.com/
+    license: GPL-2.0-only
+    status: ADOPTED
+    required: true
+    optional: false
+    used_by: [all-engineering-agents, platform, ci]
+    installation_method: system package
+    runtime_dependency: true
+    trust_level: high
+    security_risk: low
+    permissions_required: [git.read, git.branch, git.commit, git.worktree]
+    health_check: "git --version"
+    update_policy: Track distro stable; no auto-update in CI images without review.
+    adapter_required: false
+    cost_model: free
+    known_overlap: []
+    knowledge_adoption: ADOPT
+    runtime_decision: ADOPT
+    notes: Baseline. Protected-branch rules enforced at the forge, not locally.
+
+  - id: github
+    name: GitHub
+    category: forge
+    purpose: Source hosting, pull requests, branch protection, code scanning, environments.
+    official_source: https://github.com/
+    license: proprietary-saas
+    status: ADOPTED
+    required: true
+    optional: false
+    used_by: [all-agents, ci, human-founder]
+    installation_method: SaaS account + fine-grained tokens / GitHub App
+    runtime_dependency: true
+    trust_level: high
+    security_risk: medium
+    permissions_required: [github.read, github.create_pr, github.review]
+    health_check: "gh auth status"
+    update_policy: SaaS; monitor changelog for security-relevant changes.
+    adapter_required: false
+    cost_model: free tier + per-seat
+    known_overlap: [gitlab, forgejo]
+    knowledge_adoption: ADOPT
+    runtime_decision: ADOPT
+    notes: >
+      Enforcement surface for git & release governance: main protected by ruleset;
+      Release Gate = required status checks; prod deploy gated by an Environment
+      whose required reviewer is the Human Founder. github.merge is non-grantable.
+
+  - id: github-actions
+    name: GitHub Actions
+    category: ci-cd
+    purpose: CI/CD workflows, required checks, OIDC cloud auth, environment approvals.
+    official_source: https://github.com/features/actions
+    license: proprietary-saas (runner MIT)
+    status: ADOPTED
+    required: true
+    optional: false
+    used_by: [devops-platform-engineer, test-automation-engineer, ci]
+    installation_method: SaaS + optional self-hosted runners
+    runtime_dependency: true
+    trust_level: medium
+    security_risk: medium
+    permissions_required: [ci.read, ci.configure]
+    health_check: "gh workflow list"
+    update_policy: Pin actions to commit SHAs; Renovate updates them via PR.
+    adapter_required: false
+    cost_model: free minutes + per-minute overage
+    known_overlap: [gitlab-ci, buildkite, dagger]
+    knowledge_adoption: ADOPT
+    runtime_decision: ADOPT
+    notes: CI logic kept in portable scripts to limit lock-in. ci.configure_production is non-grantable.
+
+  - id: claude-code
+    name: Claude Code
+    category: agent-harness
+    purpose: Human-driven agent harness used to build and maintain this repository.
+    official_source: https://claude.com/claude-code
+    license: proprietary
+    status: ADOPTED
+    required: false
+    optional: true
+    used_by: [human-founder]
+    installation_method: CLI / IDE extension
+    runtime_dependency: false
+    trust_level: high
+    security_risk: medium
+    permissions_required: []
+    health_check: "claude --version"
+    update_policy: Follow upstream releases.
+    adapter_required: false
+    cost_model: subscription / usage
+    known_overlap: [opencode, goose, aider]
+    knowledge_adoption: ADOPT
+    runtime_decision: ADOPT
+    notes: Human-in-the-loop tool for the Human Founder; not the future agent runtime.
+
+  - id: opencode
+    name: opencode
+    category: agent-harness
+    purpose: Alternative model-agnostic, local-first agent harness with per-action approval.
+    official_source: https://github.com/anomalyco/opencode
+    license: MIT
+    status: OPTIONAL
+    required: false
+    optional: true
+    used_by: [human-founder]
+    installation_method: single binary
+    runtime_dependency: false
+    trust_level: medium
+    security_risk: medium
+    permissions_required: []
+    health_check: "opencode --version"
+    update_policy: Pin a version; review release notes before bumping.
+    adapter_required: false
+    cost_model: free + model spend
+    known_overlap: [claude-code, goose]
+    knowledge_adoption: ADOPT
+    runtime_decision: OPTIONAL
+    notes: Kept to avoid harness monoculture; SDK is a possible runtime building block.
+
+  - id: spec-kit
+    name: GitHub Spec Kit
+    category: method
+    purpose: Spec-driven development scaffolding (spec -> plan -> tasks) for coding agents.
+    official_source: https://github.com/github/spec-kit
+    license: MIT
+    status: OPTIONAL
+    required: false
+    optional: true
+    used_by: [business-analyst, product-manager]
+    installation_method: uvx / pipx CLI
+    runtime_dependency: false
+    trust_level: medium
+    security_risk: low
+    permissions_required: []
+    health_check: "specify --version"
+    update_policy: Pin; review command templates before use.
+    adapter_required: false
+    cost_model: free
+    known_overlap: [bmad-method, native skills/]
+    knowledge_adoption: ADOPT
+    runtime_decision: OPTIONAL
+    notes: Front-of-lifecycle only; our workflows extend past `implement`.
+
+  - id: superpowers
+    name: Superpowers (skills framework)
+    category: method
+    purpose: Composable skill files + bootstrap for Claude Code; informs our skills/ design.
+    official_source: https://github.com/obra/superpowers
+    license: MIT
+    status: OPTIONAL
+    required: false
+    optional: true
+    used_by: [human-founder]
+    installation_method: Claude Code plugin manager
+    runtime_dependency: false
+    trust_level: medium
+    security_risk: medium
+    permissions_required: []
+    health_check: "n/a (plugin index present)"
+    update_policy: Pin skill versions; review community skills before enabling.
+    adapter_required: false
+    cost_model: free
+    known_overlap: [native skills/]
+    knowledge_adoption: ADOPT
+    runtime_decision: OPTIONAL
+    notes: Skill format and discipline reproduced natively in schemas/skill.schema.json.
+
+  - id: repomix
+    name: Repomix
+    category: code-context
+    purpose: Pack a repository (or subset) into an AI-friendly file with a secret pre-flight.
+    official_source: https://github.com/yamadashy/repomix
+    license: MIT
+    status: ADOPTED
+    required: false
+    optional: true
+    used_by: [senior-code-reviewer, solution-architect, application-security-engineer, all-engineering-agents]
+    installation_method: npx / npm -g / MCP server
+    runtime_dependency: false
+    trust_level: high
+    security_risk: low
+    permissions_required: [repomix.pack]
+    health_check: "repomix --version"
+    update_policy: Renovate PR; low risk.
+    adapter_required: false
+    cost_model: free (reduces token spend)
+    known_overlap: [aider repo-map, gitingest]
+    knowledge_adoption: ADOPT
+    runtime_decision: ADOPT
+    notes: Secret-scan-before-send discipline; tree-sitter compression for large context.
+
+  - id: litellm
+    name: LiteLLM
+    category: model-ops
+    purpose: Model gateway - provider abstraction, per-agent virtual keys, budgets, fallbacks, spend logs.
+    official_source: https://github.com/BerriAI/litellm
+    license: MIT (Enterprise tier separate)
+    status: ADOPTED
+    required: false
+    optional: false
+    used_by: [model-operations-engineer, platform]
+    installation_method: Docker / Helm (proxy) + pip (sdk)
+    runtime_dependency: true
+    trust_level: medium
+    security_risk: high
+    permissions_required: [litellm.admin]
+    health_check: "GET /health on the proxy"
+    update_policy: Track releases closely; patch promptly (fast-moving, holds keys).
+    adapter_required: false
+    cost_model: free (controls/reduces model spend)
+    known_overlap: [openrouter, portkey, cloudflare-ai-gateway]
+    knowledge_adoption: ADOPT
+    runtime_decision: ADOPT
+    notes: >
+      High-value secret store - harden and network-restrict. Implements Constitution
+      Articles 11 and 13. Adopted as the design of record; stood up when the runtime exists.
+
+  - id: promptfoo
+    name: promptfoo
+    category: model-ops
+    purpose: Prompt / agent evaluation + adversarial LLM red-teaming, CI-friendly.
+    official_source: https://github.com/promptfoo/promptfoo
+    license: MIT
+    status: ADOPTED
+    required: false
+    optional: true
+    used_by: [model-operations-engineer, application-security-engineer]
+    installation_method: npx / npm -g
+    runtime_dependency: false
+    trust_level: high
+    security_risk: low
+    permissions_required: [promptfoo.eval, promptfoo.redteam]
+    health_check: "promptfoo --version"
+    update_policy: Renovate PR.
+    adapter_required: false
+    cost_model: free + eval token spend
+    known_overlap: [garak, pyrit, langfuse evals]
+    knowledge_adoption: ADOPT
+    runtime_decision: ADOPT
+    notes: Eval gate for agent prompts; redteam maps to OWASP LLM Top 10.
+
+  - id: opentelemetry
+    name: OpenTelemetry
+    category: observability
+    purpose: Vendor-neutral traces / metrics / logs; the observability contract wire format.
+    official_source: https://github.com/open-telemetry
+    license: Apache-2.0
+    status: ADOPTED
+    required: false
+    optional: false
+    used_by: [sre-observability-engineer, model-operations-engineer, all-agents]
+    installation_method: SDK per language + Collector deployment
+    runtime_dependency: true
+    trust_level: high
+    security_risk: medium
+    permissions_required: [observability.read, observability.configure, otel.emit]
+    health_check: "Collector /healthz"
+    update_policy: Track SDK + Collector stable releases.
+    adapter_required: false
+    cost_model: free (backend storage cost)
+    known_overlap: []
+    knowledge_adoption: ADOPT
+    runtime_decision: ADOPT
+    notes: Contract adopted now; Collector deployed when there is runtime traffic. Redact PII at the Collector.
+
+  - id: langfuse
+    name: Langfuse
+    category: observability
+    purpose: LLM/agent trace + cost + eval + prompt-management UI over an OTel-native ingest.
+    official_source: https://github.com/langfuse/langfuse
+    license: MIT core (some EE features commercial)
+    status: DEFERRED
+    required: false
+    optional: true
+    used_by: [model-operations-engineer, sre-observability-engineer]
+    installation_method: Docker Compose / Helm (Postgres + ClickHouse + Redis + blob)
+    runtime_dependency: false
+    trust_level: medium
+    security_risk: high
+    permissions_required: [observability.read]
+    health_check: "GET /api/public/health"
+    update_policy: Track releases; heavy stack - stage upgrades.
+    adapter_required: false
+    cost_model: free self-host (infra cost) / Cloud tiers
+    known_overlap: [grafana-tempo, phoenix, vendor apm]
+    knowledge_adoption: ADOPT
+    runtime_decision: DEFER
+    notes: Adopt when there is agent traffic; contract stays OTel so the backend is swappable.
+
+  - id: semgrep
+    name: Semgrep (OSS)
+    category: security
+    purpose: Polyglot SAST with custom YAML rules that encode our security & architecture invariants.
+    official_source: https://github.com/semgrep/semgrep
+    license: LGPL-2.1 (engine); Pro rules & platform commercial
+    status: ADOPTED
+    required: false
+    optional: false
+    used_by: [application-security-engineer, backend-engineer, integration-engineer, senior-code-reviewer, ci]
+    installation_method: pip / Docker
+    runtime_dependency: false
+    trust_level: high
+    security_risk: low
+    permissions_required: [semgrep.scan]
+    health_check: "semgrep --version"
+    update_policy: Pin ruleset versions; review third-party rules.
+    adapter_required: false
+    cost_model: free (OSS engine)
+    known_overlap: [codeql, sonarqube, bearer]
+    knowledge_adoption: ADOPT
+    runtime_decision: ADOPT
+    notes: OSS tier only for now; Pro/platform DEFERRED (code-egress + lock-in).
+
+  - id: trivy
+    name: Trivy
+    category: security
+    purpose: SCA + IaC misconfig + container + secret scanning + SBOM in one binary.
+    official_source: https://github.com/aquasecurity/trivy
+    license: Apache-2.0
+    status: ADOPTED
+    required: false
+    optional: false
+    used_by: [application-security-engineer, devops-platform-engineer, ci]
+    installation_method: single binary / Docker / GitHub Action
+    runtime_dependency: false
+    trust_level: high
+    security_risk: low
+    permissions_required: [trivy.scan]
+    health_check: "trivy --version"
+    update_policy: DB auto-refresh; mirror for air-gapped.
+    adapter_required: false
+    cost_model: free
+    known_overlap: [grype, snyk, checkov, osv-scanner]
+    knowledge_adoption: ADOPT
+    runtime_decision: ADOPT
+    notes: Primary multi-target scanner; SARIF output into the SECURITY gate.
+
+  - id: gitleaks
+    name: gitleaks
+    category: security
+    purpose: Detect committed secrets in the working tree and git history; pre-commit + CI gate.
+    official_source: https://github.com/gitleaks/gitleaks
+    license: MIT
+    status: ADOPTED
+    required: false
+    optional: false
+    used_by: [application-security-engineer, all-engineering-agents, ci]
+    installation_method: single binary / pre-commit hook / GitHub Action
+    runtime_dependency: false
+    trust_level: high
+    security_risk: low
+    permissions_required: [gitleaks.scan]
+    health_check: "gitleaks version"
+    update_policy: Renovate PR.
+    adapter_required: false
+    cost_model: free
+    known_overlap: [trufflehog, trivy secrets, repomix secretlint]
+    knowledge_adoption: ADOPT
+    runtime_decision: ADOPT
+    notes: Blocking pre-commit gate; reviewed, expiring allowlists only.
+
+  - id: osv-scanner
+    name: OSV-Scanner
+    category: security
+    purpose: Precise dependency vulnerability scanning via OSV.dev + guided remediation.
+    official_source: https://github.com/google/osv-scanner
+    license: Apache-2.0
+    status: OPTIONAL
+    required: false
+    optional: true
+    used_by: [application-security-engineer, ci]
+    installation_method: single binary / GitHub Action
+    runtime_dependency: false
+    trust_level: high
+    security_risk: low
+    permissions_required: [osv.scan]
+    health_check: "osv-scanner --version"
+    update_policy: Offline DB option for air-gapped.
+    adapter_required: false
+    cost_model: free
+    known_overlap: [trivy sca]
+    knowledge_adoption: ADOPT
+    runtime_decision: OPTIONAL
+    notes: Secondary to Trivy SCA; `fix` guidance used in the dependency-update workflow.
+
+  - id: owasp-zap
+    name: OWASP ZAP
+    category: security
+    purpose: DAST - passive/active scanning of a running app; baseline & API packaged scans.
+    official_source: https://github.com/zaproxy/zaproxy
+    license: Apache-2.0
+    status: DEFERRED
+    required: false
+    optional: true
+    used_by: [application-security-engineer, ci]
+    installation_method: Docker image / GitHub Action
+    runtime_dependency: false
+    trust_level: high
+    security_risk: medium
+    permissions_required: [zap.scan]
+    health_check: "zap.sh -version"
+    update_policy: Track weekly/stable images.
+    adapter_required: false
+    cost_model: free (staging compute)
+    known_overlap: [nuclei, burp]
+    knowledge_adoption: ADOPT
+    runtime_decision: DEFER
+    notes: ADOPTED once Cleaning Commerce has a staging deployment. Active scans staging-only, scoped, authorized.
+
+  - id: credential-proxy
+    name: Credential Proxy (Infisical Agent Vault / Agent Proxy or equivalent)
+    category: secrets
+    purpose: Inject credentials at the network boundary so agents never hold secrets.
+    official_source: https://github.com/Infisical/agent-vault
+    license: open source (Agent Vault); Infisical core MIT-style
+    status: DEFERRED
+    required: false
+    optional: false
+    used_by: [platform, all-engineering-agents]
+    installation_method: local forward proxy (HTTPS_PROXY) + optional backing store
+    runtime_dependency: true
+    trust_level: medium
+    security_risk: high
+    permissions_required: [secrets.read_dev]
+    health_check: "proxy /health + request-log tail"
+    update_policy: Track closely; Agent Vault is a research preview.
+    adapter_required: true
+    cost_model: free (OSS)
+    known_overlap: [hashicorp-vault, doppler, infisical]
+    knowledge_adoption: ADOPT
+    runtime_decision: DEFER
+    notes: >
+      policies/secrets.yml is written tool-agnostically. Adopt a production-ready
+      proxy when the runtime exists. secrets.production and secrets.rotate are non-grantable.
+
+  - id: playwright
+    name: Playwright
+    category: qa
+    purpose: Cross-browser E2E / component / API-request testing; MCP mode for agent UI checks.
+    official_source: https://github.com/microsoft/playwright
+    license: Apache-2.0
+    status: ADOPTED
+    required: false
+    optional: false
+    used_by: [test-automation-engineer, qa-lead, incident-debug-engineer, ci]
+    installation_method: npm + browser binaries
+    runtime_dependency: false
+    trust_level: high
+    security_risk: medium
+    permissions_required: [playwright.run, playwright.mcp]
+    health_check: "npx playwright --version"
+    update_policy: Renovate PR; pin browser versions in CI images.
+    adapter_required: false
+    cost_model: free (CI compute)
+    known_overlap: [cypress, selenium]
+    knowledge_adoption: ADOPT
+    runtime_decision: ADOPT
+    notes: MCP mode restricted to an allowlist of target domains.
+
+  - id: renovate
+    name: Renovate
+    category: ci-cd
+    purpose: Automated dependency-update pull requests with changelogs, grouping, and policy-bounded auto-merge.
+    official_source: https://github.com/renovatebot/renovate
+    license: AGPL-3.0 (self-hosted CLI)
+    status: ADOPTED
+    required: false
+    optional: true
+    used_by: [devops-platform-engineer, ci]
+    installation_method: GitHub App / self-hosted Docker job
+    runtime_dependency: false
+    trust_level: medium
+    security_risk: medium
+    permissions_required: [github.create_pr]
+    health_check: "renovate --version"
+    update_policy: Self-updating config presets; review preset changes.
+    adapter_required: false
+    cost_model: free
+    known_overlap: [dependabot]
+    knowledge_adoption: ADOPT
+    runtime_decision: ADOPT
+    notes: PRs only. Auto-merge limited to lockfile-only patch/minor of non-sensitive deps passing all gates.
+
+  - id: docker
+    name: Docker / OCI containers
+    category: infrastructure
+    purpose: Reproducible build/run environments; isolation boundary for agent execution and services.
+    official_source: https://github.com/moby/moby
+    license: Apache-2.0
+    status: ADOPTED
+    required: true
+    optional: false
+    used_by: [devops-platform-engineer, all-engineering-agents, ci]
+    installation_method: Docker Engine / Podman / nerdctl
+    runtime_dependency: true
+    trust_level: high
+    security_risk: medium
+    permissions_required: [docker.build, docker.run_sandbox]
+    health_check: "docker info"
+    update_policy: Track engine stable; pin + scan base images.
+    adapter_required: false
+    cost_model: free (Engine/Compose); avoid Docker Desktop licensing
+    known_overlap: [podman]
+    knowledge_adoption: ADOPT
+    runtime_decision: ADOPT
+    notes: Rootless + hardened defaults; no docker socket in agent containers. Stronger isolation (microVM) decided in the runtime phase.
+
+  - id: opentofu
+    name: OpenTofu
+    category: infrastructure
+    purpose: Open-licensed infrastructure as code (Terraform fork); plan/apply model.
+    official_source: https://github.com/opentofu/opentofu
+    license: MPL-2.0
+    status: DEFERRED
+    required: false
+    optional: false
+    used_by: [devops-platform-engineer, solution-architect]
+    installation_method: single binary
+    runtime_dependency: false
+    trust_level: high
+    security_risk: medium
+    permissions_required: [infra.plan]
+    health_check: "tofu version"
+    update_policy: Pin; checksum-lock providers.
+    adapter_required: false
+    cost_model: free (provisions billable infra)
+    known_overlap: [terraform, pulumi]
+    knowledge_adoption: ADOPT
+    runtime_decision: DEFER
+    notes: No infra to manage yet. plan = proposal; infra.production_apply is non-grantable (RISK 5).
+
+  - id: opa
+    name: Open Policy Agent (OPA)
+    category: policy
+    purpose: Default-deny policy decision engine (Rego); candidate runtime enforcement of policies/.
+    official_source: https://github.com/open-policy-agent/opa
+    license: Apache-2.0
+    status: OPTIONAL
+    required: false
+    optional: true
+    used_by: [platform, ci]
+    installation_method: single binary / Go module / conftest
+    runtime_dependency: false
+    trust_level: high
+    security_risk: low
+    permissions_required: []
+    health_check: "opa version"
+    update_policy: Pin; sign policy bundles.
+    adapter_required: true
+    cost_model: free
+    known_overlap: [cedar, native python validators]
+    knowledge_adoption: ADOPT
+    runtime_decision: OPTIONAL
+    notes: Likely ADOPTED in the runtime phase as the action-authorization decision point; conftest optional for config gates now.
+
+  - id: pr-agent
+    name: Qodo PR-Agent
+    category: code-review
+    purpose: First-pass automated PR description and review comments feeding the independent reviewer.
+    official_source: https://github.com/qodo-ai/pr-agent
+    license: Apache-2.0 (OSS core)
+    status: OPTIONAL
+    required: false
+    optional: true
+    used_by: [senior-code-reviewer, ci]
+    installation_method: GitHub Action / Docker / CLI
+    runtime_dependency: false
+    trust_level: medium
+    security_risk: medium
+    permissions_required: [github.comment]
+    health_check: "container starts; posts a comment on a test PR"
+    update_policy: Pin image; review prompt config.
+    adapter_required: false
+    cost_model: free (self-host) + model spend
+    known_overlap: [senior-code-reviewer agent]
+    knowledge_adoption: ADOPT
+    runtime_decision: OPTIONAL
+    notes: Token limited to read + comment. NEVER holds merge rights; never the reviewer of record.
+
+  - id: filesystem
+    name: Working-tree filesystem
+    category: infrastructure
+    purpose: Read/write access to the checked-out repository within a sandbox.
+    official_source: https://pubs.opengroup.org/onlinepubs/9699919799/
+    license: n/a
+    status: ADOPTED
+    required: true
+    optional: false
+    used_by: [all-engineering-agents]
+    installation_method: provided by the sandbox
+    runtime_dependency: true
+    trust_level: high
+    security_risk: low
+    permissions_required: [fs.read, fs.write]
+    health_check: "read/write a scratch file in the sandbox"
+    update_policy: n/a
+    adapter_required: false
+    cost_model: free
+    known_overlap: []
+    knowledge_adoption: ADOPT
+    runtime_decision: ADOPT
+    notes: Writes are confined to feature branches inside the sandbox.
+
+  - id: sandbox
+    name: Execution sandbox
+    category: sandbox
+    purpose: Isolated, non-production environment for building, testing, and running generated code.
+    official_source: https://github.com/e2b-dev/E2B
+    license: varies by implementation (E2B Apache-2.0)
+    status: DEFERRED
+    required: false
+    optional: false
+    used_by: [all-engineering-agents]
+    installation_method: E2B / Daytona / OpenHands runtime - decided in the runtime phase
+    runtime_dependency: true
+    trust_level: medium
+    security_risk: high
+    permissions_required: [shell.exec_sandbox]
+    health_check: "spawn a sandbox, run `echo`, tear down"
+    update_policy: n/a until selected
+    adapter_required: true
+    cost_model: compute
+    known_overlap: [e2b, daytona, openhands-runtime]
+    knowledge_adoption: ADOPT
+    runtime_decision: DEFER
+    notes: >
+      Requirements - sub-second start, resource caps, auto-stop, snapshots, no host
+      network by default, microVM isolation for network-connected generated code.
+
+  - id: postgresql
+    name: PostgreSQL
+    category: infrastructure
+    purpose: Relational database for company products; development/staging instances used by agents.
+    official_source: https://www.postgresql.org/
+    license: PostgreSQL License
+    status: ADOPTED
+    required: false
+    optional: false
+    used_by: [database-engineer, backend-engineer]
+    installation_method: Docker / managed service
+    runtime_dependency: true
+    trust_level: high
+    security_risk: medium
+    permissions_required: [db.query_readonly, db.migrate_prepare, db.migrate_staging]
+    health_check: "pg_isready"
+    update_policy: Track supported major versions; test upgrades in staging.
+    adapter_required: false
+    cost_model: free (self-host) / managed pricing
+    known_overlap: []
+    knowledge_adoption: ADOPT
+    runtime_decision: ADOPT
+    notes: db.migrate_production is non-grantable (RISK 5, Human Founder only).
+
+  - id: deployment
+    name: Deployment target
+    category: infrastructure
+    purpose: The mechanism that ships built artifacts to an environment.
+    official_source: https://github.com/features/actions
+    license: n/a (abstract)
+    status: DEFERRED
+    required: false
+    optional: false
+    used_by: [devops-platform-engineer]
+    installation_method: defined in the runtime / product architecture phase
+    runtime_dependency: true
+    trust_level: medium
+    security_risk: high
+    permissions_required: [deploy.prepare, deploy.staging]
+    health_check: "environment reachable; last deploy status green"
+    update_policy: n/a until defined
+    adapter_required: true
+    cost_model: infra cost
+    known_overlap: []
+    knowledge_adoption: PARTIAL
+    runtime_decision: DEFER
+    notes: deploy.production is non-grantable. Production deploys run via a GitHub Environment with the Human Founder as required reviewer.
+
+  - id: payment-provider
+    name: Payment provider
+    category: infrastructure
+    purpose: External payment processing for the future commerce product.
+    official_source: https://stripe.com/
+    license: n/a (third-party SaaS; provider not yet selected)
+    status: DEFERRED
+    required: false
+    optional: false
+    used_by: [integration-engineer]
+    installation_method: SDK + sandbox account
+    runtime_dependency: false
+    trust_level: low
+    security_risk: critical
+    permissions_required: []
+    health_check: "sandbox API reachable"
+    update_policy: n/a until selected
+    adapter_required: true
+    cost_model: per-transaction fees
+    known_overlap: []
+    knowledge_adoption: PARTIAL
+    runtime_decision: DEFER
+    notes: >
+      Provider selection is a future decision. payments.configure and finance.execute
+      are non-grantable - all real financial actions and config changes are Human-Founder-only.
+
+  - id: metagpt
+    name: MetaGPT
+    category: method
+    purpose: Reference for role/SOP decomposition of an AI software company.
+    official_source: https://github.com/FoundationAgents/MetaGPT
+    license: MIT
+    status: REJECTED
+    required: false
+    optional: false
+    used_by: []
+    installation_method: pip (not installed)
+    runtime_dependency: false
+    trust_level: medium
+    security_risk: medium
+    permissions_required: []
+    health_check: n/a
+    update_policy: n/a
+    adapter_required: false
+    cost_model: free
+    known_overlap: [our governed pipeline]
+    knowledge_adoption: ADOPT
+    runtime_decision: REJECT
+    notes: Learn from it; do not run it. No permission model, too opinionated.
+
+  - id: bmad-method
+    name: BMAD-METHOD
+    category: method
+    purpose: Reference for "org as files" - personas, workflows, templates, context sharding.
+    official_source: https://github.com/bmad-code-org/BMAD-METHOD
+    license: MIT
+    status: REJECTED
+    required: false
+    optional: false
+    used_by: []
+    installation_method: npx installer (not installed)
+    runtime_dependency: false
+    trust_level: medium
+    security_risk: low
+    permissions_required: []
+    health_check: n/a
+    update_policy: n/a
+    adapter_required: false
+    cost_model: free
+    known_overlap: [this repository]
+    knowledge_adoption: ADOPT
+    runtime_decision: REJECT
+    notes: Closest prior art; we author our own governed method with enforcement.
+
+  - id: langgraph
+    name: LangGraph
+    category: agent-framework
+    purpose: Durable stateful graph orchestration with human-in-the-loop interrupts.
+    official_source: https://github.com/langchain-ai/langgraph
+    license: MIT
+    status: RESEARCH
+    required: false
+    optional: false
+    used_by: []
+    installation_method: pip (not installed)
+    runtime_dependency: false
+    trust_level: medium
+    security_risk: medium
+    permissions_required: []
+    health_check: n/a
+    update_policy: n/a
+    adapter_required: true
+    cost_model: free (library)
+    known_overlap: [mastra, agno, ms-agent-framework, crewai]
+    knowledge_adoption: ADOPT
+    runtime_decision: OPTIONAL
+    notes: Recommended orchestration core if the runtime is Python; final choice is a runtime-phase decision.
+
+  - id: mastra
+    name: Mastra
+    category: agent-framework
+    purpose: TypeScript agent framework - deterministic workflows, suspend/resume, evals.
+    official_source: https://github.com/mastra-ai/mastra
+    license: Apache-2.0 / Elastic-2.0 (per component)
+    status: RESEARCH
+    required: false
+    optional: false
+    used_by: []
+    installation_method: npm (not installed)
+    runtime_dependency: false
+    trust_level: medium
+    security_risk: medium
+    permissions_required: []
+    health_check: n/a
+    update_policy: n/a
+    adapter_required: true
+    cost_model: free (framework)
+    known_overlap: [langgraph, agno, crewai]
+    knowledge_adoption: ADOPT
+    runtime_decision: OPTIONAL
+    notes: Recommended orchestration core if the runtime is TypeScript (matches the engineering stack).
+
+  - id: openhands
+    name: OpenHands
+    category: agent-harness
+    purpose: Reference execution runtime - Docker sandbox + event stream + tests-as-feedback.
+    official_source: https://github.com/All-Hands-AI/OpenHands
+    license: MIT
+    status: RESEARCH
+    required: false
+    optional: false
+    used_by: []
+    installation_method: Docker (not installed)
+    runtime_dependency: false
+    trust_level: medium
+    security_risk: high
+    permissions_required: []
+    health_check: n/a
+    update_policy: n/a
+    adapter_required: true
+    cost_model: free + model spend
+    known_overlap: [e2b, daytona, sandbox]
+    knowledge_adoption: ADOPT
+    runtime_decision: DEFER
+    notes: Candidate engineer-agent execution sandbox for the runtime phase.
+
+  - id: trigger-dev
+    name: Trigger.dev
+    category: infrastructure
+    purpose: Durable background-job execution with checkpoint/resume and approval waits (TypeScript).
+    official_source: https://github.com/triggerdotdev/trigger.dev
+    license: Apache-2.0
+    status: DEFERRED
+    required: false
+    optional: false
+    used_by: []
+    installation_method: self-hosted (Postgres + Redis + containers) - not installed
+    runtime_dependency: false
+    trust_level: medium
+    security_risk: medium
+    permissions_required: []
+    health_check: n/a
+    update_policy: n/a
+    adapter_required: true
+    cost_model: free self-host / Cloud tiers
+    known_overlap: [langgraph checkpointer, temporal]
+    knowledge_adoption: ADOPT
+    runtime_decision: DEFER
+    notes: Durable-execution substrate candidate for a TypeScript runtime.
+
+  - id: n8n
+    name: n8n
+    category: automation
+    purpose: Visual workflow automation for app/API glue (business ops, not engineering governance).
+    official_source: https://github.com/n8n-io/n8n
+    license: Sustainable Use License (fair-code, not OSI)
+    status: DEFERRED
+    required: false
+    optional: false
+    used_by: []
+    installation_method: Docker (not installed)
+    runtime_dependency: false
+    trust_level: low
+    security_risk: high
+    permissions_required: []
+    health_check: n/a
+    update_policy: n/a
+    adapter_required: true
+    cost_model: free self-host / Cloud
+    known_overlap: [trigger-dev, workflows/]
+    knowledge_adoption: PARTIAL
+    runtime_decision: DEFER
+    notes: Wrong layer for governed delivery; revisit for business-ops glue with the license caveat.
+
+  - id: aider
+    name: aider
+    category: agent-harness
+    purpose: Reference for ranked repo-map context and per-change commit discipline.
+    official_source: https://github.com/aider-ai/aider
+    license: Apache-2.0
+    status: REJECTED
+    required: false
+    optional: false
+    used_by: []
+    installation_method: pipx (not installed)
+    runtime_dependency: false
+    trust_level: medium
+    security_risk: medium
+    permissions_required: []
+    health_check: n/a
+    update_policy: n/a
+    adapter_required: false
+    cost_model: free + model spend
+    known_overlap: [claude-code, opencode]
+    knowledge_adoption: ADOPT
+    runtime_decision: REJECT
+    notes: Techniques adopted (repo-map, commit discipline); not a company harness.
+
+  - id: continue
+    name: Continue
+    category: code-context
+    purpose: IDE assistant for human developers; evaluated and not adopted.
+    official_source: https://github.com/continuedev/continue
+    license: Apache-2.0
+    status: REJECTED
+    required: false
+    optional: false
+    used_by: []
+    installation_method: IDE extension (not installed)
+    runtime_dependency: false
+    trust_level: medium
+    security_risk: medium
+    permissions_required: []
+    health_check: n/a
+    update_policy: n/a
+    adapter_required: false
+    cost_model: free + model spend
+    known_overlap: [claude-code]
+    knowledge_adoption: PARTIAL
+    runtime_decision: REJECT
+    notes: IDE-centric; the workforce is agents in a pipeline, not humans in an editor.

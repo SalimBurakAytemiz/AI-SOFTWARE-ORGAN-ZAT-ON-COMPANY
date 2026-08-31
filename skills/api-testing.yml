@@ -1,0 +1,38 @@
+id: api-testing
+name: API and Contract Testing
+version: 1.0.0
+summary: >
+  Verify API behavior against its contract: status codes, schemas, error model, auth,
+  idempotency, and pagination - including the negative cases.
+when_to_use:
+  - Any new or changed API endpoint
+  - Verifying an integration boundary
+when_not_to_use:
+  - Pure UI changes with no API surface
+procedure:
+  - Derive test cases from the published contract and the acceptance criteria.
+  - Test the success path for each operation against the response schema.
+  - Test the error model - each documented error condition returns the right code and shape.
+  - Test authorization - unauthenticated and under-privileged callers are rejected.
+  - Test idempotency - repeating an unsafe call with the same key does not double-apply.
+  - Test pagination and boundary values.
+  - Wire the suite into CI; keep it deterministic.
+inputs:
+  - The API contract and acceptance criteria
+  - A test environment with seedable data
+outputs:
+  - An automated API test suite in CI
+  - Coverage of success, error, auth, and idempotency cases
+quality_checks:
+  - Every documented error condition has a test
+  - Authorization negative cases are covered
+  - The suite is deterministic
+failure_modes:
+  - Testing only 200 responses
+  - No idempotency test on retry-able writes
+  - Order-dependent tests
+risk_level: 2
+source_influences:
+  - Contract testing practice
+  - microsoft/playwright (APIRequestContext)
+status: ACTIVE

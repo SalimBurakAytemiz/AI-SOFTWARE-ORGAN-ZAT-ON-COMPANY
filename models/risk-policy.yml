@@ -1,0 +1,84 @@
+# Risk policy - the 0-5 scale that drives routing, review depth, and approval.
+#
+# Referenced by every agent (`risk_level` ceiling), every workflow step
+# (`risk_level`), and routing.yml (`risk_floor`).
+
+version: "1.0"
+
+scale:
+  - level: 0
+    name: Deterministic
+    meaning: No judgment needed; ordinary software is correct by construction.
+    model_tier: NO_AI
+    review: automated checks only
+    human_founder: not required
+    examples: [schema validation, formatting, template codegen, file moves]
+
+  - level: 1
+    name: Low
+    meaning: Cheap to get wrong; errors caught easily and reversibly.
+    model_tier: LOW_COST
+    review: peer agent glance or automated
+    human_founder: not required
+    examples: [ticket triage, release-note phrasing, doc typo fixes]
+
+  - level: 2
+    name: Moderate
+    meaning: Normal product work; a mistake causes rework, not harm.
+    model_tier: STANDARD_CODING
+    review: independent code review
+    human_founder: not required
+    examples: [UI feature, non-auth endpoint, unit/integration tests, spec authoring]
+
+  - level: 3
+    name: Elevated
+    meaning: Broader blast radius; regressions plausible; staging catches most issues.
+    model_tier: STANDARD_CODING (design at ADVANCED_REASONING)
+    review: independent code review + QA sign-off
+    human_founder: not required (but notified for awareness)
+    examples: [cross-cutting refactor, staging migration, CI pipeline change, new integration adapter in sandbox]
+
+  - level: 4
+    name: High
+    meaning: Real risk to reliability, data integrity, or cost if wrong.
+    model_tier: ADVANCED_REASONING (review at CRITICAL_REVIEW)
+    review: independent code review at CRITICAL_REVIEW + QA + security if applicable
+    human_founder: required to approve the RELEASE, not each step
+    examples: [architecture change, backup/restore change, dependency major bump, observability of a critical path]
+
+  - level: 5
+    name: Critical
+    meaning: Irreversible or externally consequential; safety, money, or security at stake.
+    model_tier: ADVANCED_REASONING + mandatory CRITICAL_REVIEW review step
+    review: independent code review + security review + Release Manager verification
+    human_founder: REQUIRED - explicit approval before execution, no exceptions
+    examples: &risk5_domains
+      - authentication
+      - authorization
+      - payment processing and payment provider configuration
+      - critical database migrations and destructive DB operations
+      - production infrastructure modification
+      - customer data security, export, or deletion
+      - financial operations (refunds, payouts, supplier payments)
+      - advertising / marketing budget changes
+      - bulk customer messaging
+      - access-control escalation
+      - critical security architecture changes
+      - production deployment
+      - merge to protected main
+      - secret creation, rotation, or revocation
+
+risk_5_rule: >
+  For any RISK 5 item: agents may analyze, plan, propose, and prepare. Execution is
+  performed only by the Human Founder, or by a system action that the Human Founder
+  has explicitly approved for that specific instance. There is no standing delegation
+  of a RISK 5 action to any agent. This mirrors Constitution Article 3 and
+  policies/human-approval.yml, which is the enforced source of truth.
+
+determination:
+  - The Business Analyst and Solution Architect propose a risk level during SPEC/PLAN.
+  - The Engineering Director confirms or adjusts it and records the reason.
+  - The Application Security Engineer may raise (never lower) the risk level of any item.
+  - When in doubt, round UP.
+
+status: ADOPTED

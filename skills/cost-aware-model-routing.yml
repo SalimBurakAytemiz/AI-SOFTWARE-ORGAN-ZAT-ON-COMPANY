@@ -1,0 +1,38 @@
+id: cost-aware-model-routing
+name: Cost-Aware Model Routing
+version: 1.0.0
+summary: >
+  Choose the cheapest tier that clears the task's risk floor and quality bar. Use
+  NO_AI for deterministic work. Escalate a tier only on demonstrated need.
+when_to_use:
+  - Assigning a task to an agent / tier
+  - Reviewing or changing routing rules
+  - Deciding whether a task needs a model at all
+when_not_to_use:
+  - Never skip it - routing is always a cost decision
+procedure:
+  - Ask first - can ordinary software do this correctly? If yes, route to NO_AI.
+  - Look up the risk level and its tier floor in models/risk-policy.yml.
+  - Start at the floor. Raise one tier only if complexity is high, context is large, or the quality bar is critical, or the task touches auth/payments/customer-data.
+  - Confirm the target tier is within the agent's risk_level ceiling (else get Engineering Director sign-off).
+  - On repeated gate failure, retry per the escalation ladder (twice at tier, once at next tier, then human) - never unbounded.
+  - Record the chosen tier and the reason in the audit event.
+inputs:
+  - Task type, risk level, complexity, context size, quality bar
+  - The agent's declared tier and risk ceiling
+outputs:
+  - A tier selection with a recorded rationale
+  - An escalation flag if a tier ceiling was hit
+quality_checks:
+  - Deterministic work was not sent to a model
+  - The tier is at or above the risk floor, never below
+  - Higher tiers were not chosen "to be safe"
+failure_modes:
+  - Defaulting to the strongest model for everything
+  - Routing below the risk floor to save money
+  - Infinite retry at escalating tiers
+risk_level: 1
+source_influences:
+  - BerriAI/litellm (gateway routing, fallbacks, budgets)
+  - AI Software Company Constitution Articles 11 and 13
+status: ACTIVE

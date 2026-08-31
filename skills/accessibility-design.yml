@@ -1,0 +1,37 @@
+id: accessibility-design
+name: Accessibility Design and Verification
+version: 1.0.0
+summary: >
+  Design and verify interfaces to WCAG 2.2 AA as a baseline: semantics, keyboard
+  operability, focus management, contrast, and complete non-happy states.
+when_to_use:
+  - Designing any user-facing screen or flow
+  - Reviewing a frontend implementation for accessibility
+when_not_to_use:
+  - Backend-only or internal CLI work with no UI
+procedure:
+  - Define the semantic structure (landmarks, headings, roles) before visual styling.
+  - Specify keyboard operation for every interactive element, including focus order and visible focus.
+  - Define error, loading, empty, and partial states with accessible messaging.
+  - Specify color/contrast that meets AA, and ensure meaning is not carried by color alone.
+  - Define screen-reader announcements for dynamic changes (live regions).
+  - Write accessibility acceptance criteria and hand them to QA for automated + manual checks.
+inputs:
+  - The feature spec and user flows
+  - The design system's accessible component patterns
+outputs:
+  - An accessibility section in the design spec
+  - Testable accessibility acceptance criteria
+quality_checks:
+  - Every interactive element is keyboard-operable with visible focus
+  - All non-happy states are defined and announced
+  - Contrast meets WCAG 2.2 AA; color is not the sole signal
+failure_modes:
+  - Bolting accessibility on after visual design
+  - Undefined loading/empty/error states
+  - Relying on automated checks alone (they catch ~40% of issues)
+risk_level: 2
+source_influences:
+  - WCAG 2.2 and WAI-ARIA Authoring Practices
+  - microsoft/playwright (accessibility-tree assertions in E2E)
+status: ACTIVE

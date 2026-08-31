@@ -1,0 +1,44 @@
+id: code-review
+name: Independent Code Review
+version: 1.0.0
+summary: >
+  Review a change you did not write, against the spec, architecture, standards, and
+  regression risk. Give specific, actionable feedback tied to a principle. Approve or
+  request changes - never merge.
+when_to_use:
+  - Every pull request before it can merge
+when_not_to_use:
+  - A change authored by your own implementing context (independence violation - decline and reroute)
+procedure:
+  - Confirm you are not the implementer of this change.
+  - Read the linked spec, design, and ADRs; understand the intended behavior.
+  - Pack the surrounding code for context; understand the blast radius.
+  - Check correctness against acceptance criteria and edge/negative cases.
+  - Check maintainability, naming, and consistency with house standards.
+  - Check test adequacy - are the risky paths covered? Block if not.
+  - Check for regression, concurrency, performance, and security concerns; route security concerns onward.
+  - Verify the change is one coherent logical unit with a clear description.
+  - Run the build and tests in a sandbox to confirm the author's claims.
+  - 'Post a verdict: approve, or request changes with each comment citing a concrete reason.'
+inputs:
+  - The PR diff and description
+  - The governing spec, design, architecture, and standards
+  - Confirmation of the implementer's identity
+outputs:
+  - A review verdict
+  - Specific comments tied to principles or standards
+  - A regression-risk note; security concerns routed to the security engineer
+quality_checks:
+  - Every request-changes comment has a concrete, actionable reason
+  - Risky changes without test coverage are blocked
+  - The reviewer verified claims by running, not just reading
+failure_modes:
+  - Rubber-stamping ("LGTM") without running or reading deeply
+  - Vague feedback with no cited principle
+  - Reviewing your own work
+risk_level: 4
+source_influences:
+  - qodo-ai/pr-agent (structured review checklist)
+  - yamadashy/repomix (packed review context)
+  - AI Software Company Constitution Article 5.2
+status: ACTIVE

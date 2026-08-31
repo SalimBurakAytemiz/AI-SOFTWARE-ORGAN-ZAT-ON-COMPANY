@@ -1,0 +1,56 @@
+id: qa
+name: Quality Assurance Policy
+purpose: Define the quality gates, coverage expectations, and the QA state decision.
+authority: human-founder
+default: DENY
+rules:
+  - id: STRATEGY_BEFORE_BUILD
+    statement: A risk-based test strategy exists before BUILD for any RISK >= 2 work.
+    effect: REQUIRE_REVIEW
+    applies_to: [qa-lead]
+    rationale: Tests must be designed, not improvised.
+  - id: ACCEPTANCE_CRITERIA_COVERAGE
+    statement: Every acceptance criterion is covered by at least one automated test before QA can PASS.
+    effect: DENY
+    applies_to: [qa-lead]
+    actions: [qa_pass_without_criteria_coverage]
+    rationale: Untested criteria are unmet criteria.
+  - id: TEST_PYRAMID
+    statement: Favor many fast unit tests, fewer integration tests, few E2E tests. E2E is reserved for critical journeys.
+    effect: REQUIRE_REVIEW
+    applies_to: [qa-lead, test-automation-engineer]
+    rationale: Speed and stability.
+  - id: NO_FLAKY_MERGES
+    statement: Known-flaky tests are not merged; flakes in the suite are quarantined and ticketed within one working day.
+    effect: DENY
+    applies_to: [test-automation-engineer]
+    actions: [merge_flaky_test]
+    rationale: A flaky suite is an ignored suite.
+  - id: REGRESSION_BEFORE_QA_PASS
+    statement: The regression suite for affected areas runs green before QA PASS.
+    effect: REQUIRE_REVIEW
+    applies_to: [qa-lead]
+    rationale: Prevent re-introducing fixed bugs.
+  - id: FAILURE_EVIDENCE
+    statement: E2E failures produce a trace, screenshot, and video; these are attached to the defect.
+    effect: REQUIRE_REVIEW
+    applies_to: [test-automation-engineer]
+    rationale: Reproducibility (Playwright).
+  - id: HONEST_RECOMMENDATION
+    statement: The release-quality recommendation is evidence-based and states known risks. A failing gate is reported, never worked around.
+    effect: DENY
+    applies_to: [qa-lead]
+    actions: [misrepresent_quality, hide_failing_gate]
+    rationale: Constitution Article 6, Article 5.4.
+  - id: COVERAGE_FLOOR
+    statement: New or changed logic meets the coverage floor set in the test strategy (default 80% line / 70% branch for changed files); auth paths require explicit negative-case tests regardless of percentage.
+    effect: REQUIRE_REVIEW
+    applies_to: [all-engineering-agents, qa-lead]
+    rationale: Percentages are a floor, not the goal.
+enforcement:
+  - CI enforces coverage thresholds on changed files
+  - qa gate step in delivery workflows (tests/test_workflows.py checks its presence)
+  - Release Gate QA check (policies/release.yml)
+related_policies: [development, release, security]
+review: When the test strategy template or coverage floors change.
+notes: Quality-gate specifics per workflow are in workflows/*.yml step definitions.

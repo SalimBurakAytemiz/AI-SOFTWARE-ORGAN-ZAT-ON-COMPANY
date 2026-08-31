@@ -1,0 +1,44 @@
+id: security-review
+name: Application Security Review
+version: 1.0.0
+summary: >
+  Review a change for security defects: authn/authz, input handling, OWASP Top 10,
+  dependency and secret hygiene, and secure configuration. Produce risk-ranked
+  findings with concrete remediation and a gate decision.
+when_to_use:
+  - Any change touching authentication, authorization, payments, customer data, or an external surface
+  - The SECURITY gate step of any workflow
+  - A dependency update or a reported finding
+when_not_to_use:
+  - Pure documentation or internal-tooling changes with no data or auth impact (record the rationale)
+procedure:
+  - Identify the trust boundaries the change touches; threat-model new surfaces (STRIDE).
+  - Review authn/authz logic and its negative-case tests explicitly.
+  - Run SAST (Semgrep), SCA (Trivy), secret scan (gitleaks); triage each finding for exploitability.
+  - For LLM-exposed untrusted input, run promptfoo redteam.
+  - Check for injection, broken access control, SSRF, insecure deserialization, and secret exposure.
+  - Verify secure configuration and that no secret is in code, logs, prompts, or memory.
+  - Rank findings (critical/high/medium/low) with a concrete fix for each.
+  - Issue SECURITY PASS or FAIL; escalate any RISK 5 security item to the Human Founder.
+inputs:
+  - The change under review with packed code context
+  - Architecture and security design
+  - Scanner baselines and the waiver register
+outputs:
+  - A risk-ranked findings report with remediation
+  - Threat model for new surfaces
+  - SECURITY gate decision
+  - Escalation memo for RISK 5 items
+quality_checks:
+  - No PASS with an unresolved high/critical finding lacking a time-boxed waiver
+  - Auth changes have negative-case tests
+  - Findings record references, never secret values
+failure_modes:
+  - Treating a green scanner run as sufficient without manual review of auth logic
+  - Permanent waivers with no expiry
+  - Missing the prompt-injection surface on an LLM feature
+risk_level: 4
+source_influences:
+  - OWASP Top 10 and OWASP LLM Top 10
+  - semgrep/semgrep, aquasecurity/trivy, gitleaks/gitleaks, promptfoo/promptfoo
+status: ACTIVE

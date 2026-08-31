@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-software-company/schemas/model-tier.schema.json",
+  "title": "Model Tier and Routing Configuration",
+  "description": "Provider-independent conceptual model tiers plus routing and risk policy. Concrete model names are illustrative and expected to change; routing depends on task type, risk, complexity, cost, quality and context requirements.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "abstraction", "tiers"],
+  "properties": {
+    "version": { "type": "string" },
+    "abstraction": { "type": "string", "minLength": 20 },
+    "provider_independence": { "type": "string" },
+    "tiers": {
+      "type": "array",
+      "minItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "intent", "typical_use", "cost_class", "example_models_illustrative_only"],
+        "properties": {
+          "name": { "$ref": "#/$defs/tierName" },
+          "intent": { "type": "string", "minLength": 10 },
+          "typical_use": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+          "cost_class": { "type": "string", "enum": ["none", "very-low", "low", "medium", "high", "highest"] },
+          "requires_human_founder": { "type": "boolean" },
+          "example_models_illustrative_only": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "notes": { "type": "string" }
+  },
+  "$defs": {
+    "tierName": {
+      "type": "string",
+      "enum": ["NO_AI", "LOW_COST", "STANDARD_CODING", "ADVANCED_REASONING", "CRITICAL_REVIEW"]
+    }
+  }
+}

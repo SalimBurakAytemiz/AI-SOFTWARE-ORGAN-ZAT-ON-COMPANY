@@ -1,0 +1,186 @@
+id: incident
+name: Incident Response
+purpose: >
+  Respond to a live production incident: detect, classify, contain within a
+  pre-authorized envelope, find root cause, fix, and deploy the fix only after Human
+  Founder approval, then run a blameless postmortem.
+trigger:
+  - Monitoring or an alert indicates production degradation or outage
+  - A security event affecting production is detected
+  - The Human Founder or a user reports a live customer-impacting problem
+risk_level: 5
+reaches_production: true
+steps:
+  - id: detect
+    name: Detect
+    owner: sre-observability-engineer
+    action: Confirm the signal is real; capture the first timeline entry and affected surface.
+    project_state: MONITORING
+    on_pass: classify
+    on_fail: abort
+    audit_event: true
+  - id: classify
+    name: Classify
+    owner: sre-observability-engineer
+    action: Assign severity (SEV1-4) and incident type (availability, correctness, security, data).
+    project_state: MONITORING
+    gate: true
+    on_pass: triage
+    on_fail: detect
+    audit_event: true
+  - id: triage
+    name: Triage
+    owner: incident-debug-engineer
+    action: Assign an incident lead, identify likely subsystems, decide if containment is needed.
+    project_state: SECURITY
+    on_pass: contain_if_needed
+    on_fail: classify
+    audit_event: true
+  - id: contain_if_needed
+    name: Contain (within pre-authorized envelope)
+    owner: incident-debug-engineer
+    action: >
+      Apply only containment actions the Human Founder pre-authorized in
+      policies/incident.yml (e.g. feature-flag off, scale out, block an abusive IP).
+      Any containment action that is itself a critical action requires the Human
+      Founder now.
+    project_state: SECURITY
+    gate: true
+    human_approval: false
+    risk_level: 4
+    on_pass: collect_evidence
+    on_fail: escalate_containment
+    audit_event: true
+  - id: escalate_containment
+    name: Escalate containment to Human Founder
+    owner: human-founder
+    action: Approve or perform containment that exceeds the pre-authorized envelope.
+    project_state: SECURITY
+    gate: true
+    human_approval: true
+    risk_level: 5
+    on_pass: collect_evidence
+    on_fail: collect_evidence
+    audit_event: true
+  - id: collect_evidence
+    name: Collect evidence
+    owner: incident-debug-engineer
+    action: Gather logs, traces, metrics, recent deploys/config changes; freeze artifacts.
+    project_state: SECURITY
+    on_pass: root_cause
+    on_fail: triage
+    audit_event: true
+  - id: root_cause
+    name: Root cause analysis
+    owner: incident-debug-engineer
+    action: Establish the causal chain with evidence.
+    project_state: PLAN
+    gate: true
+    on_pass: fix
+    on_fail: collect_evidence
+    audit_event: true
+  - id: fix
+    name: Fix
+    owner: incident-debug-engineer
+    action: Implement the fix on a branch with a regression test; involve the owning engineer as needed.
+    project_state: BUILD
+    on_pass: test
+    on_fail: root_cause
+    audit_event: true
+  - id: test
+    name: Test
+    owner: test-automation-engineer
+    action: Run the regression suite and the new test; verify no new failures.
+    project_state: TEST
+    gate: true
+    on_pass: review
+    on_fail: fix
+    audit_event: true
+  - id: review
+    name: Independent review
+    owner: senior-code-reviewer
+    action: Review the fix; security review if the incident was a security event.
+    project_state: REVIEW
+    gate: true
+    on_pass: staging
+    on_fail: fix
+    audit_event: true
+  - id: staging
+    name: Staging validation
+    owner: devops-platform-engineer
+    action: Deploy the fix to staging and confirm it resolves the reproduced failure.
+    project_state: STAGING
+    gate: true
+    on_pass: human_approval
+    on_fail: fix
+    audit_event: true
+  - id: human_approval
+    name: Human Founder approval
+    owner: human-founder
+    action: Approve or reject deploying the incident fix to production.
+    project_state: APPROVAL
+    gate: true
+    human_approval: true
+    risk_level: 5
+    on_pass: deploy
+    on_fail: fix
+    audit_event: true
+  - id: deploy
+    name: Deploy
+    owner: human-founder
+    action: Execute or authorize the production deployment of the fix.
+    project_state: PRODUCTION
+    risk_level: 5
+    on_pass: verify
+    on_fail: rollback
+    audit_event: true
+  - id: verify
+    name: Verify
+    owner: sre-observability-engineer
+    action: Confirm the incident signal has cleared and no new regressions appear.
+    project_state: PRODUCTION
+    gate: true
+    on_pass: monitor
+    on_fail: rollback
+    audit_event: true
+  - id: rollback
+    name: Rollback
+    owner: human-founder
+    action: Revert to the last good state per the rollback plan.
+    project_state: PRODUCTION
+    risk_level: 5
+    on_pass: monitor
+    on_fail: abort
+    audit_event: true
+  - id: monitor
+    name: Monitor
+    owner: sre-observability-engineer
+    action: Heightened monitoring through the stabilization window.
+    project_state: MONITORING
+    on_pass: postmortem
+    on_fail: rollback
+    audit_event: true
+  - id: postmortem
+    name: Postmortem
+    owner: incident-debug-engineer
+    action: Write the blameless postmortem with a timeline, root cause, and owned follow-up actions.
+    project_state: IMPROVEMENT
+    gate: true
+    on_pass: end
+    on_fail: postmortem
+    audit_event: true
+produces:
+  - Incident timeline and severity classification
+  - Evidence package and root cause analysis
+  - Reviewed fix with a regression test
+  - Production verification record
+  - Blameless postmortem with follow-up actions
+invariants:
+  - Human Founder approval precedes the first PRODUCTION deploy step.
+  - Containment beyond the pre-authorized envelope routes to the Human Founder.
+  - The review owner is never the fix owner.
+  - A postmortem is mandatory and cannot be skipped.
+  - Every gate step emits an audit event.
+notes: >
+  Implements build spec section 15. The pre-authorized containment envelope is
+  defined by the Human Founder in policies/incident.yml.

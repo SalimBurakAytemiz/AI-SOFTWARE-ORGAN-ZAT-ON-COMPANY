@@ -1,0 +1,138 @@
+id: human-approval
+name: Human Founder Approval Policy
+purpose: >
+  The enforced source of truth for which actions no AI agent may execute
+  independently. Mirrors Constitution Article 3. Tests in tests/ fail the build if any
+  agent, workflow, or capability grant contradicts this policy.
+authority: human-founder
+default: DENY
+rules:
+  - id: PRODUCTION_DEPLOYMENT
+    statement: Deploying to any production environment requires Human Founder approval.
+    effect: REQUIRE_APPROVAL
+    applies_to: [all-agents]
+    actions: [production_deployment]
+    approver: human-founder
+    rationale: Irreversible customer-facing change.
+  - id: MERGE_PROTECTED_MAIN
+    statement: Merging any pull request into the protected main branch requires Human Founder approval.
+    effect: REQUIRE_APPROVAL
+    applies_to: [all-agents]
+    actions: [merge_protected_main]
+    approver: human-founder
+    rationale: main is the source of production; the merge is the point of no return.
+  - id: PRODUCTION_DATABASE_MIGRATION
+    statement: Applying a migration to a production database requires Human Founder approval.
+    effect: REQUIRE_APPROVAL
+    applies_to: [all-agents]
+    actions: [production_database_migration]
+    approver: human-founder
+    rationale: Schema changes can corrupt or lock production data.
+  - id: PRODUCTION_DATABASE_DESTRUCTIVE_OPERATION
+    statement: Any destructive operation on production data (drop, truncate, bulk delete/rewrite) requires Human Founder approval and a verified backup.
+    effect: REQUIRE_APPROVAL
+    applies_to: [all-agents]
+    actions: [production_database_destructive_operation]
+    approver: human-founder
+    rationale: Data loss is often unrecoverable.
+  - id: PRODUCTION_DATA_DELETION
+    statement: Deleting production data outside a normal, spec-approved product flow requires Human Founder approval.
+    effect: REQUIRE_APPROVAL
+    applies_to: [all-agents]
+    actions: [production_data_deletion]
+    approver: human-founder
+    rationale: Same as destructive operations; includes customer records.
+  - id: PRODUCTION_INFRASTRUCTURE_MODIFICATION
+    statement: Modifying production infrastructure (tofu apply, cloud console changes, DNS, networking) requires Human Founder approval.
+    effect: REQUIRE_APPROVAL
+    applies_to: [all-agents]
+    actions: [production_infrastructure_modification]
+    approver: human-founder
+    rationale: Can cause outages and security exposure.
+  - id: SECRET_CREATION_ROTATION_REVOCATION
+    statement: Creating, rotating, or revoking any secret requires Human Founder approval.
+    effect: REQUIRE_APPROVAL
+    applies_to: [all-agents]
+    actions: [secret_creation_rotation_revocation]
+    approver: human-founder
+    rationale: Secret changes can lock out systems or widen access.
+  - id: PAYMENT_PROVIDER_CONFIGURATION_CHANGE
+    statement: Changing payment provider configuration requires Human Founder approval.
+    effect: REQUIRE_APPROVAL
+    applies_to: [all-agents]
+    actions: [payment_provider_configuration_change]
+    approver: human-founder
+    rationale: Direct financial and compliance exposure.
+  - id: REAL_REFUND_OR_FINANCIAL_TRANSACTION
+    statement: Executing a real refund, payout, or any real financial transaction requires Human Founder approval.
+    effect: REQUIRE_APPROVAL
+    applies_to: [all-agents]
+    actions: [real_refund_or_financial_transaction]
+    approver: human-founder
+    rationale: Moves real money; fraud and error risk.
+  - id: ADVERTISING_BUDGET_MODIFICATION
+    statement: Modifying an advertising or marketing budget requires Human Founder approval.
+    effect: REQUIRE_APPROVAL
+    applies_to: [all-agents]
+    actions: [advertising_budget_modification]
+    approver: human-founder
+    rationale: Direct spend with no automatic ceiling.
+  - id: SUPPLIER_OR_VENDOR_PAYMENT
+    statement: Paying a supplier or vendor requires Human Founder approval.
+    effect: REQUIRE_APPROVAL
+    applies_to: [all-agents]
+    actions: [supplier_or_vendor_payment]
+    approver: human-founder
+    rationale: Real money movement to third parties.
+  - id: BULK_CUSTOMER_MESSAGING
+    statement: Sending messages to customers in bulk requires Human Founder approval.
+    effect: REQUIRE_APPROVAL
+    applies_to: [all-agents]
+    actions: [bulk_customer_messaging]
+    approver: human-founder
+    rationale: Reputational and compliance (consent, anti-spam) exposure.
+  - id: CUSTOMER_DATA_EXPORT
+    statement: Exporting customer data out of production systems requires Human Founder approval.
+    effect: REQUIRE_APPROVAL
+    applies_to: [all-agents]
+    actions: [customer_data_export]
+    approver: human-founder
+    rationale: Privacy and breach risk.
+  - id: ACCESS_CONTROL_ESCALATION
+    statement: Granting, widening, or escalating any permission (for a human or an agent) requires Human Founder approval.
+    effect: REQUIRE_APPROVAL
+    applies_to: [all-agents]
+    actions: [access_control_escalation]
+    approver: human-founder
+    rationale: The mechanism by which every other control could be bypassed.
+  - id: CRITICAL_SECURITY_ARCHITECTURE_CHANGE
+    statement: Changing critical security architecture (authn/authz model, trust boundaries, crypto, isolation) requires Human Founder approval.
+    effect: REQUIRE_APPROVAL
+    applies_to: [all-agents]
+    actions: [critical_security_architecture_change]
+    approver: human-founder
+    rationale: Systemic security impact.
+  - id: NO_STANDING_DELEGATION
+    statement: There is no standing delegation of any action above to any agent, role, or automated system.
+    effect: DENY
+    applies_to: [all-agents]
+    actions: [any_critical_action]
+    rationale: Approval is per-instance and explicit; absence of the Human Founder is not consent.
+  - id: PREPARE_IS_ALLOWED
+    statement: Agents MAY analyze, plan, propose, draft, and prepare any of the above, then stop and request approval.
+    effect: ALLOW
+    applies_to: [all-agents]
+    actions: [analyze, plan, propose, prepare, request_approval]
+    rationale: Preparation carries no execution risk and is the expected agent behavior.
+enforcement:
+  - tests/test_human_authority.py asserts no agent lists any critical action in allowed_actions
+  - tests/test_org_security.py asserts each critical action appears here with effect REQUIRE_APPROVAL and approver human-founder
+  - tests/test_workflows.py asserts a human_approval step precedes every PRODUCTION step
+  - GitHub branch protection on main (no direct agent merge)
+  - GitHub Environment "production" with the Human Founder as the required reviewer
+  - 'Runtime (future): OPA default-deny decision point in front of every tool call, with decision logs'
+related_policies: [agent-permissions, git, production, database, secrets, security, release, incident, cost]
+review: Reviewed by the Human Founder on any change to the critical-action set; changes require a constitutional amendment commit.
+notes: >
+  This list is a floor. It may grow. It may not shrink without a Human Founder
+  constitutional amendment.

@@ -1,0 +1,59 @@
+id: incident
+name: Incident Response Policy
+purpose: Define incident severity, the pre-authorized containment envelope, and roles.
+authority: human-founder
+default: DENY
+rules:
+  - id: SEVERITY_SCALE
+    statement: "SEV1 = full outage or data/security breach; SEV2 = major degradation or partial outage; SEV3 = minor degradation, workaround exists; SEV4 = cosmetic / low impact."
+    effect: REQUIRE_REVIEW
+    applies_to: [sre-observability-engineer, incident-debug-engineer]
+    rationale: Consistent triage and response urgency.
+  - id: PRE_AUTHORIZED_CONTAINMENT
+    statement: >
+      The Human Founder pre-authorizes a bounded set of containment actions that the
+      Incident Engineer may take immediately during a live incident WITHOUT per-instance
+      approval. Default envelope (the Human Founder may amend): toggle an existing
+      feature flag off; scale out an existing service within a pre-set ceiling;
+      enable rate limiting; block an abusive IP or token; rotate a session-signing
+      key ONLY via the Human-Founder-run rotation path; put the app in read-only mode
+      if that switch already exists.
+    effect: ALLOW
+    applies_to: [incident-debug-engineer]
+    actions: [contain_within_envelope]
+    approver: human-founder
+    rationale: Speed matters in a live incident, but only within limits the Human Founder set in advance.
+  - id: CONTAINMENT_BEYOND_ENVELOPE
+    statement: Any containment action outside the pre-authorized envelope - especially one that is itself a critical action (deploy, infra change, migration, secret rotation, data deletion) - requires the Human Founder now.
+    effect: REQUIRE_APPROVAL
+    applies_to: [all-agents]
+    approver: human-founder
+    rationale: Constitution Article 3 is not suspended by an incident.
+  - id: EVIDENCE_FREEZE
+    statement: On incident declaration, relevant logs, traces, and artifacts are preserved before any remediation that would overwrite them.
+    effect: REQUIRE_REVIEW
+    applies_to: [incident-debug-engineer, sre-observability-engineer]
+    rationale: Root cause needs the evidence.
+  - id: FIX_FOLLOWS_INCIDENT_WORKFLOW
+    statement: The incident fix goes through workflows/incident.yml - review, test, staging, Human Founder approval - before production. No "just push it" bypass.
+    effect: DENY
+    applies_to: [all-agents]
+    actions: [deploy_incident_fix_without_approval]
+    rationale: Rushed fixes cause second incidents.
+  - id: POSTMORTEM_MANDATORY
+    statement: Every SEV1 and SEV2 incident has a blameless postmortem within 5 working days with owned follow-up actions.
+    effect: REQUIRE_REVIEW
+    applies_to: [incident-debug-engineer]
+    rationale: Continuous improvement (Constitution Article 15).
+  - id: BLAMELESS
+    statement: Postmortems address systemic causes, never individual blame (human or agent).
+    effect: REQUIRE_REVIEW
+    applies_to: [incident-debug-engineer]
+    rationale: Blame suppresses the information you need.
+enforcement:
+  - workflows/incident.yml gate steps and the contain/escalate branch
+  - tests/test_workflows.py - incident workflow has a human_approval step before deploy
+  - Audit events for every containment action, in or out of envelope
+related_policies: [human-approval, production, security, release, audit]
+review: After every SEV1; annually for the containment envelope.
+notes: The containment envelope above is the default; the Human Founder edits this rule to change it.

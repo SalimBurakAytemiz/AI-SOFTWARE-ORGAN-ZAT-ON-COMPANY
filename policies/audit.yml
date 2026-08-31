@@ -1,0 +1,54 @@
+id: audit
+name: Audit Policy
+purpose: Define what must be audited, the record format, and retention.
+authority: human-founder
+default: DENY
+rules:
+  - id: AUDIT_SIGNIFICANT_ACTIONS
+    statement: Every significant action emits an audit event conforming to schemas/audit-event.schema.json.
+    effect: REQUIRE_REVIEW
+    applies_to: [all-agents, system]
+    actions: [any_significant_action]
+    rationale: Constitution Article 12.
+  - id: WHAT_COUNTS_AS_SIGNIFICANT
+    statement: "Significant = any tool/capability use, any workflow state transition, any gate decision, any model call above LOW_COST, any escalation, any approval request/grant/denial, any branch/PR/merge event, any deploy/migration step, any budget or error event."
+    effect: REQUIRE_REVIEW
+    applies_to: [all-agents, system]
+    rationale: Draws the line so it is not litigated per case.
+  - id: APPEND_ONLY
+    statement: Audit records are append-only and tamper-evident. No agent can edit or delete an audit record.
+    effect: DENY
+    applies_to: [all-agents]
+    actions: [edit_audit_record, delete_audit_record]
+    rationale: An editable audit log is not an audit log.
+  - id: RECORD_REASON
+    statement: Every audit event records the reason for the action, not only the outcome.
+    effect: REQUIRE_REVIEW
+    applies_to: [all-agents]
+    rationale: Institutional memory and post-hoc review.
+  - id: NO_SENSITIVE_VALUES
+    statement: Audit events carry references (ids, hashes, URIs), never secret values or raw customer PII.
+    effect: DENY
+    applies_to: [all-agents, system]
+    actions: [put_secret_in_audit, put_pii_in_audit]
+    rationale: The audit store must not become a data-leak vector.
+  - id: APPROVAL_FIELDS
+    statement: For any approval-required action, the audit event records approval_required=true and, once acted on, approved_by (only 'human-founder' or null) and approval_timestamp.
+    effect: REQUIRE_REVIEW
+    applies_to: [all-agents, system]
+    rationale: Proves the human gate was honored.
+  - id: RETENTION
+    statement: Audit events are retained at least 24 months (longer where law requires). Retention changes require Human Founder approval.
+    effect: REQUIRE_APPROVAL
+    applies_to: [system]
+    approver: human-founder
+    rationale: Investigations and compliance need history.
+enforcement:
+  - schemas/audit-event.schema.json validates the record shape
+  - tests/test_schemas.py includes a valid + invalid audit-event fixture check
+  - 'Runtime (future): append-only store (OTel + queryable index); OPA decision logs feed it'
+related_policies: [human-approval, cost, security, incident, release]
+review: On any change to the audit schema or retention.
+notes: >
+  The audit store is a schema and contract now, not a running system - no runtime
+  exists yet. The obligation attaches to the runtime phase.

@@ -1,0 +1,191 @@
+id: security-finding
+name: Security Finding
+purpose: >
+  Handle a security finding from a scanner, a red-team run, or an external
+  disclosure: assess, decide disclosure handling, remediate, and ship the fix only
+  after Human Founder approval. If the finding is actively exploited in production,
+  switch to the incident workflow.
+trigger:
+  - SAST / SCA / secret / container / DAST scan produces a high or critical finding
+  - promptfoo red-team surfaces an exploitable LLM weakness
+  - An external party discloses a vulnerability
+risk_level: 5
+reaches_production: true
+steps:
+  - id: intake
+    name: Intake and validate
+    owner: application-security-engineer
+    action: Confirm the finding is real (not a false positive); capture affected components and data exposure.
+    project_state: SECURITY
+    gate: true
+    on_pass: triage
+    on_fail: abort
+    audit_event: true
+  - id: triage
+    name: Triage and severity
+    owner: application-security-engineer
+    action: Assign CVSS-style severity; determine exploitability and whether it is live in production.
+    project_state: SECURITY
+    gate: true
+    on_pass: exploited_check
+    on_fail: intake
+    audit_event: true
+  - id: exploited_check
+    name: Actively exploited?
+    owner: application-security-engineer
+    action: If actively exploited in production, hand off to the incident workflow. Otherwise continue here.
+    project_state: SECURITY
+    gate: true
+    on_pass: disclosure_plan
+    on_fail: handoff_incident
+    audit_event: true
+  - id: handoff_incident
+    name: Hand off to incident workflow
+    owner: incident-debug-engineer
+    action: Open an incident with the finding as the trigger; this workflow pauses.
+    project_state: SECURITY
+    on_pass: end
+    on_fail: abort
+    audit_event: true
+  - id: disclosure_plan
+    name: Disclosure handling
+    owner: application-security-engineer
+    action: Recommend disclosure/embargo handling to the Human Founder; decide private-fix vs public.
+    project_state: SECURITY
+    gate: true
+    on_pass: escalate
+    on_fail: triage
+    audit_event: true
+  - id: escalate
+    name: Escalate to Human Founder
+    owner: human-founder
+    action: Acknowledge the finding, approve the remediation approach and disclosure plan, and (if a security architecture change is needed) approve that as a RISK 5 decision.
+    project_state: SECURITY
+    gate: true
+    human_approval: true
+    risk_level: 5
+    on_pass: fix_plan
+    on_fail: disclosure_plan
+    audit_event: true
+  - id: fix_plan
+    name: Fix plan
+    owner: solution-architect
+    action: Design the remediation (code fix, config change, dependency bump, or architecture change); define tests.
+    project_state: PLAN
+    gate: true
+    on_pass: implement
+    on_fail: escalate
+    audit_event: true
+  - id: implement
+    name: Implement
+    owner: backend-engineer
+    action: Implement the remediation on a private branch with a test proving the vulnerability is closed.
+    project_state: BUILD
+    on_pass: verify_fix
+    on_fail: fix_plan
+    audit_event: true
+  - id: verify_fix
+    name: Verify the fix closes the finding
+    owner: application-security-engineer
+    action: Re-run the scanner / red-team / PoC; confirm the finding no longer reproduces.
+    project_state: TEST
+    gate: true
+    on_pass: review
+    on_fail: implement
+    audit_event: true
+  - id: review
+    name: Independent review
+    owner: senior-code-reviewer
+    action: Review the remediation; reviewer is not the implementer.
+    project_state: REVIEW
+    gate: true
+    on_pass: regression
+    on_fail: implement
+    audit_event: true
+  - id: regression
+    name: Regression and QA
+    owner: qa-lead
+    action: Run the regression suite; confirm the fix introduced no functional regression.
+    project_state: TEST
+    gate: true
+    on_pass: staging
+    on_fail: implement
+    audit_event: true
+  - id: staging
+    name: Staging validation
+    owner: devops-platform-engineer
+    action: Deploy to staging; re-verify the finding is closed there.
+    project_state: STAGING
+    gate: true
+    on_pass: release_review
+    on_fail: implement
+    audit_event: true
+  - id: release_review
+    name: Release verification
+    owner: release-manager
+    action: Verify all applicable Release Gate checks; assemble the release package; mark READY_FOR_HUMAN_APPROVAL.
+    project_state: APPROVAL
+    gate: true
+    on_pass: human_approval
+    on_fail: implement
+    audit_event: true
+  - id: human_approval
+    name: Human Founder approval
+    owner: human-founder
+    action: Approve or reject deploying the remediation to production.
+    project_state: APPROVAL
+    gate: true
+    human_approval: true
+    risk_level: 5
+    on_pass: production
+    on_fail: implement
+    audit_event: true
+  - id: production
+    name: Production deployment
+    owner: human-founder
+    action: Execute or authorize the production deployment of the remediation.
+    project_state: PRODUCTION
+    risk_level: 5
+    on_pass: verify
+    on_fail: rollback
+    audit_event: true
+  - id: verify
+    name: Verify
+    owner: application-security-engineer
+    action: Confirm the finding is closed in production; update the waiver register.
+    project_state: PRODUCTION
+    gate: true
+    on_pass: disclose
+    on_fail: rollback
+    audit_event: true
+  - id: rollback
+    name: Rollback
+    owner: human-founder
+    action: Revert if the remediation causes issues; reassess.
+    project_state: PRODUCTION
+    risk_level: 5
+    on_pass: disclose
+    on_fail: abort
+    audit_event: true
+  - id: disclose
+    name: Disclosure and postmortem
+    owner: application-security-engineer
+    action: Execute the approved disclosure plan; write a security postmortem with follow-ups.
+    project_state: IMPROVEMENT
+    gate: true
+    on_pass: end
+    on_fail: disclose
+    audit_event: true
+produces:
+  - Validated finding with severity and exploitability assessment
+  - Human-Founder-approved remediation and disclosure plan
+  - Remediation on a PR with a proof-of-closure test
+  - Review, regression, and staging evidence
+  - Production verification and security postmortem
+invariants:
+  - Human Founder approval precedes the first PRODUCTION step and the disclosure plan.
+  - Actively-exploited findings divert to the incident workflow.
+  - The review owner is never the implement owner.
+  - A test proving the vulnerability is closed ships with the fix.
+  - Every gate step emits an audit event.
+notes: Implements the security-finding path (build spec section 12).

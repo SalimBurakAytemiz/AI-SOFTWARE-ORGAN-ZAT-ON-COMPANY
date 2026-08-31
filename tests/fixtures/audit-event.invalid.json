@@ -1,0 +1,16 @@
+{
+  "_comment": "INVALID ON PURPOSE: approved_by is a non-human-founder string, result is not in the enum, risk_level out of range, and required fields are missing. tests/test_schemas.py asserts this fails validation.",
+  "event_id": "evt_bad",
+  "timestamp": "not-a-timestamp",
+  "project": "ai-software-company",
+  "task": "x",
+  "agent_id": "backend-engineer",
+  "agent_role": "AI Backend Engineer",
+  "model": "STANDARD_CODING",
+  "action": "deploy_to_production",
+  "reason": "shipping it",
+  "risk_level": 9,
+  "approval_required": false,
+  "approved_by": "backend-engineer",
+  "result": "SHIPPED"
+}

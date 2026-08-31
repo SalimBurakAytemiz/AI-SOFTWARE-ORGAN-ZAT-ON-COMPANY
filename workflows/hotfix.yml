@@ -1,0 +1,149 @@
+id: hotfix
+name: Hotfix
+purpose: >
+  Ship an urgent fix outside the normal release cadence when there is no active
+  incident firefight. Compressed, not weakened: review, tests, and Human Founder
+  approval are still mandatory.
+trigger:
+  - A high-severity defect needs to ship before the next scheduled release
+  - A time-sensitive fix (regulatory, partner deadline) is required
+risk_level: 4
+reaches_production: true
+steps:
+  - id: assess
+    name: Assess urgency
+    owner: engineering-director
+    action: Confirm this is genuinely a hotfix (not a routine bugfix, not an active incident); set risk level.
+    project_state: SPEC
+    gate: true
+    on_pass: root_cause
+    on_fail: abort
+    audit_event: true
+  - id: root_cause
+    name: Root cause
+    owner: incident-debug-engineer
+    action: Establish the cause and the minimal safe change.
+    project_state: PLAN
+    gate: true
+    on_pass: implement
+    on_fail: assess
+    audit_event: true
+  - id: implement
+    name: Implement
+    owner: backend-engineer
+    action: Make the minimal fix on a branch with a regression test.
+    project_state: BUILD
+    on_pass: self_test
+    on_fail: root_cause
+    audit_event: true
+  - id: self_test
+    name: Self test
+    owner: backend-engineer
+    action: Build, lint, SAST, targeted tests, verification checklist.
+    project_state: BUILD
+    gate: true
+    on_pass: code_review
+    on_fail: implement
+    audit_event: true
+  - id: code_review
+    name: Independent code review
+    owner: senior-code-reviewer
+    action: Expedited but real review; reviewer is not the implementer.
+    project_state: REVIEW
+    gate: true
+    on_pass: targeted_test
+    on_fail: implement
+    audit_event: true
+  - id: targeted_test
+    name: Targeted regression test
+    owner: test-automation-engineer
+    action: Run the regression suite for the affected area and the new test.
+    project_state: TEST
+    gate: true
+    on_pass: security_if_required
+    on_fail: implement
+    audit_event: true
+  - id: security_if_required
+    name: Security review (if required)
+    owner: application-security-engineer
+    action: Run the SECURITY gate if the fix touches a security-relevant surface; else pass through with rationale.
+    project_state: SECURITY
+    gate: true
+    on_pass: staging_verify
+    on_fail: implement
+    audit_event: true
+  - id: staging_verify
+    name: Staging verification
+    owner: devops-platform-engineer
+    action: Deploy to staging and confirm the fix and no obvious regressions.
+    project_state: STAGING
+    gate: true
+    on_pass: release_review
+    on_fail: implement
+    audit_event: true
+  - id: release_review
+    name: Release verification
+    owner: release-manager
+    action: Verify applicable Release Gate checks; assemble a minimal release package and rollback plan; mark READY_FOR_HUMAN_APPROVAL.
+    project_state: APPROVAL
+    gate: true
+    on_pass: human_approval
+    on_fail: implement
+    audit_event: true
+  - id: human_approval
+    name: Human Founder approval
+    owner: human-founder
+    action: Approve or reject the hotfix deployment.
+    project_state: APPROVAL
+    gate: true
+    human_approval: true
+    risk_level: 5
+    on_pass: production
+    on_fail: implement
+    audit_event: true
+  - id: production
+    name: Production deployment
+    owner: human-founder
+    action: Execute or authorize the hotfix deployment.
+    project_state: PRODUCTION
+    risk_level: 5
+    on_pass: verify
+    on_fail: rollback
+    audit_event: true
+  - id: verify
+    name: Verify
+    owner: release-manager
+    action: Confirm the fix in production; watch error rates.
+    project_state: PRODUCTION
+    gate: true
+    on_pass: backport
+    on_fail: rollback
+    audit_event: true
+  - id: rollback
+    name: Rollback
+    owner: human-founder
+    action: Revert per the rollback plan; open an incident if there is customer impact.
+    project_state: PRODUCTION
+    risk_level: 5
+    on_pass: backport
+    on_fail: abort
+    audit_event: true
+  - id: backport
+    name: Backport and follow-up
+    owner: engineering-director
+    action: Ensure the fix is on the mainline; open follow-ups for anything deferred to move fast.
+    project_state: IMPROVEMENT
+    on_pass: end
+    on_fail: abort
+    audit_event: true
+produces:
+  - Root cause and minimal fix on a PR with a regression test
+  - Expedited review, test, and security evidence
+  - Minimal release package and rollback plan
+  - Production verification record and backport confirmation
+invariants:
+  - Human Founder approval precedes the first PRODUCTION step.
+  - The code_review owner is never the implement owner.
+  - No gate is removed relative to bugfix; steps are compressed, not skipped.
+  - Every gate step emits an audit event.
+notes: Implements the hotfix path (build spec section 12).

@@ -1,0 +1,41 @@
+id: incident-analysis
+name: Incident Analysis and Postmortem
+version: 1.0.0
+summary: >
+  Run an incident from detection to blameless postmortem: classify, contain within
+  the pre-authorized envelope, preserve evidence, find root cause, and produce owned
+  follow-ups.
+when_to_use:
+  - A declared production incident
+  - A severe defect requiring incident-grade rigor
+when_not_to_use:
+  - Routine bugs (use systematic-debugging in the bugfix workflow)
+procedure:
+  - Confirm and classify severity (SEV1-4) and type (availability, correctness, security, data).
+  - Start a timeline; assign an incident lead.
+  - Contain only within the Human-Founder pre-authorized envelope; escalate anything beyond it now.
+  - Freeze and collect evidence before remediation overwrites it - logs, traces, metrics, recent changes.
+  - Establish the causal chain with evidence; distinguish trigger from root cause.
+  - Drive the fix through the incident workflow (review, test, staging, Human Founder approval).
+  - 'After stabilization, write the blameless postmortem: timeline, impact, root cause, what went well, follow-ups with owners and dates.'
+inputs:
+  - The incident declaration and initial signals
+  - Read access to production telemetry and the relevant code
+  - The pre-authorized containment envelope (policies/incident.yml)
+outputs:
+  - Severity classification and timeline
+  - Evidence package and root cause analysis
+  - A blameless postmortem with owned follow-up actions
+quality_checks:
+  - Containment stayed within the envelope or was escalated
+  - Evidence was preserved before remediation
+  - The postmortem blames the system, never a person or an agent
+failure_modes:
+  - Fixing before understanding, then a second incident
+  - Losing logs to the remediation
+  - Postmortem with vague, unowned action items
+risk_level: 4
+source_influences:
+  - Google SRE blameless postmortem practice
+  - All-Hands-AI/OpenHands (event stream as replayable evidence)
+status: ACTIVE

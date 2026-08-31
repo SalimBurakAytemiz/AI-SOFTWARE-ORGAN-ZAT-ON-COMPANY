@@ -1,0 +1,39 @@
+id: requirements-analysis
+name: Requirements Analysis
+version: 1.0.0
+summary: >
+  Turn a request into structured, unambiguous, testable requirements: actors, goals,
+  rules, acceptance criteria, and - deliberately - the negative and edge cases.
+when_to_use:
+  - Intake of a new feature or change
+  - Whenever a spec feels ambiguous or incomplete
+when_not_to_use:
+  - A mechanical change with no behavioral question
+procedure:
+  - Restate the request in your own words and confirm the intended outcome.
+  - Identify actors, their goals, and the value each derives.
+  - Extract business rules and constraints; make implicit ones explicit.
+  - Write acceptance criteria as Given/When/Then.
+  - Enumerate edge cases, boundary values, and negative/failure cases.
+  - Map requirements to a traceability entry (intent -> requirement -> criterion -> test).
+  - List open questions and route them to the Product Manager or Human Founder.
+inputs:
+  - The product brief or change request
+  - Existing system behavior and constraints
+outputs:
+  - Structured requirements with testable acceptance criteria
+  - Edge and negative case list
+  - Traceability entries and an open-questions list
+quality_checks:
+  - Every requirement is testable and unambiguous
+  - Negative cases are explicit, not implied
+  - Open questions are recorded, not guessed
+failure_modes:
+  - Happy-path-only criteria
+  - Ambiguous verbs ("handle", "support") with no defined behavior
+  - Silent assumptions filling gaps
+risk_level: 2
+source_influences:
+  - github/spec-kit (spec-first)
+  - bmad-code-org/BMAD-METHOD (analyst persona, story files)
+status: ACTIVE

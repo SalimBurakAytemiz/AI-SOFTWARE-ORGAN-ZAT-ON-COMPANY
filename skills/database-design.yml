@@ -1,0 +1,40 @@
+id: database-design
+name: Database Design and Safe Migration
+version: 1.0.0
+summary: >
+  Design relational schema for correctness and performance, and evolve it with
+  reversible, expand/contract migrations that are dry-run and staged before any
+  Human-Founder-approved production apply.
+when_to_use:
+  - Designing or changing schema, indexes, or constraints
+  - Planning a data migration
+when_not_to_use:
+  - Application logic changes that do not touch the schema
+procedure:
+  - Model entities, relationships, and constraints; normalize, then denormalize only with evidence.
+  - Design indexes from the actual query patterns; check the plan with EXPLAIN.
+  - For a change, write forward and rollback migrations using expand/contract.
+  - Dry-run forward and rollback on an ephemeral DB with production-like data; measure lock time.
+  - Apply on staging; run the app test suite against the migrated schema; verify rollback on staging.
+  - If destructive, require a verified fresh backup and a written data-loss assessment.
+  - Assemble the production runbook (steps, duration, lock window, rollback trigger, verification queries) for Human Founder approval.
+inputs:
+  - The feature spec and architecture affecting data
+  - Current schema, sizes, and slow-query data
+outputs:
+  - Schema changes and forward/rollback migrations
+  - Dry-run and staging verification evidence
+  - A production migration runbook (proposal)
+quality_checks:
+  - Every migration has a tested rollback
+  - No unbounded lock or full-table rewrite without expand/contract
+  - Destructive ops have a verified backup first
+failure_modes:
+  - Irreversible migration with no data-loss assessment
+  - Adding an index that the query planner will not use
+  - Skipping the staging apply
+risk_level: 4
+source_influences:
+  - PostgreSQL documentation; expand/contract (parallel change) pattern
+  - AI Software Company policies/database.yml
+status: ACTIVE

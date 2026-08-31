@@ -1,0 +1,300 @@
+# Capability registry
+#
+# A tool grant is NOT a capability grant. Every external tool is decomposed into
+# named, risk-rated capabilities. Agents reference capabilities (not raw tools) in
+# `allowed_tools` / `forbidden_tools`.
+#
+# `grantable: false` capabilities can NEVER appear in any agent's `allowed_tools`.
+# They exist so the system can name and forbid them explicitly (default deny).
+# `tests/test_permissions.py` enforces both rules.
+
+version: "1.0"
+
+capabilities:
+  # --- git (local) ---
+  - id: git.read
+    tool: git
+    description: Read repository history, diffs, and file contents.
+    risk_level: 0
+    grantable: true
+  - id: git.branch
+    tool: git
+    description: Create and switch local branches.
+    risk_level: 1
+    grantable: true
+  - id: git.commit
+    tool: git
+    description: Commit staged changes to a non-protected branch.
+    risk_level: 1
+    grantable: true
+  - id: git.worktree
+    tool: git
+    description: Create and manage isolated git worktrees for task isolation.
+    risk_level: 1
+    grantable: true
+
+  # --- GitHub (forge) ---
+  - id: github.read
+    tool: github
+    description: Read repositories, issues, pull requests, checks, and actions.
+    risk_level: 0
+    grantable: true
+  - id: github.create_issue
+    tool: github
+    description: Open issues.
+    risk_level: 1
+    grantable: true
+  - id: github.comment
+    tool: github
+    description: Comment on issues and pull requests.
+    risk_level: 1
+    grantable: true
+  - id: github.create_branch
+    tool: github
+    description: Push a new non-protected branch to the remote.
+    risk_level: 1
+    grantable: true
+  - id: github.create_pr
+    tool: github
+    description: Open a pull request from a feature branch.
+    risk_level: 2
+    grantable: true
+  - id: github.review
+    tool: github
+    description: Submit a formal PR review verdict (approve / request changes). Not a merge.
+    risk_level: 2
+    grantable: true
+  - id: github.merge
+    tool: github
+    description: Merge a pull request into a protected branch.
+    risk_level: 5
+    grantable: false
+    reason_not_grantable: >
+      Merging to protected main is a critical action reserved to the Human Founder
+      (Constitution Article 3).
+
+  # --- filesystem / shell (sandbox) ---
+  - id: fs.read
+    tool: filesystem
+    description: Read files within the working tree.
+    risk_level: 0
+    grantable: true
+  - id: fs.write
+    tool: filesystem
+    description: Write files within the working tree (feature branch only).
+    risk_level: 2
+    grantable: true
+  - id: shell.exec_sandbox
+    tool: sandbox
+    description: Execute commands inside an isolated, non-production sandbox.
+    risk_level: 2
+    grantable: true
+
+  # --- containers ---
+  - id: docker.build
+    tool: docker
+    description: Build container images in CI / sandbox.
+    risk_level: 2
+    grantable: true
+  - id: docker.run_sandbox
+    tool: docker
+    description: Run containers inside the isolated sandbox.
+    risk_level: 2
+    grantable: true
+
+  # --- database ---
+  - id: db.query_readonly
+    tool: postgresql
+    description: Run read-only queries against development / staging databases.
+    risk_level: 1
+    grantable: true
+  - id: db.migrate_prepare
+    tool: postgresql
+    description: Author migration scripts; dry-run against an ephemeral database.
+    risk_level: 2
+    grantable: true
+  - id: db.migrate_staging
+    tool: postgresql
+    description: Apply migrations to the staging database.
+    risk_level: 3
+    grantable: true
+  - id: db.migrate_production
+    tool: postgresql
+    description: Apply migrations to the production database.
+    risk_level: 5
+    grantable: false
+    reason_not_grantable: >
+      Production database migration is a critical action reserved to the Human Founder.
+
+  # --- deployment ---
+  - id: deploy.prepare
+    tool: deployment
+    description: Assemble deployment plans, manifests, and rollback plans (no execution).
+    risk_level: 2
+    grantable: true
+  - id: deploy.staging
+    tool: deployment
+    description: Deploy to the staging environment.
+    risk_level: 3
+    grantable: true
+  - id: deploy.production
+    tool: deployment
+    description: Deploy to the production environment.
+    risk_level: 5
+    grantable: false
+    reason_not_grantable: >
+      Production deployment is a critical action reserved to the Human Founder.
+
+  # --- infrastructure ---
+  - id: infra.plan
+    tool: opentofu
+    description: Run `tofu plan` and attach the diff to a proposal (no apply).
+    risk_level: 2
+    grantable: true
+  - id: infra.production_apply
+    tool: opentofu
+    description: Run `tofu apply` against production infrastructure.
+    risk_level: 5
+    grantable: false
+    reason_not_grantable: >
+      Production infrastructure modification is a critical action reserved to the
+      Human Founder.
+
+  # --- secrets ---
+  - id: secrets.read_dev
+    tool: credential-proxy
+    description: Use short-lived development / sandbox credentials via the credential proxy.
+    risk_level: 2
+    grantable: true
+  - id: secrets.production
+    tool: credential-proxy
+    description: Direct access to production secret material.
+    risk_level: 5
+    grantable: false
+    reason_not_grantable: >
+      No agent may access production secrets by default (Constitution Article 8).
+  - id: secrets.rotate
+    tool: credential-proxy
+    description: Create, rotate, or revoke secrets.
+    risk_level: 5
+    grantable: false
+    reason_not_grantable: >
+      Secret creation, rotation, and revocation is a critical action reserved to the
+      Human Founder.
+
+  # --- CI/CD ---
+  - id: ci.read
+    tool: github-actions
+    description: Read CI workflow runs, logs, and statuses.
+    risk_level: 0
+    grantable: true
+  - id: ci.configure
+    tool: github-actions
+    description: Edit non-production CI workflows (build, test, staging) via PR.
+    risk_level: 3
+    grantable: true
+  - id: ci.configure_production
+    tool: github-actions
+    description: Edit production deployment workflows and environment protection rules.
+    risk_level: 5
+    grantable: false
+    reason_not_grantable: >
+      Changing production deploy workflows or environment protection is an
+      access-control / production change reserved to the Human Founder.
+
+  # --- observability ---
+  - id: observability.read
+    tool: opentelemetry
+    description: Read metrics, traces, logs, and dashboards (including production, read-only).
+    risk_level: 1
+    grantable: true
+  - id: observability.configure
+    tool: opentelemetry
+    description: Create or edit dashboards and alert rules via PR.
+    risk_level: 2
+    grantable: true
+  - id: otel.emit
+    tool: opentelemetry
+    description: Emit audit and telemetry spans for the agent's own actions.
+    risk_level: 0
+    grantable: true
+
+  # --- code context / review ---
+  - id: repomix.pack
+    tool: repomix
+    description: Pack a scoped view of the repository for model context (with secret pre-flight).
+    risk_level: 0
+    grantable: true
+
+  # --- QA ---
+  - id: playwright.run
+    tool: playwright
+    description: Run Playwright test suites (E2E, component, API-request) in CI / sandbox.
+    risk_level: 1
+    grantable: true
+  - id: playwright.mcp
+    tool: playwright
+    description: Drive a browser via Playwright MCP against ALLOWLISTED domains only.
+    risk_level: 2
+    grantable: true
+
+  # --- security scanners ---
+  - id: semgrep.scan
+    tool: semgrep
+    description: Run SAST scans and read findings.
+    risk_level: 1
+    grantable: true
+  - id: trivy.scan
+    tool: trivy
+    description: Run SCA / IaC / container / secret scans and generate SBOMs.
+    risk_level: 1
+    grantable: true
+  - id: gitleaks.scan
+    tool: gitleaks
+    description: Scan the working tree and history for secrets.
+    risk_level: 1
+    grantable: true
+  - id: osv.scan
+    tool: osv-scanner
+    description: Run dependency vulnerability scans against OSV.dev.
+    risk_level: 1
+    grantable: true
+  - id: zap.scan
+    tool: owasp-zap
+    description: Run DAST baseline / API scans against an ALLOWLISTED staging target only.
+    risk_level: 3
+    grantable: true
+
+  # --- model ops ---
+  - id: promptfoo.eval
+    tool: promptfoo
+    description: Run prompt / agent evaluation suites and read scores.
+    risk_level: 1
+    grantable: true
+  - id: promptfoo.redteam
+    tool: promptfoo
+    description: Run adversarial LLM red-team suites against owned systems only.
+    risk_level: 2
+    grantable: true
+  - id: litellm.admin
+    tool: litellm
+    description: Manage the model gateway config - virtual keys, budgets, fallback chains.
+    risk_level: 3
+    grantable: true
+
+  # --- financial / marketing (named so they can be forbidden) ---
+  - id: payments.configure
+    tool: payment-provider
+    description: Modify payment provider configuration.
+    risk_level: 5
+    grantable: false
+    reason_not_grantable: >
+      Payment provider configuration change is a critical action reserved to the
+      Human Founder.
+  - id: finance.execute
+    tool: payment-provider
+    description: Execute a real refund, payout, supplier payment, or financial transaction.
+    risk_level: 5
+    grantable: false
+    reason_not_grantable: >
+      Real financial transactions are critical actions reserved to the Human Founder.

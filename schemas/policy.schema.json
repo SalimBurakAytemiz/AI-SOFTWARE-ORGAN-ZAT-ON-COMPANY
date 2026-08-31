@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-software-company/schemas/policy.schema.json",
+  "title": "Governance Policy",
+  "description": "A machine-readable governance policy. Policies are DEFAULT DENY: an action is forbidden unless a rule explicitly allows it.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "purpose", "authority", "default", "rules", "enforcement", "review"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+    "name": { "type": "string" },
+    "purpose": { "type": "string", "minLength": 20 },
+    "authority": {
+      "type": "string",
+      "description": "Who may amend this policy.",
+      "enum": ["human-founder"]
+    },
+    "default": { "type": "string", "enum": ["DENY", "ALLOW"] },
+    "rules": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "statement", "effect"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+          "statement": { "type": "string", "minLength": 10 },
+          "effect": { "type": "string", "enum": ["ALLOW", "DENY", "REQUIRE_APPROVAL", "REQUIRE_REVIEW"] },
+          "applies_to": { "type": "array", "items": { "type": "string" } },
+          "actions": { "type": "array", "items": { "type": "string" } },
+          "conditions": { "type": "array", "items": { "type": "string" } },
+          "approver": { "type": "string" },
+          "rationale": { "type": "string" }
+        }
+      }
+    },
+    "enforcement": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "review": { "type": "string" },
+    "related_policies": { "type": "array", "items": { "type": "string" } },
+    "notes": { "type": "string" }
+  }
+}

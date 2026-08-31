@@ -1,0 +1,135 @@
+id: database-migration
+name: Database Migration
+purpose: >
+  A callable sub-workflow for any schema change. Isolated because a production
+  migration and any destructive database operation are RISK 5 and executed only by
+  the Human Founder, with a verified backup and a tested rollback.
+trigger:
+  - A feature-development, bugfix, or architecture-change workflow requires a schema change
+  - The Database Engineer proposes a schema or index change
+risk_level: 5
+reaches_production: true
+steps:
+  - id: design
+    name: Design the migration
+    owner: database-engineer
+    action: Design the schema change using expand/contract; write forward and rollback scripts.
+    project_state: PLAN
+    on_pass: dry_run
+    on_fail: abort
+    audit_event: true
+  - id: dry_run
+    name: Dry run
+    owner: database-engineer
+    action: Apply forward and rollback against an ephemeral database seeded with production-like data; measure lock time and duration.
+    project_state: BUILD
+    gate: true
+    on_pass: review
+    on_fail: design
+    audit_event: true
+  - id: review
+    name: Independent review
+    owner: senior-code-reviewer
+    action: Review the migration and rollback for correctness, reversibility, and lock safety; reviewer is not the author.
+    project_state: REVIEW
+    gate: true
+    on_pass: staging_apply
+    on_fail: design
+    audit_event: true
+  - id: staging_apply
+    name: Apply on staging
+    owner: database-engineer
+    action: Apply the migration on staging; run the app test suite against the migrated schema; verify rollback on staging.
+    project_state: STAGING
+    gate: true
+    on_pass: destructive_check
+    on_fail: design
+    audit_event: true
+  - id: destructive_check
+    name: Destructive operation check
+    owner: database-engineer
+    action: If the migration drops or rewrites data, require a verified fresh backup and an explicit data-loss assessment before proceeding.
+    project_state: STAGING
+    gate: true
+    on_pass: backup_verify
+    on_fail: design
+    audit_event: true
+  - id: backup_verify
+    name: Backup verification
+    owner: devops-platform-engineer
+    action: Confirm a current production backup exists and a restore has been tested.
+    project_state: STAGING
+    gate: true
+    on_pass: plan_package
+    on_fail: backup_verify
+    audit_event: true
+  - id: plan_package
+    name: Production migration plan
+    owner: database-engineer
+    action: Assemble the production runbook - exact steps, expected duration, lock window, rollback trigger, verification queries.
+    project_state: APPROVAL
+    gate: true
+    on_pass: human_approval
+    on_fail: design
+    audit_event: true
+  - id: human_approval
+    name: Human Founder approval
+    owner: human-founder
+    action: Review the migration plan, backup evidence, and rollback plan; explicitly approve or reject the production migration.
+    project_state: APPROVAL
+    gate: true
+    human_approval: true
+    risk_level: 5
+    on_pass: production_apply
+    on_fail: design
+    audit_event: true
+  - id: production_apply
+    name: Production migration
+    owner: human-founder
+    action: Execute (or authorize the system to execute) the migration per the approved runbook.
+    project_state: PRODUCTION
+    risk_level: 5
+    on_pass: verify
+    on_fail: rollback
+    audit_event: true
+  - id: verify
+    name: Verify
+    owner: database-engineer
+    action: Run the verification queries; confirm application health and data integrity.
+    project_state: PRODUCTION
+    gate: true
+    on_pass: contract
+    on_fail: rollback
+    audit_event: true
+  - id: rollback
+    name: Rollback
+    owner: human-founder
+    action: Execute the tested rollback; if data was lost, restore from the verified backup; open an incident.
+    project_state: PRODUCTION
+    risk_level: 5
+    on_pass: verify
+    on_fail: abort
+    audit_event: true
+  - id: contract
+    name: Contract phase (if expand/contract)
+    owner: database-engineer
+    action: After the application no longer needs the old shape, schedule the contract migration as a new run of this workflow.
+    project_state: MONITORING
+    on_pass: end
+    on_fail: abort
+    audit_event: true
+produces:
+  - Forward and rollback migration scripts with dry-run evidence
+  - Independent review verdict
+  - Staging apply + rollback verification
+  - Backup verification and a production migration runbook
+  - Human Founder approval record and production verification
+invariants:
+  - Production migration and any destructive DB operation are RISK 5 and executed only
+    by the Human Founder.
+  - A tested rollback and (for destructive ops) a verified backup exist before human_approval.
+  - The review owner is never the migration author.
+  - Every gate step emits an audit event.
+notes: >
+  Implements the database-migration path (build spec section 12). Invoked as a
+  sub-workflow by feature-development, bugfix, and architecture-change.

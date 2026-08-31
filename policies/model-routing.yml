@@ -1,0 +1,60 @@
+id: model-routing
+name: Model Routing Policy
+purpose: >
+  Governance wrapper around models/routing.yml: who may change routing, the hard
+  constraints, and how provider independence is preserved.
+authority: human-founder
+default: DENY
+rules:
+  - id: TIERS_NOT_PROVIDERS
+    statement: Agent definitions and product code reference conceptual tiers only (NO_AI, LOW_COST, STANDARD_CODING, ADVANCED_REASONING, CRITICAL_REVIEW). No provider or concrete model name appears outside gateway config.
+    effect: DENY
+    applies_to: [all-agents]
+    actions: [hardcode_provider, hardcode_model_name]
+    rationale: Constitution Article 13.
+  - id: RISK_FLOOR_RESPECTED
+    statement: A task is never served below the tier floor for its risk level (models/risk-policy.yml). Task signals may raise the tier, never lower it below the floor.
+    effect: DENY
+    applies_to: [model-operations-engineer]
+    actions: [route_below_risk_floor]
+    rationale: Risk drives capability, not cost.
+  - id: WITHIN_AGENT_CEILING
+    statement: An agent is not routed above its declared risk_level ceiling without Engineering Director sign-off, and never above CRITICAL_REVIEW.
+    effect: REQUIRE_APPROVAL
+    applies_to: [model-operations-engineer]
+    approver: engineering-director
+    rationale: Authority stays proportional to role.
+  - id: CHEAPEST_ADEQUATE
+    statement: Routing selects the cheapest tier that clears risk, task type, complexity, context, and quality requirements. Higher tiers are not used "to be safe".
+    effect: REQUIRE_REVIEW
+    applies_to: [model-operations-engineer]
+    rationale: Constitution Article 11.
+  - id: NO_AI_FOR_DETERMINISTIC
+    statement: Deterministic work (validation, formatting, codegen from templates, arithmetic) uses NO_AI. A model call for such work is a policy violation.
+    effect: DENY
+    applies_to: [all-agents]
+    actions: [use_model_for_deterministic_task]
+    rationale: Constitution Article 11.
+  - id: EVAL_GATE_ON_PROMPT_CHANGE
+    statement: Any non-trivial change to an agent prompt or routing rule passes a promptfoo eval run before merge.
+    effect: REQUIRE_REVIEW
+    applies_to: [model-operations-engineer]
+    rationale: Prompts are code; regressions are real.
+  - id: PROVIDER_ONBOARDING_IS_HUMAN_FOUNDER
+    statement: Adding a provider or changing which providers back a tier is proposed by the Model Operations Engineer and decided by the Human Founder.
+    effect: REQUIRE_APPROVAL
+    applies_to: [model-operations-engineer]
+    approver: human-founder
+    rationale: Contractual and data-handling implications.
+  - id: TWO_PROVIDER_TARGET
+    statement: Each tier should be satisfiable by at least two providers unless a required capability exists only on one (documented exception).
+    effect: REQUIRE_REVIEW
+    applies_to: [model-operations-engineer]
+    rationale: Resilience and negotiating leverage.
+enforcement:
+  - tests/test_models.py - tiers.yml validates; routing.yml risk_floor covers 0-5; no required provider hard-coded
+  - Gateway (LiteLLM) enforces virtual-key model scope and budgets
+  - promptfoo eval job in CI for prompt/routing changes
+related_policies: [cost, agent-permissions, human-approval]
+review: On provider onboarding and quarterly cost review.
+notes: Operational routing detail lives in models/routing.yml and models/risk-policy.yml.

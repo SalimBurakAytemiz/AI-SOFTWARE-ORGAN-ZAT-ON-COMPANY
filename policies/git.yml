@@ -1,0 +1,68 @@
+id: git
+name: Git Governance Policy
+purpose: >
+  Define branch, commit, PR, review, and merge rules. Agents develop on branches and
+  open PRs; they never merge to protected main.
+authority: human-founder
+default: DENY
+rules:
+  - id: PROTECTED_MAIN
+    statement: main is protected. No direct pushes. Merges require a passing Release Gate / required checks and are performed under Human Founder authority (or a Human-Founder-configured auto-merge rule for narrowly-scoped dependency updates).
+    effect: DENY
+    applies_to: [all-agents]
+    actions: [push_to_main, merge_protected_main, force_push_main, delete_main]
+    rationale: main is the source of production.
+  - id: BRANCH_NAMING
+    statement: "Branches follow: <type>/<workflow-id>-<short-slug>, type in {feat,fix,hotfix,chore,deps,sec,arch,db,docs}."
+    effect: REQUIRE_REVIEW
+    applies_to: [all-agents]
+    actions: [create_branch]
+    rationale: Traceability from branch to workflow.
+  - id: SHORT_LIVED_BRANCHES
+    statement: Feature branches are short-lived (target < 3 days) and rebased on main before review.
+    effect: REQUIRE_REVIEW
+    applies_to: [all-engineering-agents]
+    rationale: Small, current diffs.
+  - id: COMMIT_MESSAGES
+    statement: Conventional-commit style subject; body explains why; reference the workflow/issue; no secrets, no customer data.
+    effect: REQUIRE_REVIEW
+    applies_to: [all-agents]
+    actions: [commit]
+    rationale: Legible history.
+  - id: PR_REQUIREMENTS
+    statement: A PR links its spec/design/ADR, lists tests added, states risk level, and includes self-test evidence.
+    effect: REQUIRE_REVIEW
+    applies_to: [all-agents]
+    actions: [open_pr]
+    rationale: Reviewers and the Human Founder need context.
+  - id: REVIEW_REQUIRED
+    statement: Every PR gets an independent review from senior-code-reviewer (never the implementer). Security-relevant PRs also get application-security-engineer review.
+    effect: REQUIRE_REVIEW
+    applies_to: [all-agents]
+    approver: senior-code-reviewer
+    rationale: Constitution Article 5.2.
+  - id: REQUIRED_CHECKS
+    statement: "main merge requires green: build, lint, unit, integration, api, e2e (as applicable), SAST, SCA, secret scan, and the Release Gate for production-bound changes."
+    effect: REQUIRE_APPROVAL
+    applies_to: [all-agents]
+    approver: human-founder
+    rationale: Quality and security gates are non-negotiable.
+  - id: NO_SECRETS_IN_HISTORY
+    statement: gitleaks runs as a pre-commit hook and a CI gate. A detected secret blocks the commit/PR and triggers secret rotation (Human Founder).
+    effect: DENY
+    applies_to: [all-agents]
+    actions: [commit_secret]
+    rationale: Constitution Article 8.
+  - id: ROLLBACK_EXPECTATION
+    statement: Every production-bound change has a documented, rehearsed rollback (revert commit, previous image, or DB rollback script) before Human Founder approval.
+    effect: REQUIRE_REVIEW
+    applies_to: [release-manager, devops-platform-engineer, database-engineer]
+    rationale: Recoverability.
+enforcement:
+  - GitHub branch protection / ruleset on main (required reviews, required checks, linear history, no force push)
+  - GitHub Environment "production" gated on the Human Founder
+  - pre-commit + CI gitleaks
+  - tests/test_org_security.py checks no agent has github.merge
+related_policies: [human-approval, development, release, secrets]
+review: On any change to branch protection or the Release Gate.
+notes: Auto-merge is a Human-Founder-configured branch-protection rule, not an agent capability.

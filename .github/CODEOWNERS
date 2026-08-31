@@ -1,0 +1,14 @@
+# The Human Founder owns everything in this governance repository.
+# Replace @human-founder with the Human Founder's GitHub handle on first setup.
+# GitHub branch protection should require CODEOWNERS review on main.
+
+*                                   @human-founder
+
+# Especially load-bearing paths (listed for emphasis; same owner):
+/constitution/                      @human-founder
+/policies/human-approval.yml        @human-founder
+/policies/agent-permissions.yml     @human-founder
+/tools/capabilities.yml             @human-founder
+/workflows/                         @human-founder
+/schemas/                           @human-founder
+/CLAUDE.md                          @human-founder

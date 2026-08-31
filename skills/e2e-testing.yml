@@ -1,0 +1,39 @@
+id: e2e-testing
+name: End-to-End Testing with Playwright
+version: 1.0.0
+summary: >
+  Verify critical user journeys through the real UI with Playwright, capturing a
+  trace, screenshot, and video on failure. Reserve E2E for journeys that matter;
+  push detail down the pyramid.
+when_to_use:
+  - A critical user journey (checkout, sign-up, core task) changes or is added
+  - Staging verification of a release
+when_not_to_use:
+  - Logic that a unit or API test can cover faster and more reliably
+procedure:
+  - Identify the critical journeys from the spec; keep the E2E set small.
+  - Write tests using role/label/accessibility-tree selectors, not brittle CSS.
+  - Use web-first assertions and auto-waiting; avoid fixed sleeps.
+  - Configure trace-on-retry, screenshot-on-failure, and video-on-failure.
+  - Seed deterministic test data; isolate tests from each other.
+  - Run in CI across the target browsers; quarantine any flake within a day.
+  - On failure, attach the trace/screenshot/video to the defect.
+inputs:
+  - The critical journeys and acceptance criteria
+  - A deployed environment (staging) and seedable data
+outputs:
+  - A small, reliable E2E suite in CI
+  - Failure-evidence artifacts (trace, screenshot, video)
+quality_checks:
+  - Selectors are semantic and stable
+  - No fixed sleeps; assertions are web-first
+  - Every failure produces a trace
+failure_modes:
+  - E2E-testing logic that belongs in unit tests (slow, flaky)
+  - CSS-selector brittleness
+  - Shared mutable state between tests
+risk_level: 2
+source_influences:
+  - microsoft/playwright (trace viewer, web-first assertions, a11y selectors)
+  - Playwright MCP (structured accessibility-tree snapshots)
+status: ACTIVE

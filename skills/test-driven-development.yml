@@ -1,0 +1,40 @@
+id: test-driven-development
+name: Test-Driven Development
+version: 1.0.0
+summary: >
+  Write a failing test first, watch it fail, write the minimal code to pass it, watch
+  it pass, refactor, commit. For bug fixes, the test must fail on the current bug.
+when_to_use:
+  - Implementing non-trivial business logic
+  - Fixing a bug (the regression test proves the bug and the fix)
+  - Changing behavior with observable outputs
+when_not_to_use:
+  - Pure formatting, config, or generated-code changes
+  - Throwaway spikes (but rewrite with tests before merge)
+procedure:
+  - Express the next small behavior as a test; run it and confirm it FAILS for the right reason.
+  - Write the minimum code to make it pass; run and confirm it PASSES.
+  - Refactor with the test green; keep it green.
+  - Commit this logical step with a message describing the behavior.
+  - Repeat for the next behavior until the acceptance criteria are covered.
+inputs:
+  - The acceptance criteria or bug reproduction
+  - A test framework and runnable environment
+outputs:
+  - Tests that encode the intended behavior
+  - Implementation that passes them
+  - A commit history of small verified steps
+quality_checks:
+  - Each new test was observed failing before it passed
+  - A bug fix has a test that fails without the fix
+  - Coverage of changed logic meets the policy floor; auth paths have negative cases
+failure_modes:
+  - Writing tests after the code to fit what was built
+  - Tests that never actually failed (assert nothing meaningful)
+  - Skipping the refactor step and leaving debt
+risk_level: 2
+source_influences:
+  - obra/superpowers (test-driven-development)
+  - aider (test-command feedback loop)
+  - All-Hands-AI/OpenHands (tests as the feedback signal)
+status: ACTIVE

@@ -1,0 +1,85 @@
+# Model tiers - provider independent.
+# Validates against ../schemas/model-tier.schema.json.
+#
+# Concrete model names are ILLUSTRATIVE ONLY and change over time. The company is
+# not wired to any single provider (Constitution Article 13). Routing depends on
+# task type, risk, complexity, cost, quality bar, and context size - see routing.yml
+# and risk-policy.yml.
+
+version: "1.0"
+
+abstraction: >
+  All model access is via conceptual tiers, resolved to a concrete model by the
+  model gateway (LiteLLM) at call time. An agent declares a preferred and a fallback
+  tier; the Model Operations Engineer maps tiers to concrete models per provider and
+  keeps the mapping current. No agent code names a provider.
+
+provider_independence: >
+  At least two providers should be able to satisfy every tier except where a specific
+  capability is unavailable elsewhere. Tier-to-model mappings live in gateway config,
+  not in this repository, so a provider change is a config change with no code impact.
+
+tiers:
+  - name: NO_AI
+    intent: No model call. Deterministic software, scripts, linters, or schema checks.
+    typical_use:
+      - Config validation and schema checks
+      - Formatting, linting, codegen from templates
+      - Arithmetic, data transforms, file moves
+      - Any RISK 0 task
+    cost_class: none
+    requires_human_founder: false
+    example_models_illustrative_only: []
+
+  - name: LOW_COST
+    intent: Cheap, fast model for low-stakes text work where mistakes are cheap to catch.
+    typical_use:
+      - Drafting release notes and summaries
+      - Classifying or routing tickets
+      - Simple doc edits, changelog phrasing
+      - RISK 1 tasks
+    cost_class: very-low
+    requires_human_founder: false
+    example_models_illustrative_only:
+      - "small/fast tier of any major provider (illustrative)"
+
+  - name: STANDARD_CODING
+    intent: Competent coding model for everyday implementation and test work.
+    typical_use:
+      - Feature implementation on a branch
+      - Writing unit / API / integration tests
+      - Straightforward bug fixes
+      - RISK 2-3 tasks
+    cost_class: medium
+    requires_human_founder: false
+    example_models_illustrative_only:
+      - "mid coding tier of any major provider (illustrative)"
+
+  - name: ADVANCED_REASONING
+    intent: Strong reasoning model for architecture, complex debugging, and hard trade-offs.
+    typical_use:
+      - System architecture and ADRs
+      - Root cause analysis on hard incidents
+      - Cross-cutting refactors and migration design
+      - RISK 3-4 planning and design
+    cost_class: high
+    requires_human_founder: false
+    example_models_illustrative_only:
+      - "frontier reasoning tier of any major provider (illustrative)"
+
+  - name: CRITICAL_REVIEW
+    intent: Highest-capability model for high-consequence review and security judgment.
+    typical_use:
+      - Independent senior code review
+      - Security review and threat modeling
+      - Final technical assessment on RISK 4-5 work
+      - Any review whose miss would be expensive or unsafe
+    cost_class: highest
+    requires_human_founder: false
+    example_models_illustrative_only:
+      - "top review tier of any major provider (illustrative)"
+
+notes: >
+  `requires_human_founder` is false for every tier: model tier never substitutes for
+  human approval. RISK 5 work requires the Human Founder regardless of which tier runs
+  it (see risk-policy.yml).

@@ -1,0 +1,213 @@
+id: feature-development
+name: Feature Development
+purpose: >
+  Take a product idea from intent to monitored production, with independent review,
+  QA, security, staging validation, and mandatory Human Founder approval before any
+  production change.
+trigger:
+  - Human Founder requests a new feature or capability
+  - Product Manager promotes a backlog item to active
+risk_level: 4
+reaches_production: true
+steps:
+  - id: idea
+    name: Idea intake
+    owner: product-manager
+    action: Capture intent, users, outcome, non-goals; draft the product brief.
+    project_state: IDEA
+    on_pass: product_analysis
+    on_fail: abort
+    audit_event: true
+  - id: product_analysis
+    name: Product analysis
+    owner: product-manager
+    action: Finalize the brief with a measurable success metric and priority justification.
+    project_state: IDEA
+    gate: true
+    on_pass: business_analysis
+    on_fail: idea
+    audit_event: true
+  - id: business_analysis
+    name: Business analysis
+    owner: business-analyst
+    action: Write user stories, business rules, acceptance criteria, edge and negative cases; start traceability.
+    project_state: SPEC
+    on_pass: spec_review
+    on_fail: product_analysis
+    audit_event: true
+  - id: spec_review
+    name: Spec review
+    owner: engineering-director
+    action: Confirm the spec is testable, consistent, and has a risk level; set review depth.
+    project_state: SPEC
+    gate: true
+    on_pass: architecture
+    on_fail: business_analysis
+    audit_event: true
+  - id: architecture
+    name: Architecture
+    owner: solution-architect
+    action: Produce architecture spec and ADRs; coordinate security architecture; set non-functional targets.
+    project_state: PLAN
+    on_pass: design
+    on_fail: spec_review
+    audit_event: true
+  - id: design
+    name: UX / UI design
+    owner: ux-ui-designer
+    action: Define IA, flows, responsive behavior, accessibility, and all non-happy states.
+    project_state: DESIGN
+    on_pass: plan
+    on_fail: architecture
+    audit_event: true
+  - id: plan
+    name: Implementation plan
+    owner: engineering-director
+    action: Break work into tasks, assign engineer agents, confirm risk level and test strategy with the QA Lead.
+    project_state: PLAN
+    gate: true
+    on_pass: implementation
+    on_fail: design
+    audit_event: true
+  - id: implementation
+    name: Implementation
+    owner: backend-engineer
+    action: Implement on isolated branches/worktrees per task (frontend, backend, database, integration engineers as assigned).
+    project_state: BUILD
+    on_pass: self_test
+    on_fail: plan
+    audit_event: true
+  - id: self_test
+    name: Self test
+    owner: backend-engineer
+    action: Run build, lint, SAST, and the implementer's own unit/component/API tests; complete the verification checklist.
+    project_state: BUILD
+    gate: true
+    on_pass: code_review
+    on_fail: implementation
+    audit_event: true
+  - id: code_review
+    name: Independent code review
+    owner: senior-code-reviewer
+    action: Review each PR against spec, architecture, standards, regression risk, test adequacy. Reviewer is never the implementer.
+    project_state: REVIEW
+    gate: true
+    on_pass: automated_test
+    on_fail: implementation
+    audit_event: true
+  - id: automated_test
+    name: Automated test suite
+    owner: test-automation-engineer
+    action: Implement/extend API, integration, and E2E tests for acceptance criteria; run the regression suite.
+    project_state: TEST
+    on_pass: qa
+    on_fail: implementation
+    audit_event: true
+  - id: qa
+    name: QA gate
+    owner: qa-lead
+    action: Verify acceptance-criteria coverage, regression status, defect triage; issue QA PASS/FAIL and a release-quality recommendation.
+    project_state: TEST
+    gate: true
+    on_pass: security
+    on_fail: implementation
+    audit_event: true
+  - id: security
+    name: Security gate
+    owner: application-security-engineer
+    action: SAST/SCA/secret/container scans + threat model + LLM red-team if applicable; issue SECURITY PASS/FAIL. RISK 5 items escalate to the Human Founder.
+    project_state: SECURITY
+    gate: true
+    on_pass: staging
+    on_fail: implementation
+    audit_event: true
+  - id: staging
+    name: Staging deploy
+    owner: devops-platform-engineer
+    action: Deploy the candidate to staging with production-like config; apply staging migrations.
+    project_state: STAGING
+    on_pass: staging_verify
+    on_fail: security
+    audit_event: true
+  - id: staging_verify
+    name: Staging verification
+    owner: qa-lead
+    action: Run E2E and smoke suites against staging; confirm non-functional targets; assemble evidence.
+    project_state: STAGING
+    gate: true
+    on_pass: release_review
+    on_fail: implementation
+    audit_event: true
+  - id: release_review
+    name: Release verification
+    owner: release-manager
+    action: Confirm every Release Gate check is PASS with evidence; assemble release notes and a rehearsed rollback plan; mark READY_FOR_HUMAN_APPROVAL.
+    project_state: APPROVAL
+    gate: true
+    on_pass: human_approval
+    on_fail: implementation
+    audit_event: true
+  - id: human_approval
+    name: Human Founder approval
+    owner: human-founder
+    action: Review the release package and explicitly approve or reject the production deployment.
+    project_state: APPROVAL
+    gate: true
+    human_approval: true
+    risk_level: 5
+    on_pass: production
+    on_fail: implementation
+    audit_event: true
+  - id: production
+    name: Production deployment
+    owner: human-founder
+    action: Execute (or authorize the system to execute) the production deployment and any approved production migration.
+    project_state: PRODUCTION
+    risk_level: 5
+    on_pass: production_verify
+    on_fail: rollback
+    audit_event: true
+  - id: production_verify
+    name: Production verification
+    owner: release-manager
+    action: Confirm health, key journeys, and telemetry post-deploy; record the verification result.
+    project_state: PRODUCTION
+    gate: true
+    on_pass: monitoring
+    on_fail: rollback
+    audit_event: true
+  - id: rollback
+    name: Rollback
+    owner: human-founder
+    action: Execute the rehearsed rollback plan; open an incident if customer impact occurred.
+    project_state: PRODUCTION
+    risk_level: 5
+    on_pass: monitoring
+    on_fail: abort
+    audit_event: true
+  - id: monitoring
+    name: Monitoring
+    owner: sre-observability-engineer
+    action: Watch SLOs and error budget for the bake period; close the feature or raise follow-ups.
+    project_state: MONITORING
+    on_pass: end
+    on_fail: rollback
+    audit_event: true
+produces:
+  - Product brief and specification with traceability
+  - Architecture spec and ADRs
+  - Design specification
+  - Implemented, reviewed, tested code merged via PR (merge by Human Founder authority)
+  - QA and SECURITY gate evidence
+  - Release package with rollback plan
+  - Production verification record and monitoring outcome
+invariants:
+  - Human Founder approval (step human_approval) precedes the first PRODUCTION step.
+  - The code_review owner is never the implementation owner.
+  - No production step is reachable without passing human_approval.
+  - Every gate step emits an audit event.
+  - Any RISK 5 element is escalated to the Human Founder, not resolved by an agent.
+notes: >
+  Implements the lifecycle in build spec section 13. Engineer assignment at
+  `implementation` varies (frontend/backend/database/integration); the listed owner
+  is the coordinating default.

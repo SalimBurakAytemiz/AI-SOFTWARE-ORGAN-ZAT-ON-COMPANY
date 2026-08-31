@@ -1,0 +1,118 @@
+id: architecture-change
+name: Architecture Change
+purpose: >
+  Govern a deliberate change to system structure, component boundaries, or a core
+  technology choice. Produces an approved ADR; if it also ships code, it hands off to
+  feature-development / release for the production path and its Human Founder gate.
+trigger:
+  - The Solution Architect proposes a structural or technology change
+  - A postmortem or scaling limit requires an architecture revision
+  - The Human Founder directs an architecture change
+risk_level: 4
+reaches_production: true
+steps:
+  - id: proposal
+    name: Proposal
+    owner: solution-architect
+    action: 'Draft the change: problem, options, recommended option, trade-offs, blast radius, migration outline.'
+    project_state: SPEC
+    on_pass: impact_review
+    on_fail: abort
+    audit_event: true
+  - id: impact_review
+    name: Impact review
+    owner: engineering-director
+    action: Assess cross-team impact, cost, and risk level; involve QA, Security, DevOps, SRE for their domains.
+    project_state: SPEC
+    gate: true
+    on_pass: security_review
+    on_fail: proposal
+    audit_event: true
+  - id: security_review
+    name: Security architecture review
+    owner: application-security-engineer
+    action: Threat-model the proposed architecture; flag any critical security architecture change.
+    project_state: SECURITY
+    gate: true
+    on_pass: human_decision
+    on_fail: proposal
+    audit_event: true
+  - id: human_decision
+    name: Human Founder decision
+    owner: human-founder
+    action: Approve, reject, or request changes to the architecture direction. Mandatory for any critical security architecture change (RISK 5).
+    project_state: APPROVAL
+    gate: true
+    human_approval: true
+    risk_level: 5
+    on_pass: adr
+    on_fail: proposal
+    audit_event: true
+  - id: adr
+    name: Record the ADR
+    owner: solution-architect
+    action: Write the accepted ADR into architecture/ with alternatives and rationale.
+    project_state: PLAN
+    gate: true
+    on_pass: ships_code_check
+    on_fail: adr
+    audit_event: true
+  - id: ships_code_check
+    name: Does this ship code?
+    owner: engineering-director
+    action: If the change is design/documentation only, go to close. If it produces shippable code or infra, hand off to feature-development.
+    project_state: PLAN
+    gate: true
+    on_pass: handoff_delivery
+    on_fail: close
+    audit_event: true
+  - id: handoff_delivery
+    name: Hand off to delivery
+    owner: engineering-director
+    action: >
+      Open a feature-development workflow for the implementation. That workflow's
+      own Human Founder approval gates every production and migration step. Infra
+      changes route through its release gate; `tofu apply` remains Human-Founder-only.
+    project_state: BUILD
+    on_pass: production
+    on_fail: adr
+    audit_event: true
+  - id: production
+    name: Production (via delivery workflow)
+    owner: human-founder
+    action: The delivery workflow reaches production only after its own Human Founder approval and Release Gate.
+    project_state: PRODUCTION
+    risk_level: 5
+    on_pass: verify
+    on_fail: close
+    audit_event: true
+  - id: verify
+    name: Verify architecture outcome
+    owner: solution-architect
+    action: Confirm the non-functional targets the change was meant to achieve are met in production.
+    project_state: PRODUCTION
+    gate: true
+    on_pass: close
+    on_fail: close
+    audit_event: true
+  - id: close
+    name: Close
+    owner: solution-architect
+    action: Finalize the ADR status, update architecture docs, note follow-ups.
+    project_state: IMPROVEMENT
+    on_pass: end
+    on_fail: abort
+    audit_event: true
+produces:
+  - Architecture change proposal with options and trade-offs
+  - Security architecture review / threat model
+  - Human Founder decision record
+  - Accepted ADR in architecture/
+  - Handoff to a delivery workflow when code ships; verification of the outcome
+invariants:
+  - Any critical security architecture change requires Human Founder approval (human_decision).
+  - Design-only changes may end without a PRODUCTION step; code-shipping changes
+    inherit feature-development's Human Founder gate before production.
+  - Infrastructure apply to production (tofu apply) is never performed by an agent.
+  - Every gate step emits an audit event.
+notes: Implements the architecture-change path (build spec section 12).

@@ -1,0 +1,40 @@
+id: architecture-review
+name: Architecture Review
+version: 1.0.0
+summary: >
+  Evaluate an architecture or a significant technical decision against the spec, the
+  non-functional targets, and the trade-offs, and record the outcome as an ADR.
+when_to_use:
+  - Designing system structure for a new initiative
+  - Any proposed change to component boundaries or a core technology
+  - Reviewing an architecture proposal from another agent
+when_not_to_use:
+  - Implementation-level choices wholly inside one component
+procedure:
+  - Restate the problem and the constraints (functional, non-functional, cost, timeline).
+  - Enumerate at least two viable options.
+  - Evaluate each against scalability, security, operability, cost, and reversibility.
+  - Recommend one option and state what would change the recommendation.
+  - Check traceability to the spec and alignment with existing ADRs.
+  - 'Write the ADR: context, options, decision, consequences, alternatives.'
+  - Route critical security architecture implications to the Human Founder.
+inputs:
+  - The specification and non-functional targets
+  - Existing architecture and the ADR history
+outputs:
+  - An ADR with alternatives and rationale
+  - Non-functional fitness criteria
+  - Any RISK 5 escalation
+quality_checks:
+  - At least two options were genuinely evaluated
+  - The decision is traceable to the spec
+  - Consequences (including negative ones) are recorded
+failure_modes:
+  - Documenting only the chosen option (no alternatives)
+  - Ignoring operability and cost
+  - Undocumented technology decisions
+risk_level: 4
+source_influences:
+  - Architecture Decision Records (Nygard)
+  - FoundationAgents/MetaGPT (architect role artifacts)
+status: ACTIVE

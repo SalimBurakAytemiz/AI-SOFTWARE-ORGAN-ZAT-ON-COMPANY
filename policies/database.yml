@@ -1,0 +1,59 @@
+id: database
+name: Database Policy
+purpose: Define how schema changes, migrations, backups, and recovery are handled safely.
+authority: human-founder
+default: DENY
+rules:
+  - id: PRODUCTION_MIGRATION_IS_RISK5
+    statement: Applying a migration to production, or any destructive production data operation, is RISK 5 and executed only by the Human Founder via workflows/database-migration.yml.
+    effect: REQUIRE_APPROVAL
+    applies_to: [all-agents]
+    actions: [production_database_migration, production_database_destructive_operation, production_data_deletion]
+    approver: human-founder
+    rationale: Data loss and lock-ups are often unrecoverable.
+  - id: REVERSIBLE_BY_DEFAULT
+    statement: Every migration ships with a tested rollback script. Irreversible migrations require an explicit data-loss assessment and Human Founder sign-off.
+    effect: DENY
+    applies_to: [database-engineer]
+    actions: [migration_without_rollback]
+    rationale: Recoverability.
+  - id: EXPAND_CONTRACT
+    statement: Schema changes use expand/contract; no single migration both adds and removes reliance on a column/table in one step against production.
+    effect: REQUIRE_REVIEW
+    applies_to: [database-engineer]
+    rationale: Zero-downtime, safe rollback window.
+  - id: DRY_RUN_ON_PROD_LIKE_DATA
+    statement: Every migration is dry-run on production-like data (volume and shape) and applied on staging before a production plan is assembled.
+    effect: REQUIRE_REVIEW
+    applies_to: [database-engineer]
+    rationale: Lock time and duration surprises are caught pre-production.
+  - id: BACKUP_BEFORE_DESTRUCTIVE
+    statement: A verified, restore-tested backup exists immediately before any destructive production operation.
+    effect: DENY
+    applies_to: [database-engineer, devops-platform-engineer]
+    actions: [destructive_op_without_verified_backup]
+    rationale: The backup is the safety net.
+  - id: BACKUP_STRATEGY_CURRENT
+    statement: Backup cadence, retention, and RPO/RTO targets are documented; a restore drill is performed at least quarterly and its result recorded.
+    effect: REQUIRE_REVIEW
+    applies_to: [database-engineer, devops-platform-engineer]
+    rationale: Untested backups are not backups.
+  - id: NO_PROD_WRITE_ACCESS
+    statement: Agents never hold write access to production databases. Read-only access for diagnosis requires justification and is logged.
+    effect: DENY
+    applies_to: [all-agents]
+    actions: [production_db_write]
+    rationale: Constitution Article 3.
+  - id: NO_CUSTOMER_DATA_IN_FIXTURES
+    statement: Test data is synthetic; real customer data is never copied into development, staging fixtures, or agent memory.
+    effect: DENY
+    applies_to: [all-agents]
+    actions: [use_customer_data_as_fixture]
+    rationale: Privacy and breach blast radius.
+enforcement:
+  - Release Gate MIGRATION_CHECK and BACKUP_CHECK
+  - workflows/database-migration.yml gate steps
+  - tests/test_org_security.py - db.migrate_production non-grantable
+related_policies: [human-approval, production, security, release]
+review: After any migration incident; quarterly for backup drills.
+notes: Migration mechanics are in workflows/database-migration.yml and skills/database-design.

@@ -1,0 +1,40 @@
+id: systematic-debugging
+name: Systematic Debugging
+version: 1.0.0
+summary: >
+  Debug by hypothesis, not by guessing: reproduce, form one falsifiable hypothesis at
+  a time, test it with the smallest experiment, and follow the evidence to the root
+  cause before changing anything.
+when_to_use:
+  - A defect or incident whose cause is not obvious
+  - Intermittent or environment-dependent failures
+when_not_to_use:
+  - A one-line typo with an obvious fix and a test
+procedure:
+  - Reproduce the failure deterministically; if you cannot, document exactly what you tried.
+  - Capture the failing state - inputs, logs, traces, stack, recent changes.
+  - List candidate causes; pick the single most likely and state it as a falsifiable hypothesis.
+  - Design the smallest experiment that would confirm or refute it; run it.
+  - Update beliefs from the result; narrow or pivot. Do not change production behavior yet.
+  - When the root cause is proven, write a test that fails because of it.
+  - Implement the minimal fix; confirm the test passes and the repro is gone.
+inputs:
+  - A bug report or incident with initial evidence
+  - Read access to logs, traces, and the relevant code
+outputs:
+  - A deterministic reproduction (or a documented reason it is not reproducible)
+  - A proven root cause with evidence
+  - A regression test and a minimal fix
+quality_checks:
+  - The root cause explains all observed symptoms
+  - The fix is tied to the cause, not a symptom patch
+  - A test fails without the fix and passes with it
+failure_modes:
+  - Changing several things at once so the real cause is unknown
+  - Declaring a cause without an experiment that ruled out alternatives
+  - Patching the symptom and closing the ticket
+risk_level: 2
+source_influences:
+  - obra/superpowers (systematic debugging)
+  - SWE-agent/SWE-agent (instrumented, stepwise investigation)
+status: ACTIVE

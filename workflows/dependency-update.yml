@@ -1,0 +1,147 @@
+id: dependency-update
+name: Dependency Update
+purpose: >
+  Keep the software supply chain current and safe. Renovate proposes updates; each is
+  scanned, tested, reviewed, and — for anything beyond a trivial patch — approved by
+  the Human Founder via the release gate before production.
+trigger:
+  - Renovate opens a dependency update pull request
+  - A new advisory affects a dependency (routes here unless already exploited -> security-finding)
+risk_level: 3
+reaches_production: true
+steps:
+  - id: intake
+    name: Intake
+    owner: devops-platform-engineer
+    action: Classify the update - lockfile-only patch/minor of a non-sensitive dep, vs minor of a sensitive dep, vs major.
+    project_state: PLAN
+    gate: true
+    on_pass: scan
+    on_fail: abort
+    audit_event: true
+  - id: scan
+    name: Security scan
+    owner: application-security-engineer
+    action: Run Trivy/osv-scanner on the updated tree; check the changelog for behavioral or security changes.
+    project_state: SECURITY
+    gate: true
+    on_pass: test
+    on_fail: intake
+    audit_event: true
+  - id: test
+    name: Test
+    owner: test-automation-engineer
+    action: Run the full test suite and the regression suite against the update.
+    project_state: TEST
+    gate: true
+    on_pass: review
+    on_fail: intake
+    audit_event: true
+  - id: review
+    name: Review
+    owner: senior-code-reviewer
+    action: >
+      For lockfile-only patch/minor of a non-sensitive dep that passed all gates,
+      confirm auto-merge eligibility. For anything else, perform a full independent
+      review.
+    project_state: REVIEW
+    gate: true
+    on_pass: route
+    on_fail: intake
+    audit_event: true
+  - id: route
+    name: Route
+    owner: engineering-director
+    action: >
+      Auto-merge-eligible updates go to auto_merge. All others (sensitive deps, major
+      bumps, behavioral changes) go to the release gate.
+    project_state: REVIEW
+    gate: true
+    on_pass: release_gate
+    on_fail: auto_merge
+    audit_event: true
+  - id: auto_merge
+    name: Auto-merge (bounded, standing Human Founder authorization)
+    owner: human-founder
+    action: >
+      Merge performed under the Human-Founder-configured branch-protection auto-merge
+      rule for lockfile-only patch/minor of non-sensitive deps that passed every gate.
+      This is a standing, narrowly-scoped Human Founder authorization, not an agent
+      action; the Human Founder can revoke the rule at any time.
+    project_state: STAGING
+    gate: true
+    human_approval: true
+    risk_level: 5
+    on_pass: staging_bake
+    on_fail: release_gate
+    audit_event: true
+  - id: release_gate
+    name: Release verification
+    owner: release-manager
+    action: Run the full Release Gate for non-trivial updates; assemble the package; mark READY_FOR_HUMAN_APPROVAL.
+    project_state: APPROVAL
+    gate: true
+    on_pass: human_approval
+    on_fail: intake
+    audit_event: true
+  - id: human_approval
+    name: Human Founder approval
+    owner: human-founder
+    action: Approve or reject shipping the non-trivial dependency update.
+    project_state: APPROVAL
+    gate: true
+    human_approval: true
+    risk_level: 5
+    on_pass: staging_bake
+    on_fail: intake
+    audit_event: true
+  - id: staging_bake
+    name: Staging bake
+    owner: devops-platform-engineer
+    action: Deploy the merged update to staging and monitor for a bake period.
+    project_state: STAGING
+    gate: true
+    on_pass: production
+    on_fail: revert
+    audit_event: true
+  - id: production
+    name: Production
+    owner: human-founder
+    action: The update ships with the next approved release; no separate production push for auto-merged patches beyond the standing authorization.
+    project_state: PRODUCTION
+    risk_level: 5
+    on_pass: verify
+    on_fail: revert
+    audit_event: true
+  - id: verify
+    name: Verify
+    owner: sre-observability-engineer
+    action: Confirm no new errors or performance regressions attributable to the update.
+    project_state: PRODUCTION
+    gate: true
+    on_pass: end
+    on_fail: revert
+    audit_event: true
+  - id: revert
+    name: Revert
+    owner: human-founder
+    action: Revert the dependency update; pin the previous version; open an issue.
+    project_state: PRODUCTION
+    risk_level: 5
+    on_pass: end
+    on_fail: abort
+    audit_event: true
+produces:
+  - Classified dependency update with scan and test evidence
+  - Review verdict and routing decision
+  - Merge record (auto-merge or via release gate with Human Founder approval)
+  - Staging bake and production verification results
+invariants:
+  - Only lockfile-only patch/minor updates of non-sensitive deps that pass every gate
+    are eligible for the standing auto-merge authorization.
+  - Every other update passes the full release gate including Human Founder approval.
+  - Major bumps and security-sensitive packages are never auto-merged.
+  - Every gate step emits an audit event.
+notes: >
+  Implements build spec section 12. The auto-merge authorization is configured by the
+  Human Founder in branch-protection rules and policies/git.yml; agents never hold merge.

@@ -1,0 +1,141 @@
+id: release
+name: Release Gate
+purpose: >
+  The single gate every production-bound change passes through. Verifies all
+  applicable checks return PASS, then requires explicit Human Founder approval before
+  any production deployment.
+trigger:
+  - A feature-development, bugfix, hotfix, dependency-update, security-finding, or
+    architecture-change workflow reaches its release step
+risk_level: 5
+reaches_production: true
+steps:
+  - id: assemble
+    name: Assemble candidate
+    owner: release-manager
+    action: Freeze the change set; collect the list of changes and their owning workflows.
+    project_state: APPROVAL
+    on_pass: gate_build
+    on_fail: abort
+    audit_event: true
+  - id: gate_build
+    name: BUILD + LINT
+    owner: devops-platform-engineer
+    action: Verify the build and lint pass for the candidate.
+    project_state: APPROVAL
+    gate: true
+    on_pass: gate_tests
+    on_fail: fail_back
+    audit_event: true
+  - id: gate_tests
+    name: UNIT + INTEGRATION + API + E2E
+    owner: test-automation-engineer
+    action: Verify all applicable automated test suites pass with evidence.
+    project_state: APPROVAL
+    gate: true
+    on_pass: gate_qa
+    on_fail: fail_back
+    audit_event: true
+  - id: gate_qa
+    name: QA
+    owner: qa-lead
+    action: Verify QA PASS and the release-quality recommendation.
+    project_state: APPROVAL
+    gate: true
+    on_pass: gate_security
+    on_fail: fail_back
+    audit_event: true
+  - id: gate_security
+    name: SECURITY
+    owner: application-security-engineer
+    action: Verify SECURITY PASS with no unresolved high/critical findings and no expired waivers.
+    project_state: APPROVAL
+    gate: true
+    on_pass: gate_migration
+    on_fail: fail_back
+    audit_event: true
+  - id: gate_migration
+    name: MIGRATION_CHECK
+    owner: database-engineer
+    action: Verify migrations are reversible, tested on staging, and have a rollback; no destructive step without a verified backup.
+    project_state: APPROVAL
+    gate: true
+    on_pass: gate_backup
+    on_fail: fail_back
+    audit_event: true
+  - id: gate_backup
+    name: BACKUP_CHECK
+    owner: devops-platform-engineer
+    action: Verify a current backup exists and a restore has been tested within policy interval.
+    project_state: APPROVAL
+    gate: true
+    on_pass: gate_rollback
+    on_fail: fail_back
+    audit_event: true
+  - id: gate_rollback
+    name: ROLLBACK_CHECK
+    owner: devops-platform-engineer
+    action: Verify the rollback plan exists and has been rehearsed for this candidate.
+    project_state: APPROVAL
+    gate: true
+    on_pass: gate_release_review
+    on_fail: fail_back
+    audit_event: true
+  - id: gate_release_review
+    name: RELEASE_REVIEW
+    owner: release-manager
+    action: Confirm release notes, change inventory, staging verification evidence, and that no gate was waived without a Human-Founder-approved exception. Mark READY_FOR_HUMAN_APPROVAL.
+    project_state: APPROVAL
+    gate: true
+    on_pass: human_approval
+    on_fail: fail_back
+    audit_event: true
+  - id: human_approval
+    name: HUMAN_APPROVAL
+    owner: human-founder
+    action: Review the complete release package and explicitly approve or reject production deployment.
+    project_state: APPROVAL
+    gate: true
+    human_approval: true
+    risk_level: 5
+    on_pass: production
+    on_fail: fail_back
+    audit_event: true
+  - id: production
+    name: Production deployment
+    owner: human-founder
+    action: Execute or authorize the production deployment.
+    project_state: PRODUCTION
+    risk_level: 5
+    on_pass: production_verify
+    on_fail: fail_back
+    audit_event: true
+  - id: production_verify
+    name: PRODUCTION_VERIFY
+    owner: release-manager
+    action: Confirm health and key journeys post-deploy; hand to monitoring.
+    project_state: PRODUCTION
+    gate: true
+    on_pass: end
+    on_fail: fail_back
+    audit_event: true
+  - id: fail_back
+    name: Return to originating workflow
+    owner: engineering-director
+    action: Record which gate failed and return the change to its originating workflow for remediation. No production step proceeds.
+    project_state: BUILD
+    on_pass: end
+    on_fail: abort
+    audit_event: true
+produces:
+  - A pass/fail record for every Release Gate check with linked evidence
+  - The release package marked READY_FOR_HUMAN_APPROVAL
+  - The Human Founder approval decision
+  - Production verification record
+invariants:
+  - No production step is reachable unless HUMAN_APPROVAL passed.
+  - Any failing gate routes to fail_back, never toward production.
+  - No gate may be waived without a Human-Founder-approved exception recorded in the package.
+  - Every gate step emits an audit event.
+  - The Release Manager may mark READY_FOR_HUMAN_APPROVAL but never approves production.
+notes: Implements build spec section 16.

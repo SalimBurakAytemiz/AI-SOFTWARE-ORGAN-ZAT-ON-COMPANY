@@ -1,0 +1,37 @@
+id: product-discovery
+name: Product Discovery
+version: 1.0.0
+summary: >
+  Frame the problem before the solution: who has it, why it matters, what outcome
+  defines success, and what is explicitly out of scope.
+when_to_use:
+  - A new product idea or initiative from the Human Founder
+  - Deciding what to prioritize next
+when_not_to_use:
+  - A defined, already-scoped feature moving into specification
+procedure:
+  - State the problem as a user problem, not a feature request.
+  - Identify the target user segment and the job they are trying to do.
+  - Define the measurable outcome that would mean the problem is solved.
+  - List non-goals and explicit out-of-scope items.
+  - Estimate value, risk, and effort at a coarse level for prioritization.
+  - Write the product brief and hand off to requirements analysis.
+inputs:
+  - Human Founder goals and any market/user context
+  - Outcomes and metrics from prior initiatives
+outputs:
+  - 'A product brief: problem, user, outcome, success metric, non-goals'
+  - A coarse value/risk/effort estimate
+quality_checks:
+  - The brief names a user and a measurable outcome
+  - Non-goals are explicit
+  - Priority is justified, not asserted
+failure_modes:
+  - Starting from a solution and reverse-engineering a problem
+  - No success metric, so "done" is undefinable
+  - Unbounded scope
+risk_level: 2
+source_influences:
+  - Continuous discovery / outcome-over-output product practice
+  - bmad-code-org/BMAD-METHOD (PM persona)
+status: ACTIVE

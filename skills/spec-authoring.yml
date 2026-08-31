@@ -1,0 +1,37 @@
+id: spec-authoring
+name: Specification Authoring
+version: 1.0.0
+summary: >
+  Produce the durable spec -> plan -> tasks artifacts that carry a change from intent
+  to implementation without ambiguity, with acceptance criteria and traceability.
+when_to_use:
+  - The SPEC state of feature-development
+  - Any change large enough that "just build it" would lose requirements
+when_not_to_use:
+  - Trivial fixes covered by an existing spec
+procedure:
+  - Write spec.md - context, goals, non-goals, user stories, acceptance criteria, edge/negative cases, open questions.
+  - Get a spec review (Engineering Director) confirming testability, consistency, and a risk level.
+  - Write plan.md - approach, components touched, sequencing, test strategy (with the QA Lead), risks.
+  - Write tasks.md - discrete, independently reviewable tasks with owners and acceptance links.
+  - Keep a traceability matrix linking intent -> criterion -> task -> test.
+  - Update the artifacts if reality diverges during implementation; do not let them rot.
+inputs:
+  - The product brief and requirements analysis
+  - Architecture constraints and the design spec
+outputs:
+  - spec.md, plan.md, tasks.md
+  - A traceability matrix
+quality_checks:
+  - Acceptance criteria are testable and complete
+  - Each task maps to at least one acceptance criterion
+  - The spec is internally consistent and states its non-goals
+failure_modes:
+  - Specs that describe UI pixels instead of behavior
+  - Tasks too large to review in one sitting
+  - Artifacts abandoned once coding starts
+risk_level: 2
+source_influences:
+  - github/spec-kit (spec/plan/tasks, project constitution)
+  - bmad-code-org/BMAD-METHOD (sharded story files)
+status: ACTIVE

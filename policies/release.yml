@@ -1,0 +1,59 @@
+id: release
+name: Release Gate Policy
+purpose: Define the Release Gate checks and the rule that no release proceeds without them plus Human Founder approval.
+authority: human-founder
+default: DENY
+rules:
+  - id: ALL_APPLICABLE_CHECKS_PASS
+    statement: "No production release proceeds unless every applicable check returns PASS: BUILD, LINT, UNIT_TEST, INTEGRATION_TEST, API_TEST, E2E_TEST, QA, SECURITY, MIGRATION_CHECK, BACKUP_CHECK, ROLLBACK_CHECK, RELEASE_REVIEW."
+    effect: REQUIRE_APPROVAL
+    applies_to: [release-manager]
+    approver: human-founder
+    rationale: Constitution Article 9.
+  - id: THEN_HUMAN_APPROVAL
+    statement: After all checks PASS, the release requires explicit Human Founder approval before any production deployment.
+    effect: REQUIRE_APPROVAL
+    applies_to: [release-manager]
+    approver: human-founder
+    rationale: The final, unbypassable gate.
+  - id: RELEASE_MANAGER_CANNOT_APPROVE
+    statement: The Release Manager may mark a release READY_FOR_HUMAN_APPROVAL. It may NOT approve or execute production deployment.
+    effect: DENY
+    applies_to: [release-manager]
+    actions: [approve_production, execute_production_deploy]
+    rationale: Separation of preparation from authorization.
+  - id: NO_SILENT_WAIVER
+    statement: A gate may be waived only with a Human-Founder-approved, recorded exception in the release package. Silent waivers are forbidden.
+    effect: DENY
+    applies_to: [all-agents]
+    actions: [waive_gate_silently]
+    rationale: Constitution Article 5.4 and 9.
+  - id: EVIDENCE_BUNDLED
+    statement: Each check's PASS is backed by a linked evidence artifact (CI run, scan report, QA record, staging verification).
+    effect: REQUIRE_REVIEW
+    applies_to: [release-manager]
+    rationale: The Human Founder approves on evidence, not assertion.
+  - id: ROLLBACK_REHEARSED
+    statement: The release package includes a rollback plan that has been rehearsed for this candidate.
+    effect: DENY
+    applies_to: [release-manager]
+    actions: [ready_for_approval_without_rehearsed_rollback]
+    rationale: Recoverability is a release precondition.
+  - id: POST_RELEASE_VERIFY
+    statement: After deployment, production verification runs and its result is recorded before the workflow closes.
+    effect: REQUIRE_REVIEW
+    applies_to: [release-manager, sre-observability-engineer]
+    rationale: Confirm the release actually works.
+  - id: FAIL_ROUTES_BACK
+    statement: A failing gate routes the change back to its originating workflow for remediation; it never routes toward production.
+    effect: DENY
+    applies_to: [all-agents]
+    actions: [advance_to_production_after_gate_fail]
+    rationale: The gate is a gate.
+enforcement:
+  - GitHub required status checks on main + Environment approval by the Human Founder
+  - workflows/release.yml step graph (fail_back never reaches production)
+  - tests/test_workflows.py - human_approval precedes PRODUCTION; Release Manager owner never on a production step
+related_policies: [human-approval, production, qa, security, database, git]
+review: On any change to the check set.
+notes: The check set mirrors build spec section 16 and Constitution Article 9.

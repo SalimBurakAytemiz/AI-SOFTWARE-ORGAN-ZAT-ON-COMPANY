@@ -1,0 +1,40 @@
+id: backend-development
+name: Backend Development
+version: 1.0.0
+summary: >
+  Implement backend services in TypeScript/Node.js - APIs, auth logic, business
+  logic, background jobs - secure by default and covered by tests, including
+  negative-case tests for auth paths.
+when_to_use:
+  - Implementing or changing API endpoints, business logic, auth, or background processing
+when_not_to_use:
+  - Frontend, schema ownership, or third-party adapter work (route to the right agent)
+procedure:
+  - Work in an isolated worktree; confirm the spec, architecture, and security design.
+  - Implement against the published API contract; validate all inputs at the boundary.
+  - Implement authorization checks at every protected operation; write negative-case tests.
+  - Make external effects idempotent and retry-safe; use transactions where invariants span writes.
+  - Prepare (do not apply) any needed migration as a proposal for the Database Engineer.
+  - Write unit, API, and integration tests (TDD for logic).
+  - Run build, lint, SAST, tests, and the verification checklist before the PR.
+inputs:
+  - The spec, architecture, security design, and API contract
+  - Schema and data-access constraints
+outputs:
+  - Backend implementation on a branch
+  - Tests including auth negative cases
+  - Migration proposals; a PR with self-test and SAST evidence
+quality_checks:
+  - No new high/critical SAST findings
+  - Every protected operation has an authorization check and a negative test
+  - External writes are idempotent
+failure_modes:
+  - Trusting client input
+  - Authorization checked in the UI but not the API
+  - Non-idempotent handlers that double-apply on retry
+  - Applying a migration directly
+risk_level: 4
+source_influences:
+  - OWASP secure coding; NestJS patterns
+  - semgrep/semgrep (SAST in the loop)
+status: ACTIVE

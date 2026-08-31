@@ -1,0 +1,71 @@
+id: security
+name: Security Policy
+purpose: Define the security gates, scanning requirements, and the security release gate.
+authority: human-founder
+default: DENY
+rules:
+  - id: SECURITY_GATE_MANDATORY
+    statement: No change reaches production without a SECURITY gate PASS from the application-security-engineer.
+    effect: REQUIRE_APPROVAL
+    applies_to: [all-agents]
+    approver: application-security-engineer
+    rationale: Constitution Article 7.
+  - id: STANDING_SCANS
+    statement: "Every PR runs: Semgrep (SAST), Trivy (SCA + IaC + container + secrets), gitleaks (secrets + history). Findings are SARIF into code scanning."
+    effect: REQUIRE_REVIEW
+    applies_to: [ci, application-security-engineer]
+    rationale: Catch the common classes automatically.
+  - id: NO_HIGH_CRITICAL_UNRESOLVED
+    statement: A SECURITY PASS is not issued while an unresolved high or critical finding exists without a Human-Founder-visible, time-boxed waiver.
+    effect: DENY
+    applies_to: [application-security-engineer]
+    actions: [security_pass_with_open_high_or_critical]
+    rationale: High/critical means exploitable.
+  - id: WAIVER_HYGIENE
+    statement: Every waiver has an owner, a justification, and an expiry (max 90 days). Expired waivers block the gate.
+    effect: REQUIRE_APPROVAL
+    applies_to: [application-security-engineer]
+    approver: human-founder
+    rationale: Waivers are debt, not forgiveness.
+  - id: THREAT_MODEL_NEW_SURFACE
+    statement: Any new external surface (endpoint, integration, upload, auth flow) has a threat model before implementation review.
+    effect: REQUIRE_REVIEW
+    applies_to: [solution-architect, application-security-engineer]
+    rationale: Design out whole vulnerability classes.
+  - id: LLM_REDTEAM_UNTRUSTED_INPUT
+    statement: Any feature that exposes an LLM to untrusted input runs promptfoo redteam (OWASP LLM Top 10) in the SECURITY gate.
+    effect: REQUIRE_REVIEW
+    applies_to: [application-security-engineer, model-operations-engineer]
+    rationale: Prompt injection and data exfiltration are real.
+  - id: DAST_ON_STAGING
+    statement: Once a product has a staging deployment, OWASP ZAP baseline + API scans run against staging (never production, always scoped and authorized) in the SECURITY gate.
+    effect: REQUIRE_REVIEW
+    applies_to: [application-security-engineer]
+    rationale: Catch runtime issues SAST cannot see.
+  - id: SUPPLY_CHAIN
+    statement: GitHub Actions are pinned to commit SHAs; base images are pinned and Trivy-scanned; cloud auth uses OIDC short-lived credentials, never stored long-lived keys.
+    effect: DENY
+    applies_to: [devops-platform-engineer, ci]
+    actions: [use_unpinned_action, use_unscanned_base_image, store_long_lived_cloud_key]
+    rationale: The supply chain is the soft underbelly.
+  - id: CRITICAL_SECURITY_ARCH_IS_RISK5
+    statement: Changes to authn/authz model, trust boundaries, crypto, or isolation are RISK 5 and require Human Founder approval.
+    effect: REQUIRE_APPROVAL
+    applies_to: [all-agents]
+    actions: [critical_security_architecture_change]
+    approver: human-founder
+    rationale: Constitution Article 3 and 7.
+  - id: NO_SECRET_EXPOSURE
+    statement: No secret in code, config, prompt, log, telemetry, or agent memory. Findings are recorded as references, never values.
+    effect: DENY
+    applies_to: [all-agents]
+    actions: [log_secret, store_secret_in_memory, put_secret_in_prompt]
+    rationale: Constitution Article 8.
+enforcement:
+  - CI security jobs (Semgrep, Trivy, gitleaks) block merge on failure
+  - security gate step in every delivery workflow
+  - tests/test_org_security.py, tests/test_permissions.py
+  - Release Gate SECURITY check
+related_policies: [human-approval, secrets, git, release, incident]
+review: Quarterly and after any security incident.
+notes: Tool decisions and layering rationale in research/security-comparison.md.

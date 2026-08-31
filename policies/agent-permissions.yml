@@ -1,0 +1,63 @@
+id: agent-permissions
+name: Agent Permissions Policy
+purpose: >
+  Define how agents receive capabilities. Default deny, least privilege, explicit
+  and capability-scoped. A tool grant is never a capability grant.
+authority: human-founder
+default: DENY
+rules:
+  - id: DEFAULT_DENY
+    statement: An agent has no capability unless its definition's allowed_tools explicitly lists it and that capability is grantable in tools/capabilities.yml.
+    effect: DENY
+    applies_to: [all-agents]
+    rationale: Constitution Article 2.
+  - id: CAPABILITY_SCOPED
+    statement: Permissions are named capabilities (e.g. github.create_pr), not whole tools (github). An agent granted a tool does not receive every capability of that tool.
+    effect: REQUIRE_REVIEW
+    applies_to: [all-agents]
+    actions: [grant_capability]
+    approver: human-founder
+    rationale: SWE-agent ACI lesson; limits blast radius.
+  - id: NON_GRANTABLE_NEVER
+    statement: Capabilities marked grantable=false in tools/capabilities.yml may never appear in any agent's allowed_tools.
+    effect: DENY
+    applies_to: [all-agents]
+    actions: [github.merge, deploy.production, db.migrate_production, infra.production_apply, secrets.production, secrets.rotate, payments.configure, finance.execute, ci.configure_production]
+    rationale: These map to critical actions reserved to the Human Founder.
+  - id: WITHIN_RISK_CEILING
+    statement: An agent may not be routed to, or granted a capability whose risk_level exceeds, its own risk_level ceiling without Engineering Director sign-off, and never above 5.
+    effect: REQUIRE_APPROVAL
+    applies_to: [all-agents]
+    approver: engineering-director
+    rationale: Keeps authority proportional to role.
+  - id: NO_SELF_ESCALATION
+    statement: No agent may modify its own or another agent's permissions. access_control_escalation is a critical action.
+    effect: DENY
+    applies_to: [all-agents]
+    actions: [access_control_escalation]
+    rationale: Prevents permission creep and bypass.
+  - id: REVIEWER_CANNOT_IMPLEMENT
+    statement: The senior-code-reviewer is denied fs.write and github.create_pr so it cannot become the implementer of the change it reviews.
+    effect: DENY
+    applies_to: [senior-code-reviewer]
+    actions: [fs.write, github.create_pr]
+    rationale: Structural reviewer independence (Constitution Article 5.2).
+  - id: FORBIDDEN_TOOLS_HONORED
+    statement: A capability in an agent's forbidden_tools is denied to that agent even if some future rule would otherwise allow it.
+    effect: DENY
+    applies_to: [all-agents]
+    rationale: forbidden always wins over allowed.
+  - id: CHANGE_VIA_PR
+    statement: Any change to an agent definition or to tools/capabilities.yml is a pull request reviewed by the Human Founder.
+    effect: REQUIRE_APPROVAL
+    applies_to: [all-agents]
+    actions: [edit_agent_definition, edit_capability_registry]
+    approver: human-founder
+    rationale: Permissions are governance.
+enforcement:
+  - tests/test_permissions.py - every allowed_tools/forbidden_tools entry resolves in capabilities.yml; no non-grantable capability is granted; reviewer lacks write capabilities
+  - tests/test_agents.py - risk ceilings, required-field validation, schema validation
+  - 'Runtime (future): OPA evaluates (agent, capability, resource, risk) against this policy, default deny, decision-logged'
+related_policies: [human-approval, git, security, model-routing]
+review: On every agent or capability change.
+notes: Capability list and grantability live in tools/capabilities.yml.

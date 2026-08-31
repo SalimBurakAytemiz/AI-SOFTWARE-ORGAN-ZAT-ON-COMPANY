@@ -1,0 +1,58 @@
+id: cost
+name: Cost Discipline Policy
+purpose: Keep the cost of running the AI workforce minimal and bounded.
+authority: human-founder
+default: DENY
+rules:
+  - id: SOFTWARE_BEFORE_MODEL
+    statement: If ordinary software (a script, a linter, a schema check, a query) can do the task correctly, a model must not be used.
+    effect: DENY
+    applies_to: [all-agents]
+    actions: [use_model_for_deterministic_task]
+    rationale: Constitution Article 11.
+  - id: CHEAPEST_ADEQUATE_TIER
+    statement: Use the lowest tier that meets the risk and quality bar. Escalate a tier only on demonstrated need (failed gate, high complexity).
+    effect: REQUIRE_REVIEW
+    applies_to: [all-agents, model-operations-engineer]
+    rationale: Compounding savings across thousands of tasks.
+  - id: PER_AGENT_BUDGETS
+    statement: Every agent has a per-task hard cap, a per-task soft cap, and a daily cap enforced by the model gateway via its virtual key.
+    effect: REQUIRE_APPROVAL
+    applies_to: [model-operations-engineer]
+    approver: human-founder
+    rationale: Bounded blast radius for runaway loops.
+  - id: BUDGET_BREACH_AUTOPAUSE
+    statement: On a hard-cap breach the run auto-pauses and notifies the Engineering Director and the Human Founder. It does not silently continue.
+    effect: DENY
+    applies_to: [all-agents]
+    actions: [continue_after_budget_breach]
+    rationale: Constitution Article 14 - no uncontrolled autonomy.
+  - id: RETRY_LIMITS
+    statement: A failing task retries at most twice at its tier, then once at the next tier, then escalates to a human. No infinite retry.
+    effect: DENY
+    applies_to: [all-agents]
+    actions: [unbounded_retry]
+    rationale: Retries are the classic cost sink.
+  - id: CONTEXT_ECONOMY
+    statement: Prefer packed, scoped context (Repomix, repo-map) over whole-file dumps. Large-context tiers require justification.
+    effect: REQUIRE_REVIEW
+    applies_to: [all-agents]
+    rationale: Context tokens dominate cost on large repos.
+  - id: COST_VISIBILITY
+    statement: Every task records estimated cost in its audit event; per-agent and per-workflow cost is reported to the Human Founder monthly.
+    effect: REQUIRE_REVIEW
+    applies_to: [model-operations-engineer]
+    rationale: You cannot manage what you cannot see.
+  - id: NO_EXPENSIVE_MODEL_FOR_LOW_RISK
+    statement: ADVANCED_REASONING and CRITICAL_REVIEW tiers are not used for RISK 0-2 work absent a recorded exception.
+    effect: DENY
+    applies_to: [all-agents]
+    actions: [overtier_low_risk_work]
+    rationale: Constitution Article 11.
+enforcement:
+  - Gateway (LiteLLM) virtual-key budgets and rate limits; spend logs
+  - audit events carry estimated_cost (schemas/audit-event.schema.json)
+  - tests/test_models.py checks budget fields are declared (values may be PLANNED pre-onboarding)
+related_policies: [model-routing, audit, human-approval]
+review: Monthly cost review with the Human Founder.
+notes: Budget values are PLANNED until the Human Founder onboards providers and sets caps.

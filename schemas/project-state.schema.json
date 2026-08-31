@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-software-company/schemas/project-state.schema.json",
+  "title": "Project State",
+  "description": "The current position of a project in the standard state machine.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["project", "version", "scope", "state", "status", "updated", "human_approval"],
+  "properties": {
+    "project": { "type": "string" },
+    "version": { "type": "string" },
+    "scope": { "type": "string" },
+    "state": { "$ref": "#/$defs/stateName" },
+    "status": { "$ref": "#/$defs/statusName" },
+    "updated": { "type": "string", "format": "date-time" },
+    "owner": { "type": "string" },
+    "summary": { "type": "string" },
+    "human_approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required", "granted"],
+      "properties": {
+        "required": { "type": "boolean" },
+        "granted": { "type": "boolean" },
+        "granted_by": { "type": ["string", "null"] },
+        "granted_at": { "type": ["string", "null"] },
+        "notes": { "type": "string" }
+      }
+    },
+    "open_items": { "type": "array", "items": { "type": "string" } },
+    "history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["state", "status", "at"],
+        "properties": {
+          "state": { "$ref": "#/$defs/stateName" },
+          "status": { "$ref": "#/$defs/statusName" },
+          "at": { "type": "string" },
+          "note": { "type": "string" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "stateName": {
+      "type": "string",
+      "enum": [
+        "IDEA",
+        "SPEC",
+        "PLAN",
+        "DESIGN",
+        "BUILD",
+        "REVIEW",
+        "TEST",
+        "SECURITY",
+        "STAGING",
+        "APPROVAL",
+        "PRODUCTION",
+        "MONITORING",
+        "IMPROVEMENT",
+        "HUMAN_APPROVAL_REQUIRED"
+      ]
+    },
+    "statusName": {
+      "type": "string",
+      "enum": ["WAITING", "RUNNING", "PASS", "FAIL", "BLOCKED", "APPROVAL_REQUIRED"]
+    }
+  }
+}

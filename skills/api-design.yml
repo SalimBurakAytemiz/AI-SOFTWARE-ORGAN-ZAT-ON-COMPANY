@@ -1,0 +1,40 @@
+id: api-design
+name: Contract-First API Design
+version: 1.0.0
+summary: >
+  Design the API contract before implementation: resources, operations, schemas,
+  errors, idempotency, versioning, and auth - published so consumers can build in
+  parallel.
+when_to_use:
+  - Adding or changing an API endpoint
+  - Defining an integration boundary between services or with a third party
+when_not_to_use:
+  - Internal function refactors with no interface change
+procedure:
+  - Model the resources and the operations on them; choose consistent naming.
+  - Define request/response schemas and validation rules.
+  - Define the full error model - status codes, error shapes, and when each occurs.
+  - Specify idempotency (keys for unsafe operations), pagination, and rate-limit behavior.
+  - Specify auth and authorization per operation, including the negative cases.
+  - Decide the versioning strategy and backward-compatibility rules.
+  - Publish the contract (OpenAPI/types) and get consumer review before coding.
+inputs:
+  - The feature spec and data model
+  - The security design for auth
+outputs:
+  - A published API contract (OpenAPI / typed schema)
+  - Error model and idempotency rules
+  - Contract tests
+quality_checks:
+  - Every operation has defined errors and auth rules
+  - Unsafe operations are idempotent
+  - Breaking changes are versioned, not silent
+failure_modes:
+  - Designing the contract by implementing first
+  - Undefined error responses
+  - Non-idempotent writes that double-apply on retry
+risk_level: 3
+source_influences:
+  - REST / HTTP semantics and OpenAPI
+  - crewAIInc/crewAI, mastra-ai/mastra (typed tool/contract boundaries)
+status: ACTIVE

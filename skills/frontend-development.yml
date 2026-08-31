@@ -1,0 +1,39 @@
+id: frontend-development
+name: Frontend Development
+version: 1.0.0
+summary: >
+  Implement UI in TypeScript/React/Next.js to match the design and spec, with
+  accessibility, performance budgets, typed API integration, and tests.
+when_to_use:
+  - Implementing or changing user-facing components, pages, or client logic
+when_not_to_use:
+  - Backend, database, or infrastructure work
+procedure:
+  - Work in an isolated worktree; confirm the design spec and API contracts.
+  - Build semantic, accessible markup first; add interaction and styling per the design system.
+  - Implement all defined states - success, error, loading, empty, partial.
+  - Integrate APIs via typed contracts; handle and surface failure states.
+  - Write unit and component tests (TDD for logic); verify accessibility for the affected views.
+  - Check the performance budget for affected routes; fix regressions.
+  - Run build, lint, tests, and the verification checklist before opening the PR.
+inputs:
+  - The design spec and accessibility criteria
+  - API contracts and type definitions
+  - The frontend codebase area (packed context)
+outputs:
+  - Implementation on a feature branch
+  - Unit and component tests
+  - A PR linking spec, design, and tests with self-test evidence
+quality_checks:
+  - All designed states are implemented
+  - Accessibility checks pass for affected views
+  - Performance budget respected; tests cover the change
+failure_modes:
+  - Implementing only the happy path
+  - Divergence from the design system without justification
+  - Untyped or unhandled API failures
+risk_level: 3
+source_influences:
+  - React / Next.js patterns; Core Web Vitals
+  - microsoft/playwright (component + a11y testing)
+status: ACTIVE

@@ -1,0 +1,55 @@
+id: production
+name: Production Policy
+purpose: Define what may touch production and how. Production is Human Founder territory.
+authority: human-founder
+default: DENY
+rules:
+  - id: NO_AGENT_PRODUCTION_WRITE
+    statement: No agent performs a production deployment, infrastructure apply, database migration, destructive operation, data deletion, or data export.
+    effect: DENY
+    applies_to: [all-agents]
+    actions: [production_deployment, production_infrastructure_modification, production_database_migration, production_database_destructive_operation, production_data_deletion, customer_data_export]
+    rationale: Constitution Article 3.
+  - id: PRODUCTION_READ_ONLY_FOR_DIAGNOSIS
+    statement: Agents may hold read-only access to production telemetry (SRE, Incident Engineer, Release Manager) and, with justification, read-only DB access for diagnosis - never write.
+    effect: ALLOW
+    applies_to: [sre-observability-engineer, incident-debug-engineer, release-manager]
+    actions: [observability.read, db.query_readonly]
+    rationale: Diagnosis needs visibility; visibility is not mutation.
+  - id: DEPLOY_VIA_ENVIRONMENT_APPROVAL
+    statement: Production deploys run through a GitHub Environment whose required reviewer is the Human Founder; the pipeline pauses until approval.
+    effect: REQUIRE_APPROVAL
+    applies_to: [devops-platform-engineer, release-manager]
+    approver: human-founder
+    rationale: Native, unbypassable human gate.
+  - id: RELEASE_GATE_FIRST
+    statement: No production deploy proceeds unless the Release Gate returned PASS on every applicable check.
+    effect: REQUIRE_APPROVAL
+    applies_to: [release-manager]
+    approver: human-founder
+    rationale: Constitution Article 9.
+  - id: ROLLBACK_READY
+    statement: A rehearsed rollback plan is a precondition of Human Founder approval.
+    effect: DENY
+    applies_to: [release-manager]
+    actions: [request_approval_without_rollback]
+    rationale: Every forward step needs a way back.
+  - id: CHANGE_FREEZE_RESPECT
+    statement: Agents respect a Human-Founder-declared change freeze; only incident fixes proceed, and only with per-instance approval.
+    effect: DENY
+    applies_to: [all-agents]
+    actions: [ship_during_freeze]
+    rationale: The Human Founder controls timing.
+  - id: POST_DEPLOY_VERIFY
+    statement: Every production change is verified (health, key journeys, telemetry) and the result recorded before the workflow closes.
+    effect: REQUIRE_REVIEW
+    applies_to: [release-manager, sre-observability-engineer]
+    rationale: A deploy that completed is not the same as a deploy that works.
+enforcement:
+  - GitHub Environment protection (production) with the Human Founder as reviewer
+  - Release Gate required checks
+  - tests/test_workflows.py - human_approval precedes PRODUCTION in every reaching-production workflow
+  - tests/test_org_security.py - no agent has deploy.production / infra.production_apply / db.migrate_production
+related_policies: [human-approval, release, git, database, incident]
+review: On any change to environments or deploy mechanics.
+notes: The production apply action is intentionally owned by human-founder in every workflow that has one.

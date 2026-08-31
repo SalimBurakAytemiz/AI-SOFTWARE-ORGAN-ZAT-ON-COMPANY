@@ -1,0 +1,82 @@
+# Model routing policy.
+#
+# Decides which tier serves a task. Inputs, in priority order:
+#   1. risk_level        (see risk-policy.yml - a hard floor)
+#   2. task_type
+#   3. complexity
+#   4. context_size
+#   5. quality_bar
+#   6. cost              (tie-breaker: choose the cheapest tier that clears the above)
+#
+# The gateway resolves the chosen tier to a concrete model. Every routing decision
+# emits an audit event (schemas/audit-event.schema.json).
+
+version: "1.0"
+
+principles:
+  - Cheapest adequate tier wins. Never use a higher tier "to be safe".
+  - risk_level sets a MINIMUM tier; task signals may raise it, never lower it below the floor.
+  - Deterministic work uses NO_AI. If ordinary software can do it, a model must not.
+  - An agent is never routed above its own `risk_level` ceiling without Engineering
+    Director sign-off, and never above CRITICAL_REVIEW.
+  - Provider is chosen by the gateway for availability/price/latency within the tier,
+    never by agent code.
+
+risk_floor:
+  # Minimum tier permitted for a given risk level. Task signals may go higher.
+  0: NO_AI
+  1: LOW_COST
+  2: STANDARD_CODING
+  3: STANDARD_CODING
+  4: ADVANCED_REASONING
+  5: ADVANCED_REASONING   # plus mandatory CRITICAL_REVIEW review step + Human Founder
+
+task_type_defaults:
+  config_validation: NO_AI
+  formatting_or_codegen: NO_AI
+  ticket_triage: LOW_COST
+  summary_or_release_notes: LOW_COST
+  requirements_analysis: STANDARD_CODING
+  spec_authoring: STANDARD_CODING
+  ui_design_spec: STANDARD_CODING
+  feature_implementation: STANDARD_CODING
+  test_authoring: STANDARD_CODING
+  simple_bugfix: STANDARD_CODING
+  architecture_design: ADVANCED_REASONING
+  hard_debugging_or_rca: ADVANCED_REASONING
+  migration_design: ADVANCED_REASONING
+  code_review: CRITICAL_REVIEW
+  security_review: CRITICAL_REVIEW
+  threat_modeling: CRITICAL_REVIEW
+  release_verification: STANDARD_CODING
+
+modifiers:
+  raise_one_tier_if:
+    - complexity == "high"
+    - context_size > large_context_threshold
+    - quality_bar == "critical"
+    - task touches authentication, authorization, payments, or customer-data security
+  never_lower_below: risk_floor
+
+escalation:
+  - If a task at STANDARD_CODING fails its quality gate twice, retry once at
+    ADVANCED_REASONING and flag for the Engineering Director.
+  - If an ADVANCED_REASONING task fails a RISK 4-5 gate, stop and escalate to the
+    Human Founder; do not keep spending.
+
+budgets:
+  # Enforced at the gateway via per-agent virtual keys. Breach -> auto-pause the run
+  # and notify the Engineering Director and Human Founder. Values are placeholders to
+  # be set by the Human Founder during provider onboarding.
+  per_task_soft_cap_usd: PLANNED
+  per_task_hard_cap_usd: PLANNED
+  per_agent_daily_cap_usd: PLANNED
+  per_workflow_cap_usd: PLANNED
+
+fallback:
+  - Each tier has an ordered provider fallback chain in gateway config.
+  - On provider outage, fall back within the SAME tier first.
+  - Only drop a tier with explicit Model Operations Engineer approval, never for
+    RISK >= 4 work.
+
+status: ADOPTED (design of record; gateway stood up in the runtime phase)

@@ -1,0 +1,199 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-software-company/schemas/agent.schema.json",
+  "title": "AI Software Company Agent Definition",
+  "description": "Schema for a single AI employee (agent) definition. AGENT = ROLE + SKILLS + MODEL + TOOLS + PERMISSIONS + POLICIES + CONTEXT + MEMORY + QUALITY GATES + METRICS. An agent is never just a prompt.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "title",
+    "department",
+    "seniority",
+    "purpose",
+    "mission",
+    "responsibilities",
+    "non_responsibilities",
+    "required_skills",
+    "domain_knowledge",
+    "programming_languages",
+    "frameworks",
+    "engineering_practices",
+    "preferred_model_tier",
+    "fallback_model_tier",
+    "risk_level",
+    "allowed_tools",
+    "forbidden_tools",
+    "allowed_actions",
+    "forbidden_actions",
+    "human_approval_required",
+    "inputs",
+    "outputs",
+    "quality_gates",
+    "handoff_from",
+    "handoff_to",
+    "escalation_to",
+    "memory_scope",
+    "context_requirements",
+    "audit_requirements",
+    "success_metrics",
+    "failure_conditions"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*[a-z0-9]$",
+      "description": "Stable unique kebab-case identifier."
+    },
+    "title": { "type": "string", "minLength": 3 },
+    "department": {
+      "type": "string",
+      "enum": [
+        "leadership",
+        "product",
+        "design",
+        "architecture",
+        "engineering",
+        "quality",
+        "security",
+        "platform",
+        "incident",
+        "review",
+        "release"
+      ]
+    },
+    "seniority": {
+      "type": "string",
+      "enum": ["junior", "mid", "senior", "lead", "principal", "director"]
+    },
+    "purpose": { "type": "string", "minLength": 20 },
+    "mission": { "type": "string", "minLength": 20 },
+    "responsibilities": {
+      "type": "array",
+      "minItems": 3,
+      "items": { "type": "string", "minLength": 3 }
+    },
+    "non_responsibilities": {
+      "type": "array",
+      "minItems": 2,
+      "items": { "type": "string", "minLength": 3 }
+    },
+    "required_skills": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+      "description": "References into skills/ by skill id."
+    },
+    "domain_knowledge": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "programming_languages": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "frameworks": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "engineering_practices": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "preferred_model_tier": { "$ref": "model-tier.schema.json#/$defs/tierName" },
+    "fallback_model_tier": { "$ref": "model-tier.schema.json#/$defs/tierName" },
+    "risk_level": { "$ref": "#/$defs/riskLevel" },
+    "allowed_tools": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Capability-scoped tool references, e.g. 'github.create_pr'. Must resolve against tools/registry.yml and policies/agent-permissions.yml."
+    },
+    "forbidden_tools": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "allowed_actions": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "forbidden_actions": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "human_approval_required": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Named critical actions this agent may PREPARE but never EXECUTE without Human Founder approval."
+    },
+    "inputs": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "outputs": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "quality_gates": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "handoff_from": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^([a-z][a-z0-9-]*|human-founder|external)$" }
+    },
+    "handoff_to": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^([a-z][a-z0-9-]*|human-founder|external)$" }
+    },
+    "escalation_to": {
+      "type": "string",
+      "pattern": "^([a-z][a-z0-9-]*|human-founder)$"
+    },
+    "memory_scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["read", "write"],
+      "properties": {
+        "read": { "type": "array", "items": { "type": "string" } },
+        "write": { "type": "array", "items": { "type": "string" } },
+        "retention": { "type": "string" },
+        "forbidden": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "context_requirements": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "audit_requirements": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "success_metrics": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "failure_conditions": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "notes": { "type": "string" }
+  },
+  "$defs": {
+    "riskLevel": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 5,
+      "description": "Highest risk level of work this agent is permitted to autonomously drive. RISK 5 always additionally requires Human Founder approval."
+    }
+  }
+}

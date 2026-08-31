@@ -1,0 +1,40 @@
+id: release-verification
+name: Release Verification
+version: 1.0.0
+summary: >
+  Verify that every applicable Release Gate check has passed with linked evidence,
+  assemble the release package with a rehearsed rollback plan, and mark it
+  READY_FOR_HUMAN_APPROVAL - never approving production.
+when_to_use:
+  - A change set reaches the release step of any delivery workflow
+when_not_to_use:
+  - Before code review, QA, and security have completed
+procedure:
+  - Freeze the change set; produce the change inventory and their originating workflows.
+  - For each Release Gate check (BUILD, LINT, UNIT/INTEGRATION/API/E2E, QA, SECURITY, MIGRATION_CHECK, BACKUP_CHECK, ROLLBACK_CHECK, RELEASE_REVIEW), confirm PASS and attach the evidence artifact.
+  - Confirm no gate was waived without a Human-Founder-approved recorded exception.
+  - Confirm staging verification covers the release scope.
+  - Confirm the rollback plan exists and was rehearsed for this candidate.
+  - Draft release notes.
+  - Mark READY_FOR_HUMAN_APPROVAL and present the complete package to the Human Founder.
+  - After approval, coordinate (not execute) the deploy; record production verification.
+inputs:
+  - All gate results and their evidence
+  - The staging verification evidence and rollback plan
+outputs:
+  - 'A release package: notes, inventory, evidence bundle, rollback plan'
+  - READY_FOR_HUMAN_APPROVAL state
+  - Post-deploy verification record
+quality_checks:
+  - Every applicable check is PASS with a linked artifact
+  - A rehearsed rollback plan is included
+  - The package never asserts a check without evidence
+failure_modes:
+  - Marking ready with a failing or missing gate
+  - Approving or executing the deploy (role violation)
+  - Presenting a release with no rollback plan
+risk_level: 4
+source_influences:
+  - AI Software Company Constitution Article 9; policies/release.yml
+  - Change-management / release-readiness practice
+status: ACTIVE

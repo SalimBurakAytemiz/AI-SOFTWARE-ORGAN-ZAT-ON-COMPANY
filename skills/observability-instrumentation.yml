@@ -1,0 +1,40 @@
+id: observability-instrumentation
+name: Observability Instrumentation
+version: 1.0.0
+summary: >
+  Instrument a change so its behavior is visible in production: OpenTelemetry spans,
+  metrics, and structured logs, with SLIs for the affected journey and alerts that
+  each carry a runbook.
+when_to_use:
+  - Any new service or critical-path change before it ships
+  - Adding a user journey that needs an SLO
+  - Instrumenting agent/model calls (Model Operations Engineer)
+when_not_to_use:
+  - Cosmetic changes with no runtime behavior
+procedure:
+  - Identify the key operations and failure modes of the change.
+  - Add OTel spans around them with meaningful attributes (no secrets, no raw PII).
+  - Emit metrics for rate, errors, and duration; for model calls also cost and tokens.
+  - Emit structured logs at decision points with correlation ids.
+  - Define or update the SLI/SLO for the affected journey.
+  - Create dashboards and alert rules; every alert links a runbook and names an owner.
+  - Verify telemetry appears end to end in staging before production.
+inputs:
+  - The change and its critical operations
+  - Existing SLOs, dashboards, and the OTel conventions
+outputs:
+  - Instrumentation (spans, metrics, logs) via PR
+  - Updated SLIs/SLOs, dashboards, and alert rules with runbooks
+quality_checks:
+  - Spans and metrics carry no secrets or raw PII
+  - Every new alert has a runbook and an owner
+  - Telemetry is verified in staging
+failure_modes:
+  - Shipping a critical path with no telemetry
+  - Alerts with no runbook (alert fatigue)
+  - Logging sensitive values
+risk_level: 2
+source_influences:
+  - OpenTelemetry (semantic conventions, GenAI conventions)
+  - langfuse/langfuse (agent/model trace + cost model)
+status: ACTIVE

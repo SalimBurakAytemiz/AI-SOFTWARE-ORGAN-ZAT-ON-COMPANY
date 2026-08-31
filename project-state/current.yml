@@ -1,0 +1,50 @@
+# Current project state. Validates against ../schemas/project-state.schema.json.
+project: AI Software Company
+version: Organization V1.0
+scope: organization-governance-foundation
+state: HUMAN_APPROVAL_REQUIRED
+status: APPROVAL_REQUIRED
+updated: "2026-08-31T00:00:00Z"
+owner: engineering-director
+summary: >
+  The organizational and governance foundation is complete: constitution, 18-agent
+  workforce, 22 skills, tool + capability registry, model tiers/routing/risk policy,
+  9 gated workflows, 14 policies, 8 JSON schemas, research dossier, documentation,
+  and a validation + organizational-security test suite. No agent runtime and no
+  product were built (out of scope). Awaiting Human Founder review before the next
+  phase (AI Software Company Agent Runtime).
+human_approval:
+  required: true
+  granted: false
+  granted_by: null
+  granted_at: null
+  notes: >
+    The Human Founder reviews this repository in full. On approval, the single
+    authorized next phase is the AI Software Company Agent Runtime. Do not begin
+    Cleaning Commerce or install business systems.
+open_items:
+  - Human Founder to choose the runtime language (TypeScript vs Python) - drives the
+    orchestration framework selection (research/runtime-comparison.md).
+  - Human Founder to confirm any cloud commitment (affects secrets proxy, sandboxes,
+    IaC targets).
+  - Human Founder to onboard model providers and set per-agent budget caps
+    (models/routing.yml budgets are PLANNED until then).
+  - Decide whether a dedicated compliance/privacy role is added before Cleaning
+    Commerce handles real customer PII.
+history:
+  - state: IDEA
+    status: RUNNING
+    at: "2026-08-31"
+    note: One-shot build of the organization foundation began.
+  - state: BUILD
+    status: RUNNING
+    at: "2026-08-31"
+    note: Research, agents, skills, tools, models, workflows, policies, schemas, docs, tests authored.
+  - state: TEST
+    status: PASS
+    at: "2026-08-31"
+    note: Validation and organizational-security suite green.
+  - state: HUMAN_APPROVAL_REQUIRED
+    status: APPROVAL_REQUIRED
+    at: "2026-08-31"
+    note: Repository complete and commit-ready; awaiting Human Founder review.

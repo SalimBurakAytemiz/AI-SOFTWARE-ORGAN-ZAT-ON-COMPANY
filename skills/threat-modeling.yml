@@ -1,0 +1,38 @@
+id: threat-modeling
+name: Threat Modeling
+version: 1.0.0
+summary: >
+  Systematically enumerate how a new surface could be abused (STRIDE) and design out
+  whole vulnerability classes before implementation review.
+when_to_use:
+  - A new endpoint, integration, upload path, or authentication flow
+  - An architecture change that moves a trust boundary
+when_not_to_use:
+  - Changes wholly inside an existing trust boundary with no new data flow
+procedure:
+  - 'Draw the data-flow diagram: actors, processes, data stores, trust boundaries.'
+  - For each element, walk STRIDE (Spoofing, Tampering, Repudiation, Information disclosure, Denial of service, Elevation of privilege).
+  - Record each plausible threat with its impact and likelihood.
+  - Decide a response per threat - mitigate, transfer, accept (with sign-off), or eliminate by design.
+  - Convert mitigations into acceptance criteria and test cases.
+  - Flag any residual RISK 5 concern to the Human Founder via the Solution Architect.
+inputs:
+  - The feature or architecture proposal and its data flows
+  - Existing security architecture and controls
+outputs:
+  - A data-flow diagram with trust boundaries
+  - A threat register with responses
+  - Security acceptance criteria and test cases
+quality_checks:
+  - Every trust boundary crossing has been examined
+  - Each threat has an explicit, owned response
+  - Mitigations are testable, not aspirational
+failure_modes:
+  - Modeling the happy path only
+  - Listing threats with no decided response
+  - Treating "accept" as a silent default
+risk_level: 3
+source_influences:
+  - STRIDE / Microsoft SDL threat modeling
+  - SWE-agent/SWE-agent EnIGMA (attacker perspective, defensive use only)
+status: ACTIVE

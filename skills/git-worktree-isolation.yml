@@ -1,0 +1,37 @@
+id: git-worktree-isolation
+name: Git Worktree Isolation
+version: 1.0.0
+summary: >
+  Do every task in its own git worktree on a short-lived branch, so work is isolated,
+  parallelizable, and cleanly discardable, and main is never touched directly.
+when_to_use:
+  - Starting any implementation, fix, test, or migration task
+  - Running two tasks against the same repository at once
+when_not_to_use:
+  - Read-only analysis that produces no commits
+procedure:
+  - Fetch and confirm the base branch is current.
+  - Create a worktree on a new branch named <type>/<workflow-id>-<slug>.
+  - Do all edits, builds, and test runs inside that worktree.
+  - Commit in small logical steps with clear messages.
+  - Open a pull request from the branch; never merge it yourself.
+  - After merge (by Human Founder authority) or abandonment, remove the worktree.
+inputs:
+  - The base branch name
+  - The task type and workflow id
+outputs:
+  - An isolated worktree and branch
+  - A pull request with a clean, focused diff
+quality_checks:
+  - No edits were made outside the worktree
+  - The branch is rebased on a current base before review
+  - The worktree is removed when the task ends
+failure_modes:
+  - Working directly on main or a shared branch
+  - Leaving stale worktrees that drift from main
+  - Mixing two unrelated changes in one branch
+risk_level: 1
+source_influences:
+  - obra/superpowers (using-git-worktrees)
+  - AI Software Company policies/git.yml
+status: ACTIVE

@@ -1,0 +1,37 @@
+name: validate-organization
+
+# Runs the organization validation + organizational-security suite on every change.
+# This is the machine enforcement of the constitution's structural guarantees.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4  # pin to a commit SHA in production per policies/security.yml
+
+      - name: Set up Python
+        uses: actions/setup-python@v5  # pin to a commit SHA in production
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip pyyaml jsonschema referencing
+
+      - name: Run validation and organizational-security tests
+        run: python3 tests/run_all.py
+
+      - name: Secret scan (gitleaks)
+        uses: gitleaks/gitleaks-action@v2  # pin to a commit SHA in production
+        continue-on-error: false
+        env:
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: "false"

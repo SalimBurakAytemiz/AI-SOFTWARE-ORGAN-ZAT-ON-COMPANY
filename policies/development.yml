@@ -1,0 +1,58 @@
+id: development
+name: Development Policy
+purpose: >
+  Baseline engineering practice every implementing agent follows: isolation, tests,
+  small changes, and evidence-based completion.
+authority: human-founder
+default: DENY
+rules:
+  - id: WORKTREE_ISOLATION
+    statement: Every task is implemented in an isolated git worktree on a short-lived branch, never directly on main.
+    effect: REQUIRE_REVIEW
+    applies_to: [frontend-engineer, backend-engineer, database-engineer, integration-engineer, test-automation-engineer, incident-debug-engineer, model-operations-engineer, devops-platform-engineer, sre-observability-engineer]
+    actions: [implement]
+    rationale: Clean rollback, parallel work, no cross-contamination (superpowers).
+  - id: TDD_FOR_LOGIC
+    statement: Non-trivial logic is developed test-first (RED -> GREEN -> REFACTOR); a bug fix ships with a test that fails without it.
+    effect: REQUIRE_REVIEW
+    applies_to: [all-engineering-agents]
+    actions: [implement, fix]
+    rationale: Regressions are cheaper to prevent than to chase.
+  - id: SMALL_COHERENT_CHANGES
+    statement: One pull request is one coherent logical change; one commit is one logical step with a clear message.
+    effect: REQUIRE_REVIEW
+    applies_to: [all-engineering-agents]
+    actions: [commit, open_pr]
+    rationale: Reviewable diffs, bisectable history (aider).
+  - id: SELF_VERIFY_BEFORE_HANDOFF
+    statement: Before opening a PR, the implementer runs build, lint, applicable SAST, and its own tests, and completes the verification checklist. "Files created" is not "done".
+    effect: DENY
+    applies_to: [all-engineering-agents]
+    actions: [open_pr_without_self_test, claim_completion_without_evidence]
+    rationale: Constitution Article 5.4.
+  - id: PACKED_CONTEXT
+    statement: Use scoped, packed repository context (Repomix) rather than dumping whole files; run the secret pre-flight before sending code to a model.
+    effect: ALLOW
+    applies_to: [all-engineering-agents]
+    actions: [gather_context]
+    rationale: Cost control and secret hygiene.
+  - id: NO_DIRECT_MAIN
+    statement: No agent commits or pushes to the protected main branch.
+    effect: DENY
+    applies_to: [all-agents]
+    actions: [commit_to_main, push_to_main, merge_protected_main]
+    rationale: Git governance; main changes only via reviewed PR merged under Human Founder authority.
+  - id: STAY_IN_DOMAIN
+    statement: An agent that finds work outside its responsibility domain hands off; it does not expand scope silently.
+    effect: REQUIRE_REVIEW
+    applies_to: [all-agents]
+    actions: [expand_scope]
+    approver: engineering-director
+    rationale: One role, one domain (Constitution Article 5.1, 5.6).
+enforcement:
+  - Independent code review (senior-code-reviewer) checks change size, tests, and scope
+  - CI runs build/lint/SAST/tests on every PR
+  - tests/test_workflows.py checks self_test precedes code_review in delivery workflows
+related_policies: [git, qa, security, agent-permissions]
+review: Annually or when engineering standards change.
+notes: Detailed method lives in skills/ (test-driven-development, git-worktree-isolation, verification-before-completion).

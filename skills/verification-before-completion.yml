@@ -1,0 +1,39 @@
+id: verification-before-completion
+name: Verification Before Completion
+version: 1.0.0
+summary: >
+  A change is not "done" because files were created. It is done when it builds,
+  passes its tests, meets its acceptance criteria, and the evidence is attached.
+when_to_use:
+  - Before opening any pull request
+  - Before reporting a task, gate, or workflow step as complete
+  - Before handing off to the next agent
+when_not_to_use:
+  - Mid-implementation exploratory spikes explicitly marked as such
+procedure:
+  - Restate the acceptance criteria / step exit condition in concrete terms.
+  - Run the build and the linters; capture the result.
+  - Run the applicable tests (unit, then integration, then E2E as scoped); capture output.
+  - Run applicable scanners (SAST, secret scan) for code changes.
+  - Check each acceptance criterion against actual observed behavior, not intent.
+  - If anything fails or is unverified, fix it or report it honestly - do not round up.
+  - Attach the evidence (logs, reports, screenshots) to the handoff artifact.
+inputs:
+  - The acceptance criteria or step exit condition
+  - A runnable environment (sandbox)
+outputs:
+  - A pass/fail verification record with linked evidence
+  - An honest statement of any known gap
+quality_checks:
+  - Every acceptance criterion has an observed result, not an assumption
+  - Build, lint, and tests were actually run this session, not remembered
+  - No claim of completion without attached evidence
+failure_modes:
+  - Claiming success from code inspection alone
+  - Reporting "tests pass" without running them
+  - Silently narrowing scope to make a check pass
+risk_level: 1
+source_influences:
+  - obra/superpowers (verification-before-completion)
+  - AI Software Company Constitution Article 5.4
+status: ACTIVE
