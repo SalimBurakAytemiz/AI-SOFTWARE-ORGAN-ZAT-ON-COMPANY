@@ -11,8 +11,17 @@ description = "Secret-shaped patterns that are not secrets"
 paths = [
   # Redaction engine: contains the regexes used to FIND and mask secrets.
   '''runtime/src/core/redaction\.ts''',
+  # Sensitivity guard: contains regexes used to DETECT sensitive material in tasks.
+  '''runtime/src/proof/proof-sensitivity\.ts''',
   # Redaction test: uses synthetic all-x tokens to exercise those regexes.
   '''runtime/test/audit-and-cost\.test\.ts''',
+  # V1.1 provider / proof tests: use only synthetic "fake-*" placeholder keys
+  # (no real credentials) to exercise the OpenAI-compatible provider offline.
+  '''runtime/test/openai-compatible-provider\.test\.ts''',
+  '''runtime/test/software-factory-real\.test\.ts''',
+  '''runtime/test/proof-sensitivity-and-doctor\.test\.ts''',
+  # Example env file: keys are intentionally blank.
+  '''runtime/\.env\.example''',
 ]
 regexTarget = "line"
 regexes = [

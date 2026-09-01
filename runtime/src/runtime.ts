@@ -17,6 +17,7 @@ import { ModelRouter } from "./models/router.ts";
 import { MockModelProvider } from "./models/mock-provider.ts";
 import { LiteLlmProvider } from "./models/litellm-provider.ts";
 import type { ModelProvider } from "./models/provider.ts";
+import { buildRealProvider, type RealProviderStatus } from "./models/real-provider.ts";
 import { dataDir } from "./config/paths.ts";
 
 export interface RuntimeOptions {
@@ -25,6 +26,10 @@ export interface RuntimeOptions {
   outcomeScript?: OutcomeScript;
   /** Extra providers, tried before the built-in mock/litellm pair. */
   providers?: ModelProvider[];
+  /** Environment used to resolve the real (proof) provider. Defaults to process.env. */
+  env?: NodeJS.ProcessEnv;
+  /** Injected fetch for the real provider (tests). */
+  fetchImpl?: typeof fetch;
 }
 
 /**
@@ -47,6 +52,8 @@ export class Runtime {
   readonly router: ModelRouter;
   readonly orchestrator: Orchestrator;
   readonly providers: ModelProvider[];
+  /** Status of the configured real / proof model provider (build spec sections 6, 27). */
+  readonly realProvider: RealProviderStatus;
 
   private constructor(opts: RuntimeOptions) {
     this.registries = loadRegistries();
@@ -60,10 +67,16 @@ export class Runtime {
     this.cost = new CostAccounting(this.store, this.clock, this.registries.models);
     this.observability = new Observability(this.store, this.clock);
 
+    // The real / proof provider is resolved for reporting (doctor) and for the
+    // explicit real-agent proof only. It is deliberately NOT placed in the general
+    // provider rotation: ordinary tasks and the mock proof never spend on it, and
+    // there is no silent fall-through from mock to a paid provider (build spec
+    // sections 27, 45).
+    this.realProvider = buildRealProvider(opts.env ?? process.env, opts.fetchImpl);
     this.providers = [
       ...(opts.providers ?? []),
       new MockModelProvider(),
-      new LiteLlmProvider(),
+      new LiteLlmProvider(opts.env ?? process.env),
     ];
     this.router = new ModelRouter(this.registries.models, this.providers);
 

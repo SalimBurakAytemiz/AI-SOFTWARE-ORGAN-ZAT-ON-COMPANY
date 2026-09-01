@@ -1,10 +1,37 @@
-# AI Software Company — Agent Runtime V1.0
+# AI Software Company — Agent Runtime (V1.0 core + V1.1 real agent execution)
 
 This directory is the **executable runtime** for the organization defined in the rest
 of this repository. It loads the agent definitions, skills, tools, capabilities,
 model tiers, workflows and policies from `../` and coordinates them to carry a Human
 Founder task through a gated lifecycle — stopping for explicit Human Founder approval
 on every critical action.
+
+**V1.1** adds real, model-backed agent execution and a Software Factory proof: a
+generic OpenAI-compatible provider, a reusable prompt/context assembler, a
+validated `AgentExecutionResult` contract, a disposable proof workspace with
+default-deny file + command capabilities, a real-request budget, and a proof that
+drives real AI agents through `feature-development` to the Human Founder approval
+gate. See [`../docs/real-agent-execution.md`](../docs/real-agent-execution.md).
+
+## REAL AGENT PROOF (Founder quickstart)
+
+```
+cd runtime && npm install && npm run check      # offline, no key, 103 tests
+
+export AI_COMPANY_REAL_PROVIDER=openrouter
+export OPENROUTER_API_KEY=...                    # your key — shell only, never commit
+
+node bin/ai-company.js doctor                    # OpenRouter proof provider -> OK
+node bin/ai-company.js proof real-agent          # watch the agents execute
+node bin/ai-company.js proof status              # what ran, which gates passed
+node bin/ai-company.js audit --task <task-id>    # full evidence
+```
+
+The run stops at `PRODUCTION: HUMAN APPROVAL REQUIRED`. Nothing is deployed,
+merged or released. Without a key it reports `REAL PROOF BLOCKED` and does not
+fake success. OpenRouter free inference is a **PROOF_PROVIDER**
+(`NON_SENSITIVE_PROOF_ONLY`), not an approved production provider — moving to a
+paid provider needs separate Human Founder authorization.
 
 - **Language / platform:** TypeScript, run natively by Node.js 22.6+ (type stripping;
   no build step). Decision and alternatives: [`../architecture/adr-agent-runtime.md`](../architecture/adr-agent-runtime.md).
@@ -33,7 +60,10 @@ ai-company task run "<instruction>"   create + classify + drive to Human approva
 ai-company approvals list
 ai-company approvals approve <id>     (decided as 'human-founder' only)
 ai-company approvals reject <id>
-ai-company audit
+ai-company audit [--task <id>]
+ai-company proof software-factory     V1.1 Software Factory proof (mock)
+ai-company proof real-agent           V1.1 proof with the real (proof) provider
+ai-company proof status               latest Software Factory proof run
 ai-company pause "<reason>"           global kill switch
 ai-company resume
 ```

@@ -1,60 +1,88 @@
 # Current project state. Validates against ../schemas/project-state.schema.json.
 project: AI Software Company
-version: Agent Runtime V1.0
-scope: agent-runtime-executing-organization-v1
-state: HUMAN_APPROVAL_REQUIRED
-status: PASS
-updated: "2026-09-01T01:30:00Z"
+version: Real Agent Execution V1.1
+scope: real-agent-execution-and-software-factory-proof
+state: BUILD
+status: BLOCKED
+updated: "2026-09-01T03:00:00Z"
 owner: engineering-director
 summary: >
-  Organization V1.0 remains the source of truth and its 85-test suite still passes.
-  On top of it, the AI Software Company Agent Runtime V1.0 is now built: a
-  TypeScript-first runtime (Node.js, no build step) that loads and re-validates the
-  18 agents, 22 skills, 47 capabilities, 9 workflows and 14 policies, then
-  coordinates them for a Human Founder task. It provides an agent/skill/tool/workflow
-  registry loader, a default-deny capability gateway, a layered Human Approval Engine
-  (only 'human-founder' decides; no self-approval), a gated workflow engine with
-  durable checkpoint/resume on node:sqlite, an append-only schema-validated
-  secret-redacted audit ledger, a provider-independent model abstraction with a
-  deterministic MockModelProvider (no paid API key needed), a risk-based model
-  router, honest cost accounting, an OpenTelemetry-shaped span buffer, a local
-  sandbox, a global pause/kill switch, an ai-company CLI, and one safe end-to-end
-  proof workflow that stops at HUMAN_APPROVAL_REQUIRED. 61 runtime tests plus the 85
-  organization tests pass (typecheck clean; CI green including the gitleaks secret
-  scan). The Human Founder approval gate for Agent Runtime V1.0 has PASSED: the
-  Human Founder granted final approval to accept Agent Runtime V1.0 into main via
-  PR #1 (feat/agent-runtime-v1). The runtime is source-complete and accepted; it is
-  NOT production-deployed - no real money, no real customer data, no production
-  writes. Cleaning Commerce is still not implemented.
+  Organization V1.0 (85 tests) and Agent Runtime V1.0 (accepted into main via
+  PR #1) remain the source of truth and are unchanged. On top of them, Runtime
+  V1.1 - Real Agent Execution + Software Factory Proof - is now built on branch
+  feat/real-agent-execution-v1.1. It EXTENDS the existing runtime (AgentRunner,
+  Orchestrator, WorkflowEngine, PolicyEngine, CapabilityGateway, ApprovalEngine,
+  StateStore, AuditLog, ModelProvider abstraction) without introducing any new
+  agent framework. New pieces: a generic OpenAI-compatible model provider
+  (baseUrl + apiKeyEnv + model + timeout + retry + headers + usage), an
+  environment-driven real-provider resolver with OpenRouter as the first PROOF
+  configuration (PROOF_PROVIDER, NON_SENSITIVE_PROOF_ONLY - not an approved
+  production provider), a reusable prompt/context assembler, a validated
+  AgentExecutionResult contract (malformed -> bounded retry -> BLOCK, never
+  guessed), a RealAgentRunner routing model tool-call requests through the
+  Capability Gateway, a disposable proof workspace with default-deny
+  workspace.read/list/write/patch/exec (path jail + command allow-list), a
+  real-request budget (target <= 20, hard ceiling 30), a per-stage context
+  budget, an attributable PROOF_ONLY artifact store under build/proof/<task>/, a
+  proof-provider privacy guard that blocks PII/payment/production-secret tasks,
+  a Software Factory proof that drives feature-development with real agents for
+  the 9 key roles and stops at HUMAN_APPROVAL_REQUIRED, doctor rows for every
+  provider, and ai-company proof software-factory | real-agent | status plus
+  audit --task. 103 runtime tests (was 61; +42 for the OpenAI-compatible
+  provider, missing key, timeout, 429, 5xx, malformed response, structured
+  validation, tool-call validation, path traversal, unauthorized write,
+  arbitrary shell rejection, request-budget ceiling, context assembly, agent
+  handoff, review independence, real-vs-mock identification, proof-provider
+  privacy, workflow stopping at Human Approval) plus the 85 organization tests
+  all pass; typecheck clean; offline. The full real-agent pipeline is proven
+  end-to-end against a local offline OpenAI-compatible fake server (real code
+  written, real npm test executed, independent review, deterministic security
+  checks, release evaluation, Human Founder approval gate reached).
+  BLOCKED: the one required run against a real provider is
+  BLOCKED_PROVIDER_UNAVAILABLE - OPENROUTER_API_KEY is not configured in this
+  environment. Per the build spec the milestone is NOT marked complete, NOT
+  pushed and NOT merged until that real proof runs and reaches
+  HUMAN_APPROVAL_REQUIRED. No production deployment, no customer data, no
+  financial operations, no paid model requirement, no Cleaning Commerce.
 human_approval:
   required: true
-  granted: true
-  granted_by: human-founder
-  granted_at: "2026-09-01T01:30:00Z"
+  granted: false
   notes: >
-    Final Human Founder approval granted for AI Software Company Agent Runtime V1.0
-    after CI on PR #1 (feat/agent-runtime-v1 -> main) passed both the validate job
-    (85 organization tests + gitleaks secret scan) and the runtime job (typecheck +
-    61 tests). This approval applies ONLY to accepting Agent Runtime V1.0 into main.
-    It does NOT weaken any future Human Founder approval requirement: every critical
-    action (production deployment, merge to protected main of future work, production
-    DB migration/destructive op/data deletion, production infra change, secret
-    create/rotate/revoke, payment-config change, real financial transaction/refund,
-    ad-budget change, supplier payment, bulk customer messaging, customer-data
-    export, access-control escalation, critical security architecture change) still
-    requires a separate, explicit, per-instance Human Founder approval. It also does
-    NOT authorize: onboarding paid model providers, a production cloud, any
-    deployment, real customer data, financial transactions, or starting Cleaning
-    Commerce / the Commerce AI Workforce. Those remain open decisions.
+    Runtime V1.1 is source-complete and fully covered by deterministic tests
+    (103 runtime + 85 organization, all green, offline). The one required
+    real-provider Software Factory proof run is BLOCKED: OPENROUTER_API_KEY is
+    not configured (BLOCKED_PROVIDER_UNAVAILABLE). The milestone is therefore
+    NOT complete and NOT merged. It awaits, in order: (1) a securely provided
+    real provider credential and one real proof run that reaches
+    HUMAN_APPROVAL_REQUIRED with valid evidence, then (2) explicit per-instance
+    Human Founder review and approval to accept V1.1 into main. The prior V1.0
+    acceptance into main is unaffected. Every critical-action approval
+    requirement is unchanged: production deployment, merge to protected main of
+    future work, production DB migration/destructive op/data deletion,
+    production infra change, secret create/rotate/revoke, payment-config change,
+    real financial transaction/refund, ad-budget change, supplier payment, bulk
+    customer messaging, customer-data export, access-control escalation and
+    critical security architecture change each still require a separate,
+    explicit Human Founder approval. V1.1 does NOT authorize onboarding a paid
+    model provider, a production cloud, any deployment, real customer data,
+    financial transactions, or starting Cleaning Commerce / the Commerce AI
+    Workforce. Moving from the zero-cost proof provider to any paid provider
+    requires separate Human Founder authorization.
 open_items:
-  - Human Founder to onboard model providers and set per-agent / per-task budget caps
-    (models/routing.yml budgets remain NOT_CONFIGURED until then).
-  - Human Founder to confirm the production cloud commitment (drives the PostgreSQL
-    StateStore, the secrets proxy, and sandbox isolation choices).
-  - Assign compliance / privacy responsibility (dedicated role or explicit mandate to
-    the Application Security Engineer) before any project handles real customer PII.
-  - Evaluate Mastra integration behind the AgentRunner interface when real multi-agent
-    LLM execution enters scope (Runtime V1.1).
+  - Human Founder to securely provide OPENROUTER_API_KEY (or another
+    OpenAI-compatible provider credential via AI_COMPANY_REAL_API_KEY_ENV) so the
+    one real Software Factory proof run can execute.
+  - After that run reaches HUMAN_APPROVAL_REQUIRED, Human Founder to review the
+    generated evidence (build/proof/<task>/, ai-company audit --task <id>) and
+    decide whether to accept Runtime V1.1 into main.
+  - Human Founder to onboard model providers and set per-agent / per-task budget
+    caps (models/routing.yml budgets remain NOT_CONFIGURED until then).
+  - Human Founder to confirm the production cloud commitment (PostgreSQL
+    StateStore, secrets proxy, microVM sandbox isolation) before any real project.
+  - Assign compliance / privacy responsibility before any project handles real
+    customer PII.
+  - Re-evaluate Mastra behind the AgentRunner interface now that real multi-agent
+    LLM execution is in scope (ADR-0014 keeps it DEFERRED).
 history:
   - state: HUMAN_APPROVAL_REQUIRED
     status: APPROVAL_REQUIRED
@@ -85,3 +113,25 @@ history:
       Final Human Founder approval granted to accept Agent Runtime V1.0 into main
       via PR #1. Approval scoped to this acceptance only; future critical actions
       still require explicit per-instance Human Founder approval.
+  - state: BUILD
+    status: RUNNING
+    at: "2026-09-01"
+    note: >
+      Runtime V1.1 (Real Agent Execution + Software Factory Proof) implemented on
+      feat/real-agent-execution-v1.1, extending the existing runtime components.
+  - state: TEST
+    status: PASS
+    at: "2026-09-01"
+    note: >
+      103 runtime tests + 85 organization tests green; typecheck clean; the full
+      real-agent pipeline proven end-to-end offline against a local
+      OpenAI-compatible fake server (real code, real npm test, independent
+      review, security checks, release gate, Human Founder approval gate).
+  - state: BUILD
+    status: BLOCKED
+    at: "2026-09-01"
+    note: >
+      The one required run against a real provider is BLOCKED_PROVIDER_UNAVAILABLE
+      (OPENROUTER_API_KEY not configured). Milestone not marked complete, not
+      pushed, not merged; awaiting a real credential + one real proof run, then
+      Human Founder review.

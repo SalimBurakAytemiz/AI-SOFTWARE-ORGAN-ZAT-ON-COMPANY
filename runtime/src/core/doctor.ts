@@ -84,6 +84,27 @@ export function doctor(rt: Runtime): DoctorReport {
     "deterministic; the acceptance suite needs no paid API key",
   );
 
+  // Real / proof model provider (build spec sections 4, 5, 6, 27).
+  const rp = rt.realProvider;
+  if (!rp.descriptor) {
+    add("OpenAI-compatible provider", "OPTIONAL", rp.reason);
+    add("OpenRouter proof provider", "NOT_CONFIGURED", "set AI_COMPANY_REAL_PROVIDER=openrouter and OPENROUTER_API_KEY to enable");
+  } else {
+    const d = rp.descriptor;
+    add(
+      "OpenAI-compatible provider",
+      "OK",
+      `generic OpenAI-compatible adapter present (base ${d.baseUrl})`,
+    );
+    add(
+      d.label.includes("OpenRouter") ? "OpenRouter proof provider" : "real model provider",
+      rp.ready ? "OK" : "NOT_CONFIGURED",
+      rp.ready
+        ? `${d.label} ready: model ${d.model} [PROOF_PROVIDER, ${d.sensitivity}] - not an approved production provider`
+        : `configured but ${d.apiKeyEnv} is unset; real-agent proof is BLOCKED_PROVIDER_UNAVAILABLE`,
+    );
+  }
+
   // Git availability (used for fixture repositories, not remote writes).
   try {
     const v = execFileSync("git", ["--version"], { encoding: "utf8" }).trim();

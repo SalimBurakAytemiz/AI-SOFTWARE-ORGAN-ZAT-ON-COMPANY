@@ -1,6 +1,8 @@
 import { Runtime } from "../runtime.ts";
 import { doctor } from "../core/doctor.ts";
 import { runProof } from "../proof/proof.ts";
+import { runSoftwareFactoryProof } from "../proof/software-factory.ts";
+import { RequestBudget } from "../proof/request-budget.ts";
 import { table, kv, heading, parseFlags } from "./format.ts";
 import { UsageError, RuntimeError } from "../core/errors.ts";
 import { HUMAN_FOUNDER } from "../approvals/approval-engine.ts";
@@ -32,8 +34,11 @@ Usage: ai-company <command> [args] [--json]
   approvals reject <id> [--note N]
   approvals resume <run-id>      Continue a run after its approval was decided
 
-  audit [--limit N]              Show recent audit events
-  proof                          Run the safe end-to-end proof workflow
+  audit [--limit N] [--task ID]  Show recent audit events (optionally one task)
+  proof                          Run the safe end-to-end (mock) proof workflow
+  proof software-factory [--real]  Real-agent Software Factory proof (mock by default)
+  proof real-agent               Alias for 'proof software-factory --real'
+  proof status                   Show the latest Software Factory proof run
 
 The Human Founder is the supreme authority. No critical action executes without an
 explicit 'approvals approve' by 'human-founder'.`;
@@ -160,7 +165,10 @@ async function dispatch(
 
     case "audit": {
       const limit = typeof flags.limit === "string" ? Number(flags.limit) : 40;
-      const events = rt.audit.list(1_000_000).slice(-limit);
+      const taskFilter = typeof flags.task === "string" ? flags.task : null;
+      let events = rt.audit.list(1_000_000);
+      if (taskFilter) events = events.filter((e) => e.task === taskFilter);
+      events = events.slice(-limit);
       out(events, () =>
         console.log(
           table(
@@ -178,27 +186,8 @@ async function dispatch(
       return 0;
     }
 
-    case "proof": {
-      const result = await runProof(rt);
-      out(result, () => {
-        console.log(heading("Runtime proof workflow"));
-        console.log(kv([
-          ["task", result.task_id],
-          ["workflow", result.workflow_id],
-          ["steps executed", result.executions.length],
-          ["run status", result.run_status],
-          ["project state", result.project_state],
-          ["stopped because", result.stopped_because],
-          ["pending approval", result.approval_id ?? "-"],
-        ]));
-        console.log("\nchain:");
-        for (const e of result.executions) {
-          console.log(`  ${e.step_id.padEnd(20)} ${e.agent_id.padEnd(26)} tier=${e.model_tier} -> ${e.outcome}`);
-        }
-        console.log(`\n${result.assertion}`);
-      });
-      return result.ok ? 0 : 1;
-    }
+    case "proof":
+      return proofCmd(rt, sub, flags, json);
 
     default:
       throw new UsageError(`unknown command '${command}'. Run 'ai-company help'.`);
@@ -484,6 +473,132 @@ async function approvalsCmd(
       throw new UsageError("approvals list | show <id> | approve <id> | reject <id> | resume <run-id>");
   }
 }
+
+async function proofCmd(
+  rt: Runtime,
+  sub: string | undefined,
+  flags: Record<string, string | boolean>,
+  json: boolean,
+): Promise<number> {
+  // Legacy V1.0 mock proof.
+  if (!sub) {
+    const result = await runProof(rt);
+    if (json) console.log(JSON.stringify(result, null, 2));
+    else {
+      console.log(heading("Runtime proof workflow (mock)"));
+      console.log(kv([
+        ["task", result.task_id],
+        ["workflow", result.workflow_id],
+        ["steps executed", result.executions.length],
+        ["run status", result.run_status],
+        ["project state", result.project_state],
+        ["stopped because", result.stopped_because],
+        ["pending approval", result.approval_id ?? "-"],
+      ]));
+      for (const e of result.executions) {
+        console.log(`  ${e.step_id.padEnd(20)} ${e.agent_id.padEnd(26)} tier=${e.model_tier} -> ${e.outcome}`);
+      }
+      console.log(`\n${result.assertion}`);
+    }
+    return result.ok ? 0 : 1;
+  }
+
+  if (sub === "status") {
+    const tasks = rt.orchestrator.tasks.list().filter((t) => t.project === "runtime-proof-v1.1");
+    const latest = tasks.at(-1);
+    if (!latest) {
+      console.log("no Software Factory proof run found. Try: ai-company proof software-factory");
+      return 0;
+    }
+    const run = rt.store.getRunByTask(latest.id);
+    const pending = rt.approvals.list("PENDING").filter((a) => a.task_id === latest.id);
+    const audit = rt.audit.list(1_000_000).filter((e) => e.task === latest.id);
+    const realCalls = audit.filter((e) => e.action.startsWith("real_model_call:"));
+    const payload = { task: latest, run, pending_approvals: pending, real_requests: realCalls.length };
+    if (json) console.log(JSON.stringify(payload, null, 2));
+    else {
+      console.log(heading(`Software Factory proof - task ${latest.id}`));
+      console.log(kv([
+        ["status", latest.status],
+        ["workflow", latest.workflow_id ?? "-"],
+        ["run status", run?.status ?? "-"],
+        ["project state", run?.project_state ?? "-"],
+        ["real model requests", realCalls.length],
+        ["pending approval", pending[0]?.id ?? "-"],
+      ]));
+      if (run) for (const h of run.history) console.log(`  ${h.step_id.padEnd(20)} ${h.owner.padEnd(26)} ${h.result}`);
+    }
+    return 0;
+  }
+
+  const real = sub === "real-agent" || flags.real === true;
+  if (sub !== "software-factory" && sub !== "real-agent") {
+    throw new UsageError("proof [software-factory [--real] | real-agent | status]");
+  }
+
+  const mode: "REAL" | "MOCK" = real ? "REAL" : "MOCK";
+  if (real && !rt.realProvider.ready) {
+    const msg = `REAL PROOF BLOCKED: ${rt.realProvider.reason}`;
+    if (json) console.log(JSON.stringify({ blocked: true, mode, reason: rt.realProvider.reason }, null, 2));
+    else {
+      console.log(heading("AI SOFTWARE COMPANY - Real Agent Proof"));
+      console.log(msg);
+      console.log("\nConfigure a provider credential securely, then re-run:");
+      console.log("  export OPENROUTER_API_KEY=...        # never commit this");
+      console.log("  ai-company doctor");
+      console.log("  ai-company proof real-agent");
+    }
+    return 1;
+  }
+
+  const result = await runSoftwareFactoryProof(rt, {
+    mode,
+    descriptor: real ? rt.realProvider.descriptor ?? undefined : undefined,
+    budget: new RequestBudget(),
+  });
+
+  if (json) {
+    console.log(JSON.stringify(result, null, 2));
+    return result.ok && !result.blocked ? 0 : 1;
+  }
+
+  console.log(heading("AI SOFTWARE COMPANY"));
+  console.log(`\nTask:\n  ${PROOF_TITLE}`);
+  console.log(`\nProvider:\n  ${result.provider?.label ?? "-"}` +
+    (result.provider?.model ? ` (model ${result.provider.model})` : ""));
+  if (result.blocked) {
+    console.log(`\nSTATUS: BLOCKED\n  ${result.blockReason}`);
+    return 1;
+  }
+  console.log(`\nWorkflow:\n`);
+  for (const s of result.stages) {
+    const label = `${s.role}`.padEnd(30);
+    const kind = s.modelBacked ? (s.real ? "real-model" : "mock-model") : "auxiliary";
+    const flagsStr = [
+      kind,
+      s.testEvidence ? `tests ${s.testEvidence.passed}p/${s.testEvidence.failed}f` : "",
+      s.toolCalls && s.toolCalls.some((t) => t.executed) ? "tools✓" : "",
+    ].filter(Boolean).join(" ");
+    console.log(`  ${label} ${s.outcome.padEnd(7)} ${flagsStr}`);
+  }
+  console.log(`\nPRODUCTION:\n  ${result.humanApprovalStatus === "HUMAN_APPROVAL_REQUIRED" ? "HUMAN APPROVAL REQUIRED" : "NOT REACHED"}`);
+  console.log(kv([
+    ["mode", result.mode],
+    ["real requests", result.realRequestCount],
+    ["request budget", result.budget ? `${result.budget.used}/${result.budget.ceiling} (target ${result.budget.target})` : "-"],
+    ["token usage", `${result.tokenUsage.input_tokens ?? "?"} in / ${result.tokenUsage.output_tokens ?? "?"} out`],
+    ["cost", `$${result.cost.known_usd} / ${result.cost.note}`],
+    ["real model(s)", result.realModelsUsed.join(", ") || "-"],
+    ["pending approval", result.approval_id ?? "-"],
+    ["artifacts", result.artifactsDir ?? "-"],
+    ["workspace", result.workspaceDir ?? "-"],
+  ]));
+  console.log(`\n${result.assertion}`);
+  console.log("\nDetailed records: ai-company audit --task " + result.task_id);
+  return result.ok ? 0 : 1;
+}
+
+const PROOF_TITLE = "Add a GET /health endpoint to the demo service";
 
 function statusIcon(status: string): string {
   return (

@@ -100,16 +100,31 @@ runtime. See [`tools/registry.yml`](tools/registry.yml),
 
 ## 9. Current project state
 
-**Agent Runtime V1.0** is built, tested (61 runtime tests + 85 organization tests,
-all green, offline, no API keys), documented, and — after Human Founder final
-approval and green CI on PR #1 — **merged into `main`**. `project-state/current.yml`
-records the approval (`status: PASS`, `human_approval.granted: true`). The runtime is
-source-complete and accepted; it is **not production-deployed**. See
-[`docs/agent-runtime.md`](docs/agent-runtime.md). That approval was scoped to
-accepting the runtime into `main` only — it does **not** authorize deploying
-anything, onboarding paid model providers, a production cloud, real customer data,
-financial transactions, or starting Cleaning Commerce / a Commerce AI Workforce, and
-it does **not** weaken any future critical-action approval requirement.
+**Agent Runtime V1.0** is built, documented, and — after Human Founder final
+approval and green CI on PR #1 — **merged into `main`**. That approval was scoped to
+accepting the runtime into `main` only.
+
+**Runtime V1.1 — Real Agent Execution + Software Factory Proof** is built on branch
+`feat/real-agent-execution-v1.1` (not pushed, not merged). It *extends* the existing
+runtime (no new agent framework): a generic OpenAI-compatible model provider,
+OpenRouter as the first `PROOF_PROVIDER` (`NON_SENSITIVE_PROOF_ONLY`), a reusable
+prompt/context assembler, a validated `AgentExecutionResult` contract
+(malformed → bounded retry → BLOCK), a `RealAgentRunner` that routes model tool-call
+requests through the Capability Gateway, a disposable proof workspace with
+default-deny `workspace.read/list/write/patch/exec`, a real-request budget
+(target ≤ 20, ceiling 30), a proof-provider privacy guard, and a Software Factory
+proof that drives `feature-development` with real agents to `HUMAN_APPROVAL_REQUIRED`.
+103 runtime tests + 85 organization tests pass offline; the full real-agent pipeline
+is proven against a local OpenAI-compatible fake server. **`project-state/current.yml`
+is `status: BLOCKED`**: the one required run against a *real* provider is
+`BLOCKED_PROVIDER_UNAVAILABLE` (no `OPENROUTER_API_KEY`). V1.1 is **not** complete,
+**not** merged, and **not** approved. See
+[`docs/real-agent-execution.md`](docs/real-agent-execution.md).
+
+Neither approval authorizes deploying anything, onboarding a *paid* model provider,
+a production cloud, real customer data, financial transactions, or starting Cleaning
+Commerce / a Commerce AI Workforce, and neither weakens any critical-action approval
+requirement.
 
 ## 10. Testing requirements
 
@@ -118,10 +133,16 @@ Both suites must pass, and CI runs both on every PR:
 - `python3 tests/run_all.py` — Organization V1.0: validates every YAML/JSON against
   its schema and asserts the organizational-security invariants (no agent can bypass
   Human Founder approval). See [`docs/testing.md`](docs/testing.md).
-- `npm --prefix runtime run check` — Agent Runtime V1.0: typecheck + 58 tests
+- `npm --prefix runtime run check` — Agent Runtime: typecheck + 103 tests
   (registry, policy, gateway, approval, workflow, model routing, persistence/resume,
-  audit, cost, global pause, security-policy, critical-approval, proof, CLI). Runs
-  offline with no API keys. See [`docs/agent-runtime.md`](docs/agent-runtime.md).
+  audit, cost, global pause, security-policy, critical-approval, proof, CLI, plus
+  V1.1: OpenAI-compatible provider, missing-key/timeout/429/5xx/malformed handling,
+  structured-result validation, tool-call adjudication, path traversal, unauthorized
+  write, arbitrary-shell rejection, request-budget ceiling, context assembly, agent
+  handoff, review independence, real-vs-mock identification, proof-provider privacy,
+  Human-Approval stop). Runs offline with no API keys. See
+  [`docs/agent-runtime.md`](docs/agent-runtime.md) and
+  [`docs/real-agent-execution.md`](docs/real-agent-execution.md).
 
 Never weaken either suite. The 15 critical actions reserved to the Human Founder are
 enforced in both.
@@ -141,7 +162,10 @@ Cheapest adequate tier. Per-agent budgets with auto-pause on breach. Bounded ret
 
 ## 13. Prohibited in this phase
 
-Agent Runtime V1.0 is built (`runtime/`). Still **do not build**: Cleaning Commerce,
+Agent Runtime V1.0 is built and merged; Runtime V1.1 real agent execution is built
+behind configuration (real model calls only via the explicit `proof real-agent`
+path; OpenRouter is a `PROOF_PROVIDER`, never auto-selected, no paid provider).
+Still **do not build**: Cleaning Commerce,
 any commerce frontend/backend, Vendure/Medusa/Saleor, a control tower, CRM/ERP,
 marketing/ops agents, n8n workflows, production cloud infra, mobile apps, payment
 integration, or any real production deployment. Do not push/merge/deploy the runtime,
