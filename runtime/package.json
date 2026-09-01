@@ -1,0 +1,29 @@
+{
+  "name": "ai-software-company-runtime",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "AI Software Company Agent Runtime V1.0 - executes the Organization V1.0 configuration under Human Founder authority.",
+  "engines": {
+    "node": ">=22.6.0"
+  },
+  "bin": {
+    "ai-company": "bin/ai-company.js"
+  },
+  "scripts": {
+    "start": "node bin/ai-company.js",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test --test-reporter=spec \"test/**/*.test.ts\"",
+    "check": "npm run typecheck && npm test",
+    "doctor": "node bin/ai-company.js doctor"
+  },
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "yaml": "^2.5.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "typescript": "^5.6.3"
+  }
+}

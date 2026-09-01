@@ -1,50 +1,87 @@
 # Current project state. Validates against ../schemas/project-state.schema.json.
 project: AI Software Company
-version: Organization V1.0
-scope: organization-governance-foundation
+version: Agent Runtime V1.0
+scope: agent-runtime-executing-organization-v1
 state: HUMAN_APPROVAL_REQUIRED
-status: APPROVAL_REQUIRED
-updated: "2026-08-31T00:00:00Z"
+status: PASS
+updated: "2026-09-01T01:30:00Z"
 owner: engineering-director
 summary: >
-  The organizational and governance foundation is complete: constitution, 18-agent
-  workforce, 22 skills, tool + capability registry, model tiers/routing/risk policy,
-  9 gated workflows, 14 policies, 8 JSON schemas, research dossier, documentation,
-  and a validation + organizational-security test suite. No agent runtime and no
-  product were built (out of scope). Awaiting Human Founder review before the next
-  phase (AI Software Company Agent Runtime).
+  Organization V1.0 remains the source of truth and its 85-test suite still passes.
+  On top of it, the AI Software Company Agent Runtime V1.0 is now built: a
+  TypeScript-first runtime (Node.js, no build step) that loads and re-validates the
+  18 agents, 22 skills, 47 capabilities, 9 workflows and 14 policies, then
+  coordinates them for a Human Founder task. It provides an agent/skill/tool/workflow
+  registry loader, a default-deny capability gateway, a layered Human Approval Engine
+  (only 'human-founder' decides; no self-approval), a gated workflow engine with
+  durable checkpoint/resume on node:sqlite, an append-only schema-validated
+  secret-redacted audit ledger, a provider-independent model abstraction with a
+  deterministic MockModelProvider (no paid API key needed), a risk-based model
+  router, honest cost accounting, an OpenTelemetry-shaped span buffer, a local
+  sandbox, a global pause/kill switch, an ai-company CLI, and one safe end-to-end
+  proof workflow that stops at HUMAN_APPROVAL_REQUIRED. 61 runtime tests plus the 85
+  organization tests pass (typecheck clean; CI green including the gitleaks secret
+  scan). The Human Founder approval gate for Agent Runtime V1.0 has PASSED: the
+  Human Founder granted final approval to accept Agent Runtime V1.0 into main via
+  PR #1 (feat/agent-runtime-v1). The runtime is source-complete and accepted; it is
+  NOT production-deployed - no real money, no real customer data, no production
+  writes. Cleaning Commerce is still not implemented.
 human_approval:
   required: true
-  granted: false
-  granted_by: null
-  granted_at: null
+  granted: true
+  granted_by: human-founder
+  granted_at: "2026-09-01T01:30:00Z"
   notes: >
-    The Human Founder reviews this repository in full. On approval, the single
-    authorized next phase is the AI Software Company Agent Runtime. Do not begin
-    Cleaning Commerce or install business systems.
+    Final Human Founder approval granted for AI Software Company Agent Runtime V1.0
+    after CI on PR #1 (feat/agent-runtime-v1 -> main) passed both the validate job
+    (85 organization tests + gitleaks secret scan) and the runtime job (typecheck +
+    61 tests). This approval applies ONLY to accepting Agent Runtime V1.0 into main.
+    It does NOT weaken any future Human Founder approval requirement: every critical
+    action (production deployment, merge to protected main of future work, production
+    DB migration/destructive op/data deletion, production infra change, secret
+    create/rotate/revoke, payment-config change, real financial transaction/refund,
+    ad-budget change, supplier payment, bulk customer messaging, customer-data
+    export, access-control escalation, critical security architecture change) still
+    requires a separate, explicit, per-instance Human Founder approval. It also does
+    NOT authorize: onboarding paid model providers, a production cloud, any
+    deployment, real customer data, financial transactions, or starting Cleaning
+    Commerce / the Commerce AI Workforce. Those remain open decisions.
 open_items:
-  - Human Founder to choose the runtime language (TypeScript vs Python) - drives the
-    orchestration framework selection (research/runtime-comparison.md).
-  - Human Founder to confirm any cloud commitment (affects secrets proxy, sandboxes,
-    IaC targets).
-  - Human Founder to onboard model providers and set per-agent budget caps
-    (models/routing.yml budgets are PLANNED until then).
-  - Decide whether a dedicated compliance/privacy role is added before Cleaning
-    Commerce handles real customer PII.
+  - Human Founder to onboard model providers and set per-agent / per-task budget caps
+    (models/routing.yml budgets remain NOT_CONFIGURED until then).
+  - Human Founder to confirm the production cloud commitment (drives the PostgreSQL
+    StateStore, the secrets proxy, and sandbox isolation choices).
+  - Assign compliance / privacy responsibility (dedicated role or explicit mandate to
+    the Application Security Engineer) before any project handles real customer PII.
+  - Evaluate Mastra integration behind the AgentRunner interface when real multi-agent
+    LLM execution enters scope (Runtime V1.1).
 history:
-  - state: IDEA
-    status: RUNNING
-    at: "2026-08-31"
-    note: One-shot build of the organization foundation began.
-  - state: BUILD
-    status: RUNNING
-    at: "2026-08-31"
-    note: Research, agents, skills, tools, models, workflows, policies, schemas, docs, tests authored.
-  - state: TEST
-    status: PASS
-    at: "2026-08-31"
-    note: Validation and organizational-security suite green.
   - state: HUMAN_APPROVAL_REQUIRED
     status: APPROVAL_REQUIRED
     at: "2026-08-31"
-    note: Repository complete and commit-ready; awaiting Human Founder review.
+    note: Organization V1.0 foundation complete and commit-ready.
+  - state: BUILD
+    status: RUNNING
+    at: "2026-09-01"
+    note: Agent Runtime V1.0 implemented on feat/agent-runtime-v1 (ADR-0014).
+  - state: TEST
+    status: PASS
+    at: "2026-09-01"
+    note: 58 runtime tests + 85 organization tests green; typecheck clean; offline, no API keys.
+  - state: HUMAN_APPROVAL_REQUIRED
+    status: APPROVAL_REQUIRED
+    at: "2026-09-01"
+    note: Agent Runtime V1.0 complete, documented, locally committed; awaiting Human Founder review.
+  - state: REVIEW
+    status: PASS
+    at: "2026-09-01"
+    note: >
+      PR #1 opened (feat/agent-runtime-v1 -> main); CI gitleaks PR configuration
+      fixed (commits 2ec6064, 880134b); validate + runtime checks green.
+  - state: HUMAN_APPROVAL_REQUIRED
+    status: PASS
+    at: "2026-09-01"
+    note: >
+      Final Human Founder approval granted to accept Agent Runtime V1.0 into main
+      via PR #1. Approval scoped to this acceptance only; future critical actions
+      still require explicit per-instance Human Founder approval.

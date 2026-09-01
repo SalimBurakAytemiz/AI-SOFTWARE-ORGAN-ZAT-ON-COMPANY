@@ -18,6 +18,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4  # pin to a commit SHA in production per policies/security.yml
+        with:
+          # Full history so gitleaks can scan the PR commit range (<base>^..<head>).
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5  # pin to a commit SHA in production
@@ -34,4 +37,27 @@ jobs:
         uses: gitleaks/gitleaks-action@v2  # pin to a commit SHA in production
         continue-on-error: false
         env:
+          # The GitHub-provided token (scoped by the workflow `permissions:` block
+          # above - contents: read). gitleaks-action@v2 requires it to read the PR
+          # diff when scanning pull_request events.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_ENABLE_UPLOAD_ARTIFACT: "false"
+
+  runtime:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4  # pin to a commit SHA in production per policies/security.yml
+
+      - name: Set up Node
+        uses: actions/setup-node@v4  # pin to a commit SHA in production
+        with:
+          node-version: "22"
+
+      - name: Install runtime dependencies
+        run: npm --prefix runtime ci || npm --prefix runtime install
+
+      - name: Typecheck and test the Agent Runtime (offline, no API keys)
+        run: npm --prefix runtime run check
+        env:
+          AI_COMPANY_DATA_DIR: ${{ runner.temp }}/ai-company-data

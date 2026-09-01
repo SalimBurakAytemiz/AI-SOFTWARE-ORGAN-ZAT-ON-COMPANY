@@ -121,3 +121,26 @@ retry, error, success, approval, deployment, incident in OTel terms now. Choose 
 backend (Langfuse or otherwise) when there is traffic.
 **Why:** Art. 13; `research/opentelemetry.md`, `research/langfuse.md`.
 **Consequences:** The runtime emits only OTLP; no vendor SDK as the primary path.
+
+## ADR-014 — Agent Runtime V1.0 is TypeScript on a thin custom orchestrator; no framework yet
+
+**Decision:** Build Agent Runtime V1.0 in TypeScript, executed natively by Node.js
+22.6+ (type stripping, no build step), with three runtime dependencies (`yaml`,
+`ajv`, `ajv-formats`), `node:sqlite` for durable state, and `node:test` for tests.
+The orchestrator, workflow engine, policy engine, capability gateway, approval
+engine, audit ledger, model-provider abstraction and cost accounting are all
+first-party code behind narrow interfaces. **Mastra is the designated framework for
+V1.1+**, integrated later behind the `AgentRunner` / `WorkflowEngine` interfaces; it
+stays `DEFERRED` in the tool registry until real multi-agent LLM execution is in
+scope. The full ADR (options, security review, follow-ups) is
+`../architecture/adr-agent-runtime.md`.
+**Why:** The engineering roster and future product are TypeScript; ADR-009 already
+concluded the authz/approval/audit/budget layer must be built ourselves regardless of
+framework, so building it first behind interfaces is correct sequencing, not
+premature. The build spec mandates minimal dependencies, no framework lock-in, and an
+acceptance suite that runs with no paid API key.
+**Consequences:** We maintain our own workflow state-machine executor and checkpoint
+format (bounded — the workflows are fixed and simple). No real model calls in V1
+(`MockModelProvider` is the default; the LiteLLM adapter is `SUPPORTED_NOT_CONFIGURED`).
+Each external system (Mastra, LiteLLM, E2B/Daytona, Langfuse/OTLP, OPA, PostgreSQL)
+has a named interface and a mock/stub adapter in `runtime/src/`.
