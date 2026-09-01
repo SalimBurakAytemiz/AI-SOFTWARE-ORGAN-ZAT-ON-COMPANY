@@ -1,0 +1,11 @@
+{
+  "name": "demo-service",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Disposable fixture service for the Agent Runtime proof workflow. Not a product.",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test test/"
+  }
+}

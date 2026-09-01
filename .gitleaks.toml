@@ -1,0 +1,20 @@
+# gitleaks configuration for the AI Software Company repository.
+# Extends the built-in default ruleset; adds narrow allowlist entries for files
+# that legitimately contain secret-shaped *patterns* (regex definitions, redaction
+# fixtures) but no real secret material.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Secret-shaped patterns that are not secrets"
+paths = [
+  # Redaction engine: contains the regexes used to FIND and mask secrets.
+  '''runtime/src/core/redaction\.ts''',
+  # Redaction test: uses synthetic all-x tokens to exercise those regexes.
+  '''runtime/test/audit-and-cost\.test\.ts''',
+]
+regexTarget = "line"
+regexes = [
+  '''x{16,}''',
+]

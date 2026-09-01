@@ -35,3 +35,22 @@ jobs:
         continue-on-error: false
         env:
           GITLEAKS_ENABLE_UPLOAD_ARTIFACT: "false"
+
+  runtime:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4  # pin to a commit SHA in production per policies/security.yml
+
+      - name: Set up Node
+        uses: actions/setup-node@v4  # pin to a commit SHA in production
+        with:
+          node-version: "22"
+
+      - name: Install runtime dependencies
+        run: npm --prefix runtime ci || npm --prefix runtime install
+
+      - name: Typecheck and test the Agent Runtime (offline, no API keys)
+        run: npm --prefix runtime run check
+        env:
+          AI_COMPANY_DATA_DIR: ${{ runner.temp }}/ai-company-data

@@ -13,9 +13,15 @@ constitution, agent workforce, governance, engineering lifecycle, permissions, t
 model policy, quality gates, security rules, and human-approval system of an
 AI-powered software company controlled by **one Human Founder**.
 
-It is **governance and configuration, not a running system.** A future *Agent
-Runtime* (not built here) will execute this configuration. The first future product
-will be a B2B + B2C **Cleaning Commerce** platform (not built here, not designed here).
+The `constitution/`, `agents/`, `skills/`, `tools/`, `models/`, `workflows/`,
+`policies/`, `schemas/` and `research/` directories are **governance and
+configuration**. The **`runtime/`** directory is the **AI Software Company Agent
+Runtime V1.0** — a TypeScript program that *executes* that configuration (loads the
+agents, routes models, runs the gated workflows, enforces the policies, stops for
+Human Founder approval). See [`docs/agent-runtime.md`](docs/agent-runtime.md) and
+[`architecture/adr-agent-runtime.md`](architecture/adr-agent-runtime.md). The first
+future product will be a B2B + B2C **Cleaning Commerce** platform (not built here, not
+designed here, still `NOT_IMPLEMENTED`).
 
 ## 2. Human Founder authority (non-negotiable)
 
@@ -47,6 +53,7 @@ stop and request Human Founder approval. Enforced by
 | `architecture/` | ADR template; product ADRs will land here |
 | `docs/` | Human-facing documentation (see `docs/beginner-guide.md` first) |
 | `tests/` | Validation + organizational-security suite (pure Python) |
+| `runtime/` | **Agent Runtime V1.0** — TypeScript (Node.js, no build step). Registry loader, default-deny capability gateway, Human Approval Engine, gated workflow engine with durable resume (`node:sqlite`), append-only audit ledger, provider-independent models (deterministic mock; no API key), model router, cost accounting, telemetry, local sandbox, global pause, `ai-company` CLI, one safe proof workflow, 58 tests. See `runtime/README.md`. |
 | `project-state/current.yml` | Where the project is in its state machine |
 | `future-projects/` | Cleaning Commerce placeholder only |
 | `.github/` | CI (`validate.yml`), PR template, CODEOWNERS |
@@ -93,16 +100,28 @@ runtime. See [`tools/registry.yml`](tools/registry.yml),
 
 ## 9. Current project state
 
-`HUMAN_APPROVAL_REQUIRED` — the organization foundation is complete and awaits Human
-Founder review. See [`project-state/current.yml`](project-state/current.yml). Do
-**not** start the Agent Runtime or Cleaning Commerce without Human Founder
+`HUMAN_APPROVAL_REQUIRED` — **Agent Runtime V1.0** is built, tested (58 runtime tests
++ 85 organization tests, all green, offline, no API keys), documented, and committed
+locally on `feat/agent-runtime-v1` (not pushed, not merged, not deployed). It awaits
+Human Founder review. See [`project-state/current.yml`](project-state/current.yml)
+and [`docs/agent-runtime.md`](docs/agent-runtime.md). Do **not** push, merge, deploy,
+onboard real model providers, or start Cleaning Commerce without Human Founder
 authorization.
 
 ## 10. Testing requirements
 
-`python3 tests/run_all.py` must pass. It validates every YAML/JSON against its schema
-and asserts the organizational-security invariants (no agent can bypass Human Founder
-approval). CI runs it on every PR. See [`docs/testing.md`](docs/testing.md).
+Both suites must pass, and CI runs both on every PR:
+
+- `python3 tests/run_all.py` — Organization V1.0: validates every YAML/JSON against
+  its schema and asserts the organizational-security invariants (no agent can bypass
+  Human Founder approval). See [`docs/testing.md`](docs/testing.md).
+- `npm --prefix runtime run check` — Agent Runtime V1.0: typecheck + 58 tests
+  (registry, policy, gateway, approval, workflow, model routing, persistence/resume,
+  audit, cost, global pause, security-policy, critical-approval, proof, CLI). Runs
+  offline with no API keys. See [`docs/agent-runtime.md`](docs/agent-runtime.md).
+
+Never weaken either suite. The 15 critical actions reserved to the Human Founder are
+enforced in both.
 
 ## 11. Security requirements
 
@@ -119,11 +138,14 @@ Cheapest adequate tier. Per-agent budgets with auto-pause on breach. Bounded ret
 
 ## 13. Prohibited in this phase
 
-Do not build: the agent runtime, Cleaning Commerce, any commerce frontend/backend,
-Vendure/Medusa/Saleor, a control tower, CRM/ERP, marketing/ops agents, n8n workflows,
-production cloud infra, mobile apps, payment integration, or any real production
-deployment. Anything only planned must be labeled `PLANNED` / `RESEARCHED` /
-`DEFERRED` / `NOT_IMPLEMENTED`.
+Agent Runtime V1.0 is built (`runtime/`). Still **do not build**: Cleaning Commerce,
+any commerce frontend/backend, Vendure/Medusa/Saleor, a control tower, CRM/ERP,
+marketing/ops agents, n8n workflows, production cloud infra, mobile apps, payment
+integration, or any real production deployment. Do not push/merge/deploy the runtime,
+wire a real model provider, or use real credentials or customer data. Do not adopt
+Mastra or any agent framework as a dependency yet (ADR-0014 keeps it `DEFERRED`
+behind the `AgentRunner` interface). Anything only planned must be labeled `PLANNED` /
+`RESEARCHED` / `DEFERRED` / `NOT_IMPLEMENTED`.
 
 ## 14. Working conventions
 

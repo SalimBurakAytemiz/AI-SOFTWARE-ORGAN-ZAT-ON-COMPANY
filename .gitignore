@@ -3,3 +3,10 @@ __pycache__/
 .pytest_cache/
 .DS_Store
 node_modules/
+
+# Agent Runtime local state (never committed)
+runtime/.data/
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
