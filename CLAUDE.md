@@ -100,13 +100,16 @@ runtime. See [`tools/registry.yml`](tools/registry.yml),
 
 ## 9. Current project state
 
-`HUMAN_APPROVAL_REQUIRED` — **Agent Runtime V1.0** is built, tested (58 runtime tests
-+ 85 organization tests, all green, offline, no API keys), documented, and committed
-locally on `feat/agent-runtime-v1` (not pushed, not merged, not deployed). It awaits
-Human Founder review. See [`project-state/current.yml`](project-state/current.yml)
-and [`docs/agent-runtime.md`](docs/agent-runtime.md). Do **not** push, merge, deploy,
-onboard real model providers, or start Cleaning Commerce without Human Founder
-authorization.
+**Agent Runtime V1.0** is built, tested (61 runtime tests + 85 organization tests,
+all green, offline, no API keys), documented, and — after Human Founder final
+approval and green CI on PR #1 — **merged into `main`**. `project-state/current.yml`
+records the approval (`status: PASS`, `human_approval.granted: true`). The runtime is
+source-complete and accepted; it is **not production-deployed**. See
+[`docs/agent-runtime.md`](docs/agent-runtime.md). That approval was scoped to
+accepting the runtime into `main` only — it does **not** authorize deploying
+anything, onboarding paid model providers, a production cloud, real customer data,
+financial transactions, or starting Cleaning Commerce / a Commerce AI Workforce, and
+it does **not** weaken any future critical-action approval requirement.
 
 ## 10. Testing requirements
 

@@ -3,8 +3,8 @@ project: AI Software Company
 version: Agent Runtime V1.0
 scope: agent-runtime-executing-organization-v1
 state: HUMAN_APPROVAL_REQUIRED
-status: APPROVAL_REQUIRED
-updated: "2026-09-01T00:00:00Z"
+status: PASS
+updated: "2026-09-01T01:30:00Z"
 owner: engineering-director
 summary: >
   Organization V1.0 remains the source of truth and its 85-test suite still passes.
@@ -19,20 +19,33 @@ summary: >
   deterministic MockModelProvider (no paid API key needed), a risk-based model
   router, honest cost accounting, an OpenTelemetry-shaped span buffer, a local
   sandbox, a global pause/kill switch, an ai-company CLI, and one safe end-to-end
-  proof workflow that stops at HUMAN_APPROVAL_REQUIRED. 58 runtime tests plus the 85
-  organization tests pass. No runtime was production-deployed; no real money, no real
-  customer data, no production writes. Cleaning Commerce is still not implemented.
+  proof workflow that stops at HUMAN_APPROVAL_REQUIRED. 61 runtime tests plus the 85
+  organization tests pass (typecheck clean; CI green including the gitleaks secret
+  scan). The Human Founder approval gate for Agent Runtime V1.0 has PASSED: the
+  Human Founder granted final approval to accept Agent Runtime V1.0 into main via
+  PR #1 (feat/agent-runtime-v1). The runtime is source-complete and accepted; it is
+  NOT production-deployed - no real money, no real customer data, no production
+  writes. Cleaning Commerce is still not implemented.
 human_approval:
   required: true
-  granted: false
-  granted_by: null
-  granted_at: null
+  granted: true
+  granted_by: human-founder
+  granted_at: "2026-09-01T01:30:00Z"
   notes: >
-    The Human Founder reviews the Agent Runtime V1.0 on the feat/agent-runtime-v1
-    branch. It is a local commit only - not pushed, not merged, not deployed. On
-    approval, the next phase decisions are: onboard model providers and set budgets;
-    choose the production cloud and move state to PostgreSQL; assign compliance /
-    privacy ownership; and only then consider Cleaning Commerce (PROJECT 001).
+    Final Human Founder approval granted for AI Software Company Agent Runtime V1.0
+    after CI on PR #1 (feat/agent-runtime-v1 -> main) passed both the validate job
+    (85 organization tests + gitleaks secret scan) and the runtime job (typecheck +
+    61 tests). This approval applies ONLY to accepting Agent Runtime V1.0 into main.
+    It does NOT weaken any future Human Founder approval requirement: every critical
+    action (production deployment, merge to protected main of future work, production
+    DB migration/destructive op/data deletion, production infra change, secret
+    create/rotate/revoke, payment-config change, real financial transaction/refund,
+    ad-budget change, supplier payment, bulk customer messaging, customer-data
+    export, access-control escalation, critical security architecture change) still
+    requires a separate, explicit, per-instance Human Founder approval. It also does
+    NOT authorize: onboarding paid model providers, a production cloud, any
+    deployment, real customer data, financial transactions, or starting Cleaning
+    Commerce / the Commerce AI Workforce. Those remain open decisions.
 open_items:
   - Human Founder to onboard model providers and set per-agent / per-task budget caps
     (models/routing.yml budgets remain NOT_CONFIGURED until then).
@@ -59,3 +72,16 @@ history:
     status: APPROVAL_REQUIRED
     at: "2026-09-01"
     note: Agent Runtime V1.0 complete, documented, locally committed; awaiting Human Founder review.
+  - state: REVIEW
+    status: PASS
+    at: "2026-09-01"
+    note: >
+      PR #1 opened (feat/agent-runtime-v1 -> main); CI gitleaks PR configuration
+      fixed (commits 2ec6064, 880134b); validate + runtime checks green.
+  - state: HUMAN_APPROVAL_REQUIRED
+    status: PASS
+    at: "2026-09-01"
+    note: >
+      Final Human Founder approval granted to accept Agent Runtime V1.0 into main
+      via PR #1. Approval scoped to this acceptance only; future critical actions
+      still require explicit per-instance Human Founder approval.
