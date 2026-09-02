@@ -1,214 +1,100 @@
 # Current project state. Validates against ../schemas/project-state.schema.json.
 project: AI Software Company
-version: Real Agent Execution V1.1
-scope: real-agent-execution-and-software-factory-proof
+version: Project Factory V0.1
+scope: natural-language-project-intake-and-runtime-handoff
 state: HUMAN_APPROVAL_REQUIRED
 status: APPROVAL_REQUIRED
-updated: "2026-09-02T17:45:00Z"
+updated: "2026-09-02T19:30:00Z"
 owner: engineering-director
 summary: >
-  Organization V1.0 (85 tests) and Agent Runtime V1.0 (accepted into main via
-  PR #1) remain the source of truth and are unchanged. On top of them, Runtime
-  V1.1 - Real Agent Execution + Software Factory Proof - is built on branch
-  feat/real-agent-execution-v1.1. It EXTENDS the existing runtime (AgentRunner,
-  Orchestrator, WorkflowEngine, PolicyEngine, CapabilityGateway, ApprovalEngine,
-  StateStore, AuditLog, ModelProvider abstraction) without introducing any new
-  agent framework. New pieces: ONE generic OpenAI-compatible model provider
-  (baseUrl + apiKeyEnv + model + timeout + retry + headers + usage), an
-  environment-driven real-provider resolver with Groq Direct as the PREFERRED
-  proof provider (default; GROQ_API_KEY, openai/gpt-oss-120b) and OpenRouter as
-  the optional MANUAL fallback (never auto-added), and NVIDIA NIM
-  (nvidia/nemotron-3.5-lightning-30b-a3b, NVIDIA_API_KEY) as the FREE-FIRST
-  auto fallback engaged ONLY on a bounded Groq RATE_LIMIT_EXHAUSTED - the runner
-  preserves the workflow checkpoint, records a provider_transition audit event
-  (from_provider / to_provider / reason=RATE_LIMIT_EXHAUSTED / stage), switches
-  provider and retries ONLY the blocked stage with no completed stage / tool
-  write / artifact repeated; all PROOF_PROVIDER / NON_SENSITIVE_PROOF_ONLY, never
-  an approved production provider, no paid provider; a reusable prompt/context assembler with
-  acceptance-critical per-stage directives; a validated AgentExecutionResult
-  contract (malformed / truncated -> one bounded classified retry -> BLOCK,
-  never guessed) that is ALSO sent as a provider-native strict response_format
-  JSON Schema where supported; a RealAgentRunner routing model tool-call
-  requests through the Capability Gateway, with a bounded one-shot test-repair
-  pass on the implementation stage; a provider-agnostic rate-limit scheduler
-  (learns per-window request/token budget from Retry-After / x-ratelimit-*
-  headers, paces real calls sequentially, waits out 429 reset windows over
-  bounded cycles -> RATE_LIMIT_EXHAUSTED); a disposable proof workspace with
-  default-deny workspace.read/list/write/patch/exec (path jail + command
-  allow-list); a real-request budget (target <= 20, hard ceiling 30); a
-  per-stage context and output-token budget; an attributable PROOF_ONLY artifact
-  store under build/proof/<task>/; a proof-provider privacy guard that blocks
-  PII/payment/production-secret tasks; a Software Factory proof driving
-  feature-development with real agents for the 9 key roles, stopping at
-  HUMAN_APPROVAL_REQUIRED; doctor rows + doctor --probe for every provider; and
-  ai-company proof software-factory | real-agent | status plus audit --task.
-  223 runtime tests + 85 organization tests pass; typecheck clean; gitleaks clean;
-  offline. The full real-agent pipeline is proven end-to-end against local offline
-  OpenAI-compatible fake servers + a mocked Codex CLI (strict JSON-Schema output + the
-  json_schema -> json_object -> prompt-only self-heal cascade, bounded one-shot
-  test-repair, rate-limit pacing / 429 waits / RATE_LIMIT_EXHAUSTED, truncation
-  retry, provider HTTP/5xx/404, insufficient_quota -> PROVIDER_QUOTA_EXHAUSTED
-  (non-retryable, not a rate limit), doctor --probe, the Groq->NVIDIA free-first
-  fallback (transition audit, checkpoint resume, no duplicate stages / writes /
-  artifacts, NVIDIA-also-fails stays fail-safe, secret protection), the
-  2026-09-02 implementation-stage hardening (deterministic projectFacts()
-  authoritative context, first-class fileChanges channel replacing the
-  double-escaped args_json for code, inspect-first directives, requireTestChange
-  gate, evidence-driven repair, .npm diff-pollution fix, snapshot/restore on
-  fallback), and the PREMIUM implementation escalation (implementation stage only,
-  authorization-gated per run via AI_COMPANY_PREMIUM_IMPL_PROVIDER; two paths -
-  codex-cli (the local Codex CLI / ChatGPT login, no paid API; codex exec spawned
-  with stdin=/dev/null so it does not hang, its own process group SIGKILLed on
-  the deadline, classified CODEX_SUCCESS/TIMEOUT/AUTH_REQUIRED/APPROVAL_BLOCKED/
-  PROCESS_ERROR/NO_WORKSPACE_CHANGE, changed-file scope check, OPENAI_API_KEY
-  stripped, auth file never read) and openai (paid Chat Completions API); bounded
-  to one primary + one repair, never auto-engaged, no free fallback on failure,
-  the shared decideImplementationOutcome gates still authoritative, independent
-  review intact) - NO existing gate weakened.
-  The originally-confirmed real-provider blocker is FIXED and VERIFIED: Groq
-  strict Structured Output rejected the previous MODEL_AUTHORED_RESULT_JSON_SCHEMA
-  (unconstrained tool-arg object, type unions, missing additionalProperties:false
-  / required), so business_analysis returned MALFORMED. The schema is now a Groq
-  strict subset (args as a bounded args_json string, single-string types,
-  every object closed and fully required) and across repeated real Groq runs
-  business_analysis, spec_review, architecture and plan pass with native
-  structured_output_mode = json_schema.
-  COMPLETE: the one required real run to HUMAN_APPROVAL_REQUIRED has now
-  finished. Runs 1-6 each stopped before the approval gate (free-model code
-  quality, then the Groq free-tier per-day token cap, then the NVIDIA Nemotron
-  JSON-reliability flake - none a runtime defect); run 7 (2026-09-02 11:17)
-  drove the whole chain on real providers with the Codex CLI premium implementer
-  and got all the way through code_review, then the qa stage's real model call
-  hit Groq HTTP 400 `tool_use_failed` ("Tool choice is none, but model called a
-  tool") and the GitHub Codespace was stopped before the failure was handled -
-  leaving run run_254a2876-f20e-4d85-b8c6-4e8248d0fd2f persisted RUNNING at qa
-  with implementation + code_review already PASS.
-  Root cause of the qa 400: the qa StagePlan advertised workspace.exec to the
-  model AND the shared stageDirectives told it to "Run the test script via
-  workspace.exec", so the tool-native Groq gpt-oss-120b emitted a native
-  function call while the OpenAI-compatible provider (by design) sends no `tools`
-  array - which Groq rejects. The QA gate never needed that: the runner runs
-  `npm test` itself and gates on the real exit code + counts
-  (decideImplementationOutcome). Minimum provider-compat fix (no gate weakened,
-  no schema/validation change, no redesign): PLANS.qa and PLANS.security now
-  carry `allowedRuntimeTools: []` (the diff is already in context via
-  includeWorkspaceDiff), and stageDirectives only tells the model to run tests
-  via workspace.exec when that tool is actually offered. A small `resume`
-  capability was added to the Software Factory proof driver
-  (RunOptions.resume + `ai-company proof resume`) so the workflow engine's own
-  persisted run can continue from its current step without re-running any
-  completed stage or the implementation; ProofWorkspace now re-attaches to a
-  workspace it seeded in a previous run instead of trying to create a second
-  seed commit; RequestBudget accepts a `used` seed so the shared ceiling keeps
-  counting across the interruption. +2 deterministic tests
-  (software-factory-resume.test.ts): interrupted-at-qa run resumes to
-  HUMAN_APPROVAL with no completed stage / implementation re-run and the shared
-  budget preserved; resume refuses a run that has not passed implementation +
-  code_review. 225 runtime + 85 organization tests green; typecheck clean;
-  gitleaks clean.
-  Run 8 (2026-09-02 17:04) resumed run_254a2876 from the pre:qa checkpoint on
-  the live free chain: qa, security and release_review all PASSED on Groq
-  gpt-oss-120b (three real requests, no NVIDIA fallback needed, no provider
-  error), implementation and code_review were NOT re-executed (reused from the
-  persisted history / committed workspace), and the run STOPPED at
-  HUMAN_APPROVAL_REQUIRED with a pending approval
-  (apr_03ac3263-7dc5-49d9-b978-d8b6cd57bd26, requested_action
-  production_deployment, risk 5). Machine evidence in the approval packet:
-  `npm test` exit 0 / 1 passing / 0 failing; deterministic security checks
-  no-secret-in-diff=PASS, no-new-runtime-dependency=PASS,
-  no-dangerous-api-introduced=PASS; estimated cost $0. Every quality gate
-  remained authoritative and unweakened; the independent reviewer
-  (senior-code-reviewer) was never the implementer (backend-engineer via Codex
-  CLI). Proof evidence:
-  build/proof/task_52d90ea5-dc78-4cfc-8162-d1216895b974/ and
-  `ai-company audit --task task_52d90ea5-dc78-4cfc-8162-d1216895b974`.
-  Per the build spec the milestone is now pushed on feat/real-agent-execution-v1.1
-  with a PR into main for CI; it is NOT merged and NOT approved - accepting
-  Runtime V1.1 into main is a separate, explicit Human Founder decision. No
-  production deployment, no customer data, no financial operations, no Cleaning
-  Commerce; the pending approval is a PROOF artifact, not an authorization to
-  deploy anything.
+  Organization V1.0 (85 tests), Agent Runtime V1.0 and Runtime V1.1 - Real Agent
+  Execution + Software Factory Proof - are all merged into main (PR #1 and PR #2,
+  merge commit e8c012b) and remain the source of truth, unchanged. On top of them,
+  Project Factory V0.1 is built on branch feat/project-factory-v0.1 (not yet
+  merged). It lets the Human Founder describe a project in natural language and
+  have AI Company create a structured, persistent project workspace and a
+  validated, immutable Runtime handoff package - it does NOT build the
+  application. New runtime module runtime/src/project-factory/ (no new agent
+  framework, no Runtime V1.1 architecture change): a deterministic natural-language
+  intake (labelled fields and/or prose -> the structured project schema, every
+  inference recorded; no model call, no paid API, Codex not required); an ajv-
+  validated PROJECT_SCHEMA and HANDOFF_PACKAGE_SCHEMA (kept in the runtime, not the
+  governance-locked repo schemas/ dir); a filesystem ProjectStore persisting
+  projects/<slug>/ (project.yml + product/ brief, requirements, business-rules,
+  user-stories, acceptance-criteria + plans + decisions + state + artifacts);
+  a linear forward-only lifecycle DRAFT -> INTAKE -> DISCOVERY -> SPEC_READY ->
+  PLAN_READY -> READY_FOR_BUILD (BUILD is never entered automatically); a
+  per-project AI budget policy (free_first true and premium_authorization_required
+  true are non-negotiable invariants; premium disabled by default); an immutable,
+  SHA-256 checksum-protected Runtime handoff package (verifyHandoffPackage rejects
+  a tampered checksum, weakened governance, or a missing build authorization); and
+  a Human Founder build gate - ai-company project authorize-build <slug> (only
+  'human-founder', RISK 5, approval-required audit event) flips the gate and
+  regenerates the authorized package but starts no build. CLI: ai-company new
+  <slug>, ai-company project list | status | show <slug> | advance <slug> |
+  verify <slug> | authorize-build <slug>; doctor gains a 'project factory' row.
+  Every project inherits and cannot weaken Runtime V1.1 governance (Human Founder
+  approval, kill switch, audit, capability gates, secret protection, no automatic
+  production deployment / financial actions / destructive production operations).
+  Creating a project has NO workflow-run, task, approval, cost, provider, payment
+  or deployment side effect. +12 deterministic Project Factory tests (creation,
+  invalid schema, duplicate slug, persistence, lifecycle transitions, listing,
+  status, Human Founder build gate, budget policy, handoff package + checksum +
+  governance + tamper detection, no secret leakage, no side effects). 237 runtime
+  tests + 85 organization tests pass; typecheck clean; gitleaks clean; fully
+  offline. Acceptance sample: projects/project-factory-proof/ (a GET /health API
+  service) - a valid workspace and a schema-valid, checksum-verified handoff
+  package were produced; its build is NOT authorized and no Software Factory build
+  was run. Project Factory V0.1 awaits Human Founder review and merge of its PR;
+  Cleaning Commerce remains NOT_IMPLEMENTED and is not started.
 human_approval:
   required: true
   granted: false
   granted_by: null
   granted_at: null
   notes: >
-    PROOF ARTIFACT APPROVAL (recorded 2026-09-02T17:42:45Z): the Human Founder
-    APPROVED the pending proof approval request
-    apr_03ac3263-7dc5-49d9-b978-d8b6cd57bd26 (run
-    run_254a2876-f20e-4d85-b8c6-4e8248d0fd2f, state APPROVED, decided_by
-    human-founder). Scope is strict: it applies ONLY to the existing disposable
-    Software Factory proof artifact (the GET /health change in the fixture
-    demo-service workspace). It does NOT authorize real production deployment,
-    customer-data access, financial actions, destructive database operations, or
-    external production release. The workflow run is deliberately HELD at the
-    human_approval step - NOT advanced into the PRODUCTION stage. `granted`
-    stays false: PR #2 is open and NOT merged, and accepting Runtime V1.1 into
-    main is a separate explicit Human Founder decision still pending.
-    Runtime V1.1 is source-complete and fully covered by deterministic tests
-    (225 runtime + 85 organization, all green, offline). The Groq strict
-    JSON-Schema incompatibility that BLOCKED business_analysis, and the later
-    Groq qa-stage HTTP 400 `tool_use_failed`, are both fixed and verified
-    against the real preferred provider. The one required real-provider Software
-    Factory proof run reached HUMAN_APPROVAL_REQUIRED (run
-    run_254a2876-f20e-4d85-b8c6-4e8248d0fd2f: full feature-development chain on
-    real providers - Groq gpt-oss-120b for every model-backed stage, Codex CLI
-    ChatGPT-login premium implementer - every gate PASSED on machine evidence,
-    the independent reviewer was not the implementer). On 2026-09-02T17:42Z the
-    Human Founder APPROVED the pending proof approval artifact
-    (apr_03ac3263-7dc5-49d9-b978-d8b6cd57bd26), scoped strictly to that
-    disposable proof; the workflow run stays parked at the human_approval step
-    and is NOT driven into PRODUCTION. Separately, the milestone is pushed on
-    feat/real-agent-execution-v1.1 with PR #2 open into main (CI green,
-    mergeStateStatus CLEAN). It still awaits an explicit per-instance Human
-    Founder decision to accept V1.1 into main by merging PR #2 - review the
-    generated evidence (build/proof/task_52d90ea5-dc78-4cfc-8162-d1216895b974/,
-    `ai-company audit --task task_52d90ea5-dc78-4cfc-8162-d1216895b974`) and the
-    PR, then decide. PR #2 is NOT merged. The prior V1.0
-    acceptance into main is unaffected. Every critical-action approval
-    requirement is unchanged: production deployment, merge to protected main of
-    future work, production DB migration/destructive op/data deletion,
-    production infra change, secret create/rotate/revoke, payment-config change,
-    real financial transaction/refund, ad-budget change, supplier payment, bulk
-    customer messaging, customer-data export, access-control escalation and
-    critical security architecture change each still require a separate,
-    explicit Human Founder approval. V1.1 does NOT authorize onboarding a paid
-    model provider, a production cloud, any deployment, real customer data,
-    financial transactions, or starting Cleaning Commerce / the Commerce AI
-    Workforce. Moving from the zero-cost proof provider to any paid provider
-    requires separate Human Founder authorization.
+    Project Factory V0.1 is source-complete on branch feat/project-factory-v0.1,
+    fully covered by deterministic tests (237 runtime + 85 organization, all
+    green, offline; typecheck clean; gitleaks clean). It adds a natural-language
+    project-intake and Runtime-handoff capability WITHOUT changing Runtime V1.1
+    architecture: a new runtime/src/project-factory/ module, an ajv-validated
+    project + handoff schema kept inside the runtime (the governance-locked repo
+    schemas/ directory is untouched), a projects/<slug>/ filesystem workspace, a
+    linear DRAFT..READY_FOR_BUILD lifecycle that never auto-enters BUILD, a
+    per-project FREE-FIRST budget policy, and a Human Founder build gate
+    (ai-company project authorize-build, only 'human-founder', RISK 5, audited)
+    that flips a gate but starts no build. Creating a project is deterministic
+    (no model call, no paid API) and has no workflow-run / task / approval /
+    cost / provider / payment / deployment side effect. The V0.1 acceptance
+    sample projects/project-factory-proof/ produced a valid workspace and a
+    schema-valid, checksum-verified handoff package; its build is NOT authorized
+    and no Software Factory build ran. This milestone awaits, in order: (1)
+    Human Founder review and merge of the PR (feat/project-factory-v0.1
+    -> main) with green CI, then (2) - separately, and only when the Human
+    Founder decides - authorizing a first real project build. Every
+    critical-action approval requirement is unchanged and every project inherits
+    (and cannot weaken) Runtime V1.1 governance. Project Factory V0.1 does NOT
+    authorize onboarding a paid model provider, a production cloud, any
+    deployment, real customer data, financial transactions, or starting Cleaning
+    Commerce / the Commerce AI Workforce - those remain open Human Founder
+    decisions. The prior V1.0 and V1.1 acceptances into main are unaffected.
 open_items:
   - >
-    DONE - the one required real Software Factory proof run reached
-    HUMAN_APPROVAL_REQUIRED (run_254a2876, 2026-09-02), completed in two parts
-    across a Codespace shutdown. Run 7 drove idea through code_review on real
-    providers (Codex CLI premium implementer, every deterministic gate PASS),
-    then the qa model call hit a Groq HTTP 400 tool_use_failed and the
-    environment stopped. Run 8 resumed the SAME persisted run from the pre:qa
-    checkpoint via `ai-company proof resume` and drove qa, security and
-    release_review to HUMAN_APPROVAL_REQUIRED on Groq gpt-oss-120b with no
-    completed stage or the implementation re-run. The qa 400 root cause - the qa
-    StagePlan offered workspace.exec plus a "run it via workspace.exec" directive
-    to the tool-native Groq model while the provider sends no tools array - is
-    fixed with the minimum provider-compat change. PLANS.qa and PLANS.security
-    now use an empty allowedRuntimeTools list, and stageDirectives only asks for
-    a workspace.exec test run when that tool is actually offered. No gate, schema
-    or validation was weakened; the qa gate is still the runner's own `npm test`
-    exit code + counts. The proof driver gained a resume path (RunOptions.resume
-    plus `ai-company proof resume [<run-id>]`), ProofWorkspace re-attaches to a
-    workspace it previously seeded, and RequestBudget accepts a `used` seed.
-    +2 deterministic tests. 225 runtime + 85 organization tests green; typecheck
-    clean; gitleaks clean.
+    Human Founder to review and merge PR (feat/project-factory-v0.1 -> main)
+    for Project Factory V0.1. Evidence: projects/project-factory-proof/ (the
+    acceptance sample - a valid workspace + a checksum-verified Runtime handoff
+    package, build NOT authorized), runtime/test/project-factory.test.ts (12
+    deterministic tests), docs/project-factory.md (the Human Founder workflow).
+    DO NOT merge without the Human Founder.
   - >
-    Human Founder to review the PR (feat/real-agent-execution-v1.1 into main)
-    plus the proof evidence
-    (build/proof/task_52d90ea5-dc78-4cfc-8162-d1216895b974/ and `ai-company
-    audit --task task_52d90ea5-dc78-4cfc-8162-d1216895b974`) and decide whether
-    to accept Runtime V1.1 into main. DO NOT MERGE without the Human Founder. The
-    pending run approval apr_03ac3263-7dc5-49d9-b978-d8b6cd57bd26 is a PROOF
-    artifact for a disposable fixture workspace - deciding it does not deploy,
-    merge or release anything.
+    Authorizing a first real project build (ai-company project authorize-build
+    <slug>) and running its Software Factory is a separate Human Founder
+    decision, made after the project workspace is reviewed. Not part of
+    Project Factory V0.1.
+  - >
+    Optional AI-assisted intake enrichment is designed as a typed plug-in point
+    (ProjectEnricher) that would use the existing FREE-FIRST provider chain; it
+    is not wired or required in V0.1 and needs no paid API.
   - Human Founder to onboard model providers and set per-agent / per-task budget
     caps (models/routing.yml budgets remain NOT_CONFIGURED until then).
   - Human Founder to confirm the production cloud commitment (PostgreSQL
@@ -590,3 +476,41 @@ history:
       is still a separate pending Human Founder decision. Runtime architecture
       unchanged; no new proof started; nothing committed/pushed/merged/deployed
       beyond this state-file update.
+  - state: BUILD
+    status: RUNNING
+    at: "2026-09-02"
+    note: >
+      Project Factory V0.1 implemented on branch feat/project-factory-v0.1. New
+      runtime module runtime/src/project-factory/ (project-model + ajv schema-
+      check, deterministic natural-language intake, ProjectStore filesystem
+      persistence under projects/<slug>/, linear DRAFT..READY_FOR_BUILD lifecycle
+      with product-doc generation, per-project FREE-FIRST budget policy, immutable
+      SHA-256 checksum-protected Runtime handoff package + verifyHandoffPackage,
+      ProjectFactory facade, Human Founder build gate). CLI: ai-company new,
+      ai-company project list|status|show|advance|verify|authorize-build; doctor
+      'project factory' row. Runtime V1.1 architecture unchanged; repo schemas/
+      dir untouched (project schema lives in the runtime). +12 deterministic
+      tests. 237 runtime + 85 organization tests green; typecheck clean; gitleaks
+      clean. Acceptance sample projects/project-factory-proof/ created
+      (deterministically): valid workspace + schema-valid checksum-verified
+      handoff package; build NOT authorized; no Software Factory build run.
+      NOT merged - awaits Human Founder review + PR merge.
+  - state: HUMAN_APPROVAL_REQUIRED
+    status: APPROVAL_REQUIRED
+    at: "2026-09-02"
+    note: >
+      Recovery after a GitHub Codespace interruption. The interruption occurred
+      after commit f5eaa4c was pushed and PR #3 (feat/project-factory-v0.1 ->
+      main) opened; no uncommitted work was lost (working tree clean, no stash,
+      local branch == origin). Full verification set re-run from the persisted
+      repository state: 237 runtime tests + typecheck (npm --prefix runtime run
+      check) green; 85 organization tests (python3 tests/run_all.py) green; branch
+      diff carries no gitleaks-style secret and no gitignored runtime/build or
+      runtime/.data; CLI acceptance check `ai-company project verify
+      project-factory-proof` reports handoff schema+checksum+governance OK with
+      build NOT authorized; `doctor` shows the project-factory row ok. PR #3 CI:
+      both checks (validate-organization -> validate + runtime) SUCCESS,
+      mergeStateStatus CLEAN, mergeable MERGEABLE. Nothing rebuilt, no valid work
+      reverted, Runtime V1.1 unchanged, Cleaning Commerce not started. The one
+      remaining step is the Human Founder's review and merge of PR #3; authorizing
+      a first real project build stays a separate later decision.

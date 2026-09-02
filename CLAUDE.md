@@ -50,6 +50,7 @@ stop and request Human Founder approval. Enforced by
 | `policies/` | 14 machine-readable governance policies (default-deny) |
 | `schemas/` | 8 JSON Schemas that validate all of the above |
 | `research/` | Repository evaluations + gap analyses + ADR log + recommendations (institutional memory) |
+| `projects/` | Project Factory workspaces — one `<slug>/` per project (definition, not built app). See `docs/project-factory.md` |
 | `architecture/` | ADR template; product ADRs will land here |
 | `docs/` | Human-facing documentation (see `docs/beginner-guide.md` first) |
 | `tests/` | Validation + organizational-security suite (pure Python) |
@@ -104,9 +105,9 @@ runtime. See [`tools/registry.yml`](tools/registry.yml),
 approval and green CI on PR #1 — **merged into `main`**. That approval was scoped to
 accepting the runtime into `main` only.
 
-**Runtime V1.1 — Real Agent Execution + Software Factory Proof** is on branch
-`feat/real-agent-execution-v1.1` (pushed, PR open into `main` for CI, **not
-merged**). It *extends* the existing
+**Runtime V1.1 — Real Agent Execution + Software Factory Proof** was **merged into
+`main`** by the Human Founder (PR #2, merge commit `e8c012b`, 2026-09-02). It
+*extends* the existing
 runtime (no new agent framework): ONE generic OpenAI-compatible model provider
 (no per-vendor client), a reusable prompt/context assembler, a validated
 `AgentExecutionResult` contract (malformed / truncated → one bounded classified
@@ -158,7 +159,7 @@ after its genuine free budget is exhausted AND a Human Founder authorizes that
 run; HIGH→premium implementer behind a Founder budget gate; CRITICAL→independent
 premium + Founder. Never auto-spend premium. See `docs/real-agent-execution.md` §7.
 
-223 runtime tests + 85 organization tests pass offline; the full real-agent pipeline
+237 runtime tests + 85 organization tests pass offline; the full real-agent pipeline
 is proven against local OpenAI-compatible fake servers + a mocked Codex CLI
 (Groq + NVIDIA + OpenRouter + OpenAI-premium + codex-cli config, provider HTTP
 error [redacted body], 5xx, 404
@@ -209,21 +210,41 @@ validation was weakened. The Groq strict-Structured-Output blocker and the
 Groq→NVIDIA free-first fallback remain fixed/proven. 225 runtime + 85
 organization tests pass; typecheck clean; gitleaks clean.
 
-On 2026-09-02 the Human Founder **APPROVED the proof approval artifact**
-(`apr_03ac3263…`, run `run_254a2876`, state `APPROVED`) — **scoped strictly to
-the disposable Software Factory proof**; it does not authorize production
-deployment, customer data, financial actions, destructive DB ops, or external
-release. The workflow run is deliberately **held at the `human_approval` step**
-(not driven into `PRODUCTION`). Separately, V1.1 is **pushed** on
-`feat/real-agent-execution-v1.1` with **PR #2 into `main`** (CI green,
-`mergeStateStatus: CLEAN`); PR #2 is **not merged** — accepting Runtime V1.1
-into `main` is a separate, still-pending Human Founder decision. See
+On 2026-09-02 the Human Founder **APPROVED the disposable Software Factory proof
+approval artifact** (`apr_03ac3263…`, run `run_254a2876`, `APPROVED`) — scoped
+strictly to that proof; it authorized no deployment, and the workflow run is
+deliberately **held at the `human_approval` step** (never driven into
+`PRODUCTION`). The Human Founder then merged **PR #2** into `main`. Accepting the
+runtime code into `main` did **not** authorize deploying anything, onboarding a
+paid provider, a production cloud, real customer data, or financial actions. See
 [`docs/real-agent-execution.md`](docs/real-agent-execution.md).
+
+**Project Factory V0.1** is built on branch `feat/project-factory-v0.1` (not yet
+merged). It lets the Human Founder describe a project in natural language and
+have AI Company create a **structured, persistent project workspace**
+(`projects/<slug>/` — `project.yml` + a `product/` document set + plans +
+decisions) and a **validated, immutable, checksum-protected Runtime handoff
+package** (`artifacts/runtime-handoff.json`). Creation is **deterministic** — no
+model call, no paid API, Codex not required. Lifecycle
+`DRAFT → INTAKE → DISCOVERY → SPEC_READY → PLAN_READY → READY_FOR_BUILD`; BUILD is
+never entered automatically — `ai-company project authorize-build <slug>` (Human
+Founder only, RISK 5, audited) is required before Runtime V1.1 may execute a
+project. Every project inherits and cannot weaken Runtime V1.1 governance (Human
+Founder approval, kill switch, audit, capability gates, secret protection, no
+auto production deploy / financial actions / destructive prod ops). Per-project
+AI budget policy: FREE-FIRST, premium disabled by default, premium always needs a
+separate per-run authorization. CLI: `ai-company new <slug>`, `ai-company project
+list | status | show | advance | verify | authorize-build`. It does **not** build
+the application and never invokes a model provider. See
+[`docs/project-factory.md`](docs/project-factory.md). The V0.1 acceptance sample
+is `projects/project-factory-proof/` (build not authorized). Runtime V1.1 stays
+green (typecheck + 237 runtime tests, incl. 12 Project Factory tests).
 
 Neither approval authorizes deploying anything, onboarding a *paid* model provider,
 a production cloud, real customer data, financial transactions, or starting Cleaning
 Commerce / a Commerce AI Workforce, and neither weakens any critical-action approval
-requirement.
+requirement. Project Factory V0.1 creates project *definitions* only; it starts no
+build, and Cleaning Commerce remains `NOT_IMPLEMENTED`.
 
 ## 10. Testing requirements
 
@@ -232,9 +253,13 @@ Both suites must pass, and CI runs both on every PR:
 - `python3 tests/run_all.py` — Organization V1.0: validates every YAML/JSON against
   its schema and asserts the organizational-security invariants (no agent can bypass
   Human Founder approval). See [`docs/testing.md`](docs/testing.md).
-- `npm --prefix runtime run check` — Agent Runtime: typecheck + 223 tests
+- `npm --prefix runtime run check` — Agent Runtime: typecheck + 237 tests
   (registry, policy, gateway, approval, workflow, model routing, persistence/resume,
-  audit, cost, global pause, security-policy, critical-approval, proof, CLI, plus
+  audit, cost, global pause, security-policy, critical-approval, proof, CLI,
+  Project Factory V0.1 (project creation, invalid schema, duplicate slug,
+  persistence, lifecycle transitions, listing/status, Human Founder build gate,
+  budget policy, Runtime handoff package + checksum, no secret leakage, no
+  provider/payment/deployment side effects), plus
   V1.1: one OpenAI-compatible provider serving Groq Direct (primary) + NVIDIA NIM
   (free fallback) + OpenRouter (manual fallback), the Groq→NVIDIA free-first
   fallback (transition audit, checkpoint resume, no duplicate stages/writes/
@@ -276,21 +301,24 @@ Cheapest adequate tier. Per-agent budgets with auto-pause on breach. Bounded ret
 
 ## 13. Prohibited in this phase
 
-Agent Runtime V1.0 is built and merged; Runtime V1.1 real agent execution is built
-behind configuration (real model calls only via the explicit `proof real-agent`
+Agent Runtime V1.0 and Runtime V1.1 (real agent execution) are built and merged
+into `main`. Real model calls happen only via the explicit `proof real-agent`
 path; Groq Direct is the primary `PROOF_PROVIDER`, NVIDIA NIM the free-first
 auto-fallback, OpenRouter the optional manual fallback — all
-`NON_SENSITIVE_PROOF_ONLY`, never auto-selected for ordinary work). The premium
+`NON_SENSITIVE_PROOF_ONLY`, never auto-selected for ordinary work. The premium
 `implementation`-stage escalation (Codex CLI / ChatGPT login, or the paid OpenAI
 API) may be used ONLY for the `implementation` stage, and ONLY for a run the Human
 Founder explicitly authorized via `AI_COMPANY_PREMIUM_IMPL_PROVIDER` — bounded, no
 free fallback on failure, never auto-engaged. Do not onboard any other paid
-provider, do not use premium for any other stage, and do not push/merge/deploy.
-Still **do not build**: Cleaning Commerce,
-any commerce frontend/backend, Vendure/Medusa/Saleor, a control tower, CRM/ERP,
-marketing/ops agents, n8n workflows, production cloud infra, mobile apps, payment
-integration, or any real production deployment. Do not push/merge/deploy the runtime,
-wire a real model provider, or use real credentials or customer data. Do not adopt
+provider and do not use premium for any other stage. **Project Factory V0.1** may
+create project *definitions* under `projects/<slug>/` and Runtime handoff
+packages — deterministically, with no model call — but it starts no build:
+entering BUILD needs `ai-company project authorize-build` by the Human Founder.
+Still **do not build**: Cleaning Commerce or any project's actual application
+code, any commerce frontend/backend, Vendure/Medusa/Saleor, a control tower,
+CRM/ERP, marketing/ops agents, n8n workflows, production cloud infra, mobile apps,
+payment integration, or any real production deployment. Do not deploy, wire a real
+production model provider, or use real credentials or customer data. Do not adopt
 Mastra or any agent framework as a dependency yet (ADR-0014 keeps it `DEFERRED`
 behind the `AgentRunner` interface). Anything only planned must be labeled `PLANNED` /
 `RESEARCHED` / `DEFERRED` / `NOT_IMPLEMENTED`.

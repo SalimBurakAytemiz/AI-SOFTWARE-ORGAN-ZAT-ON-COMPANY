@@ -1,6 +1,8 @@
 import { execFileSync } from "node:child_process";
 import type { Runtime } from "../runtime.ts";
 import { loadRegistries } from "../registry/index.ts";
+import { ProjectStore } from "../project-factory/project-store.ts";
+import { projectsDir } from "../config/paths.ts";
 
 export type CheckStatus =
   | "OK"
@@ -165,6 +167,18 @@ export function doctor(rt: Runtime): DoctorReport {
     add("git", "OK", v);
   } catch {
     add("git", "OPTIONAL", "git not found; only fixture-repo features are affected");
+  }
+
+  // Project Factory V0.1 - project intake and workspace creation.
+  try {
+    const store = new ProjectStore(projectsDir());
+    add(
+      "project factory",
+      "OK",
+      `V0.1 ready; ${store.list().length} project(s) under ${projectsDir()}; creation is deterministic (no model call, no paid API)`,
+    );
+  } catch (err) {
+    add("project factory", "ERROR", String(err));
   }
 
   // Optional external systems (research: DEFERRED).

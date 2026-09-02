@@ -21,6 +21,11 @@ export const paths = {
   fixtures: join(RUNTIME_ROOT, "fixtures"),
 };
 
+/** Where Project Factory persists project workspaces. Overridable for tests. */
+export function projectsDir(): string {
+  return process.env.AI_COMPANY_PROJECTS_DIR ?? join(REPO_ROOT, "projects");
+}
+
 /** Where mutable runtime state lives. Overridable for tests and for a scratch run. */
 export function dataDir(): string {
   return process.env.AI_COMPANY_DATA_DIR ?? join(RUNTIME_ROOT, ".data");

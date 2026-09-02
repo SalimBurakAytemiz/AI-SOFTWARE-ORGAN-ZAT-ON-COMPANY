@@ -1,0 +1,43 @@
+{
+  "package_version": "0.1",
+  "generated_at": "2026-09-02T18:37:50.033Z",
+  "project_id": "proj_c3a35fe5-52e1-4f09-8d28-b9fdb15e255e",
+  "slug": "project-factory-proof",
+  "project_name": "Project Factory Proof",
+  "requested_workflow": "feature-development",
+  "risk_level": 2,
+  "security_level": "standard",
+  "product": {
+    "brief": "---\ngenerated_by: project-factory@0.1\nproject: project-factory-proof\ntitle: \"Project Factory Proof - Product Brief\"\nlifecycle_state: INTAKE\nnote: >\n  Deterministic scaffold generated from project.yml. Runtime V1.1 agents\n  refine this during an authorised build. Not the final specification.\n---\n# Project Factory Proof - Product Brief\n\n**Slug:** project-factory-proof  |  **Type:** api_service  |  **Business model:** other\n**Target market:** unspecified  |  **Risk level:** 2  |  **Security level:** standard\n\n## Description\nA simple API service with a GET /health endpoint.\n\n## Business goal\nDeliver a working first version of Project Factory Proof for end users.\n\n## Target users\n- end users\n\n## Platforms\n- api\n\n## Core features (initial)\n- A simple API service with a GET /health endpoint\n\n## Constraints\n- (none recorded)\n\n## Integrations (candidate)\n- (none recorded)\n\n## Non-goals for the first version\n- Anything not listed under core features above\n- Production deployment, payment execution, or destructive data operations (Human Founder controlled)\n",
+    "requirements": "---\ngenerated_by: project-factory@0.1\nproject: project-factory-proof\ntitle: \"Project Factory Proof - Requirements\"\nlifecycle_state: DISCOVERY\nnote: >\n  Deterministic scaffold generated from project.yml. Runtime V1.1 agents\n  refine this during an authorised build. Not the final specification.\n---\n# Project Factory Proof - Requirements\n\n## Functional requirements\n\n### FR-001. A simple API service with a GET /health endpoint\n\n- **Priority:** must\n- **Rationale:** supports the business goal (\"Deliver a working first version of Project Factory Proof for end users.\").\n- **Verification:** an automated test proves this feature behaves as specified.\n\n## Non-functional requirements\n\n- NFR-001. The system runs on: api.\n- NFR-002. Security level is \"standard\"; no secret is committed or logged.\n- NFR-003. All changes go through the feature-development workflow with an independent review and a QA gate.\n- NFR-004. No production deployment, migration, or financial action occurs without explicit Human Founder approval.\n\n## Open questions for Discovery\n- Confirm the priority order of the core features with the Human Founder\n- Confirm the target market and any locale / regulatory constraints\n- Identify any third-party integrations the first version needs\n",
+    "business_rules": "---\ngenerated_by: project-factory@0.1\nproject: project-factory-proof\ntitle: \"Project Factory Proof - Business Rules\"\nlifecycle_state: DISCOVERY\nnote: >\n  Deterministic scaffold generated from project.yml. Runtime V1.1 agents\n  refine this during an authorised build. Not the final specification.\n---\n# Project Factory Proof - Business Rules\n\n- BR-001. Every user-facing action respects the project's security level (\"standard\").\n- BR-002. Business model is \"other\"; access and pricing rules follow from that.\n",
+    "user_stories": "---\ngenerated_by: project-factory@0.1\nproject: project-factory-proof\ntitle: \"Project Factory Proof - User Stories\"\nlifecycle_state: SPEC_READY\nnote: >\n  Deterministic scaffold generated from project.yml. Runtime V1.1 agents\n  refine this during an authorised build. Not the final specification.\n---\n# Project Factory Proof - User Stories\n\n### US-001\n\nAs a **end users**, I want to **a simple api service with a get /health endpoint**, so that I get value from Project Factory Proof.\n",
+    "acceptance_criteria": "---\ngenerated_by: project-factory@0.1\nproject: project-factory-proof\ntitle: \"Project Factory Proof - Acceptance Criteria\"\nlifecycle_state: SPEC_READY\nnote: >\n  Deterministic scaffold generated from project.yml. Runtime V1.1 agents\n  refine this during an authorised build. Not the final specification.\n---\n# Project Factory Proof - Acceptance Criteria\n\n### AC-001 - A simple API service with a GET /health endpoint\n\n- **Given** Project Factory Proof is running\n- **When** a end users exercises \"A simple API service with a GET /health endpoint\"\n- **Then** the system responds correctly and an automated test proves it\n- **And** no unrelated behaviour changes and no secret is exposed\n\n## Global acceptance gates (inherited from Runtime V1.1)\n- The full automated test suite passes (real exit code, not a claim)\n- An independent reviewer (never the implementer) approves the change\n- The deterministic security checks pass (no secret, no new risky dependency)\n- The run STOPS at HUMAN_APPROVAL_REQUIRED before any production step\n"
+  },
+  "constraints": [],
+  "integrations": [],
+  "budget_policy": {
+    "free_first": true,
+    "max_real_provider_requests": 30,
+    "max_premium_invocations": 0,
+    "premium_authorization_required": true,
+    "provider_fallback_allowed": true
+  },
+  "governance": {
+    "human_founder_approval_required": true,
+    "kill_switch": true,
+    "audit": true,
+    "capability_gates": true,
+    "secret_protection": true,
+    "no_automatic_production_deployment": true,
+    "no_financial_actions": true,
+    "no_destructive_production_operations": true
+  },
+  "build_authorization": {
+    "granted": false,
+    "granted_by": null,
+    "granted_at": null,
+    "note": null
+  },
+  "checksum": "sha256:1fe7af01aba0f7d4a6f0515f85b6c67b5348c855f5521c6a08e74e6d8f2cd5d8"
+}

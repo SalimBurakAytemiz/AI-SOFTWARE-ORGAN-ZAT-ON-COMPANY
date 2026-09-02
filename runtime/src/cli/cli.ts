@@ -4,10 +4,16 @@ import { runProof } from "../proof/proof.ts";
 import { runSoftwareFactoryProof } from "../proof/software-factory.ts";
 import { RequestBudget } from "../proof/request-budget.ts";
 import { CodexCliHarness } from "../agents/codex-cli-harness.ts";
-import { dataDir } from "../config/paths.ts";
+import { dataDir, projectsDir } from "../config/paths.ts";
 import { table, kv, heading, parseFlags } from "./format.ts";
 import { UsageError, RuntimeError } from "../core/errors.ts";
 import { HUMAN_FOUNDER } from "../approvals/approval-engine.ts";
+import { readFileSync } from "node:fs";
+import { ProjectStore } from "../project-factory/project-store.ts";
+import { ProjectFactory } from "../project-factory/project-factory.ts";
+import { verifyHandoffPackage } from "../project-factory/runtime-handoff.ts";
+import { validateProjectDefinition } from "../project-factory/schema-check.ts";
+import type { StructuredIntake } from "../project-factory/intake.ts";
 
 const HELP = `ai-company - AI Software Company Agent Runtime V1.0
 
@@ -37,6 +43,16 @@ Usage: ai-company <command> [args] [--json]
   approvals resume <run-id>      Continue a run after its approval was decided
 
   audit [--limit N] [--task ID]  Show recent audit events (optionally one task)
+
+  new <slug> --name N --description D   Create a project workspace from a brief
+  new <slug> --brief-file <path>        ...or from a natural-language brief file
+  project list                   List projects
+  project status <slug>          Show one project's lifecycle + handoff status
+  project show <slug>            Print a project's project.yml
+  project advance <slug>         Move a project one lifecycle state forward
+  project verify <slug>          Validate the project + its Runtime handoff package
+  project authorize-build <slug> [--note N]   Human Founder: authorize Runtime execution
+
   proof                          Run the safe end-to-end (mock) proof workflow
   proof software-factory [--real]  Real-agent Software Factory proof (mock by default)
   proof real-agent               Alias for 'proof software-factory --real'
@@ -194,6 +210,11 @@ async function dispatch(
 
     case "proof":
       return proofCmd(rt, sub, rest, flags, json);
+
+    case "new":
+      return newProjectCmd(rt, sub, rest, flags, json);
+    case "project":
+      return projectCmd(rt, sub, rest, flags, json);
 
     default:
       throw new UsageError(`unknown command '${command}'. Run 'ai-company help'.`);
@@ -742,6 +763,200 @@ async function proofCmd(
 }
 
 const PROOF_TITLE = "Add a GET /health endpoint to the demo service";
+
+// ---------------------------------------------------------------------------
+// Project Factory V0.1
+// ---------------------------------------------------------------------------
+
+function projectFactory(rt: Runtime): ProjectFactory {
+  return new ProjectFactory({ store: new ProjectStore(projectsDir()), clock: rt.clock, audit: rt.audit });
+}
+
+async function newProjectCmd(
+  rt: Runtime,
+  slug: string | undefined,
+  rest: string[],
+  flags: Record<string, string | boolean>,
+  json: boolean,
+): Promise<number> {
+  if (rt.control.isPaused()) {
+    throw new UsageError(`runtime is paused (${rt.control.pauseReason() ?? "?"}); run 'ai-company resume' first`);
+  }
+  const str = (k: string): string | undefined => (typeof flags[k] === "string" ? (flags[k] as string) : undefined);
+  let brief = str("brief") ?? "";
+  const briefFile = str("brief-file");
+  if (briefFile) brief = readFileSync(briefFile, "utf8");
+  const name = str("name");
+  const description = str("description");
+  if (!brief) {
+    if (!name && !description) {
+      throw new UsageError(
+        'ai-company new <slug> --name "Name" --description "..."   (or --brief-file <path>)',
+      );
+    }
+    brief = [name ? `Project name: ${name}` : "", description ? `Description: ${description}` : ""]
+      .filter(Boolean)
+      .join("\n");
+  }
+  const overrides: Partial<StructuredIntake> = {};
+  if (name) overrides.project_name = name;
+  if (description) overrides.description = description;
+  if (str("workflow")) overrides.requested_workflow = str("workflow");
+  if (str("risk")) overrides.risk_level = Number(str("risk"));
+
+  const pf = projectFactory(rt);
+  const def = pf.createProject({
+    brief,
+    slug: slug && !slug.startsWith("--") ? slug : undefined,
+    overrides,
+    stopAt: (str("stop-at") as never) ?? "READY_FOR_BUILD",
+  });
+  const status = pf.getProjectStatus(def.slug);
+
+  if (json) {
+    console.log(JSON.stringify(status, null, 2));
+    return 0;
+  }
+  console.log(heading(`Project created: ${def.slug}`));
+  console.log(
+    kv([
+      ["name", def.project_name],
+      ["id", def.project_id],
+      ["type / model", `${def.project_type} / ${def.business_model}`],
+      ["market", def.target_market],
+      ["risk / security", `${def.risk_level} / ${def.security_level}`],
+      ["workflow", def.requested_workflow],
+      ["lifecycle state", status.status],
+      ["handoff package", status.handoff_present ? status.handoff_checksum : "not yet"],
+      ["build authorized", status.build_authorized ? `yes (${status.build_authorized_by})` : "NO - awaiting Human Founder"],
+      ["workspace", `${projectsDir()}/${def.slug}/`],
+    ]),
+  );
+  console.log(`\nArtifacts:\n${status.artifacts.map((a) => `  ${a}`).join("\n")}`);
+  console.log(
+    `\nNext: review projects/${def.slug}/, then\n  ai-company project authorize-build ${def.slug} --note "..."   (Human Founder only)`,
+  );
+  return 0;
+}
+
+async function projectCmd(
+  rt: Runtime,
+  sub: string | undefined,
+  rest: string[],
+  flags: Record<string, string | boolean>,
+  json: boolean,
+): Promise<number> {
+  const pf = projectFactory(rt);
+  const slug = rest[0];
+
+  switch (sub) {
+    case "list": {
+      const rows = pf.listProjects();
+      if (json) {
+        console.log(JSON.stringify(rows, null, 2));
+        return 0;
+      }
+      if (rows.length === 0) {
+        console.log("no projects yet. Create one: ai-company new <slug> --name N --description D");
+        return 0;
+      }
+      console.log(
+        table(
+          rows.map((r) => [
+            r.slug,
+            r.status,
+            `risk ${r.risk_level}`,
+            r.requested_workflow,
+            r.build_authorized ? "build:authorized" : "build:pending",
+            r.project_name,
+          ]),
+          ["slug", "state", "risk", "workflow", "build", "name"],
+        ),
+      );
+      return 0;
+    }
+    case "status": {
+      if (!slug) throw new UsageError("ai-company project status <slug>");
+      const s = pf.getProjectStatus(slug);
+      if (json) {
+        console.log(JSON.stringify(s, null, 2));
+        return 0;
+      }
+      console.log(heading(`Project ${s.slug}`));
+      console.log(
+        kv([
+          ["name", s.project_name],
+          ["lifecycle state", s.status],
+          ["next state", s.next_state ?? "(terminal for Project Factory)"],
+          ["risk / security", `${s.risk_level} / ${s.security_level}`],
+          ["requested workflow", s.requested_workflow],
+          ["budget", `free_first=${s.budget_policy.free_first}, <=${s.budget_policy.max_real_provider_requests} real req, ${s.budget_policy.max_premium_invocations} premium`],
+          ["handoff package", s.handoff_present ? s.handoff_checksum : "not generated"],
+          ["build authorized", s.build_authorized ? `yes (${s.build_authorized_by})` : "NO - awaiting Human Founder"],
+        ]),
+      );
+      console.log("\nlifecycle history:");
+      for (const h of s.history) console.log(`  ${h.at}  ${h.state.padEnd(16)} ${h.note}`);
+      return 0;
+    }
+    case "show": {
+      if (!slug) throw new UsageError("ai-company project show <slug>");
+      console.log(pf.store.readFile(slug, "project.yml"));
+      return 0;
+    }
+    case "advance": {
+      if (!slug) throw new UsageError("ai-company project advance <slug>");
+      const def = pf.advanceProject(slug);
+      console.log(json ? JSON.stringify(pf.getProjectStatus(slug), null, 2) : `${slug} -> ${def.status}`);
+      return 0;
+    }
+    case "verify": {
+      if (!slug) throw new UsageError("ai-company project verify <slug>");
+      const def = validateProjectDefinition(pf.store.loadDefinition(slug));
+      const handoff = pf.store.hasFile(slug, "artifacts/runtime-handoff.json")
+        ? verifyHandoffPackage(pf.store.loadHandoff(slug))
+        : null;
+      const report = {
+        slug,
+        project_definition_valid: def.valid,
+        project_definition_errors: def.errors,
+        handoff_present: handoff !== null,
+        handoff: handoff,
+      };
+      if (json) {
+        console.log(JSON.stringify(report, null, 2));
+      } else {
+        console.log(heading(`Verify ${slug}`));
+        console.log(
+          kv([
+            ["project.yml valid", def.valid ? "yes" : `NO - ${def.errors.join("; ")}`],
+            ["handoff present", handoff ? "yes" : "no"],
+            ["handoff schema+checksum+governance", handoff ? (handoff.valid ? "OK" : `FAIL - ${handoff.errors.join("; ")}`) : "n/a"],
+            ["build authorized", handoff ? (handoff.buildAuthorized ? "yes" : "no") : "n/a"],
+          ]),
+        );
+      }
+      const ok = def.valid && (handoff === null || handoff.valid);
+      return ok ? 0 : 1;
+    }
+    case "authorize-build": {
+      if (!slug) throw new UsageError("ai-company project authorize-build <slug> [--note N]");
+      const note = typeof flags.note === "string" ? flags.note : undefined;
+      const def = pf.authorizeBuild(slug, { by: HUMAN_FOUNDER, note });
+      const s = pf.getProjectStatus(slug);
+      if (json) {
+        console.log(JSON.stringify(s, null, 2));
+      } else {
+        console.log(`build authorized for '${slug}' by ${def.build_authorization.granted_by} at ${def.build_authorization.granted_at}`);
+        console.log(`handoff package: ${s.handoff_checksum}`);
+        console.log("\nProject Factory does NOT start the build. Runtime V1.1 executes it separately under Human Founder control.");
+      }
+      return 0;
+    }
+    default:
+      throw new UsageError("ai-company project list | status <slug> | show <slug> | advance <slug> | verify <slug> | authorize-build <slug>");
+  }
+}
 
 function statusIcon(status: string): string {
   return (
