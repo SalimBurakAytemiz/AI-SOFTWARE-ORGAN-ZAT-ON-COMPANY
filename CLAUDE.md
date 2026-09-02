@@ -240,6 +240,17 @@ the application and never invokes a model provider. See
 is `projects/project-factory-proof/` (build not authorized). Runtime V1.1 stays
 green (typecheck + 237 runtime tests, incl. 12 Project Factory tests).
 
+**`qa-portfolio` — first authorized project build (in progress).** The Human
+Founder authorized `qa-portfolio`'s build on 2026-09-02
+(`project.yml` `build_authorization.granted: true`, audited RISK 5). A 14-document
+pre-development planning package is in `projects/qa-portfolio/planning/`, reviewed
+from 10 perspectives. Implementation is proceeding **locally** on branch
+`feat/qa-portfolio-build` under the §13 carve-out (Next.js 15 + Supabase +
+Vercel, bilingual TR/EN public site + admin CMS) — no deployment, no real
+Supabase project, no real credentials, no real data, `[PLACEHOLDER]` for missing
+professional content, not merged to `main`. All new source carries Turkish
+comments per `docs/coding-standards.md`.
+
 Neither approval authorizes deploying anything, onboarding a *paid* model provider,
 a production cloud, real customer data, financial transactions, or starting Cleaning
 Commerce / a Commerce AI Workforce, and neither weakens any critical-action approval
@@ -314,13 +325,30 @@ provider and do not use premium for any other stage. **Project Factory V0.1** ma
 create project *definitions* under `projects/<slug>/` and Runtime handoff
 packages — deterministically, with no model call — but it starts no build:
 entering BUILD needs `ai-company project authorize-build` by the Human Founder.
-Still **do not build**: Cleaning Commerce or any project's actual application
-code, any commerce frontend/backend, Vendure/Medusa/Saleor, a control tower,
-CRM/ERP, marketing/ops agents, n8n workflows, production cloud infra, mobile apps,
-payment integration, or any real production deployment. Do not deploy, wire a real
-production model provider, or use real credentials or customer data. Do not adopt
-Mastra or any agent framework as a dependency yet (ADR-0014 keeps it `DEFERRED`
-behind the `AgentRunner` interface). Anything only planned must be labeled `PLANNED` /
+
+**Authorized-project build carve-out.** Once the Human Founder has run
+`ai-company project authorize-build <slug>` (RISK 5, audited), that **one**
+project's application code MAY be written **locally** under
+`projects/<slug>/` — source, migrations, tests, local dev only. Currently
+authorized: **`qa-portfolio`** (authorized 2026-09-02, see
+`projects/qa-portfolio/decisions/decision-log.md`). Even for an authorized
+project, the following stay prohibited without a further explicit Human Founder
+decision: any production deployment, provisioning a production cloud / a real
+Supabase or hosting project, using real credentials or real customer/personal
+data, onboarding a paid provider, financial actions, destructive production
+operations, and merging to `main`. Missing professional content uses visible
+`[PLACEHOLDER]` values and is never invented. Where progress needs a credential
+or a human action, stop that thread, state in Turkish exactly what is required,
+and continue the independent work.
+
+Still **do not build** (unchanged): Cleaning Commerce or any *un*authorized
+project's application code, any commerce frontend/backend,
+Vendure/Medusa/Saleor, a control tower, CRM/ERP, marketing/ops agents, n8n
+workflows, production cloud infra, mobile apps, payment integration, or any real
+production deployment. Do not deploy, wire a real production model provider, or
+use real credentials or customer data. Do not adopt Mastra or any agent
+framework as a dependency yet (ADR-0014 keeps it `DEFERRED` behind the
+`AgentRunner` interface). Anything only planned must be labeled `PLANNED` /
 `RESEARCHED` / `DEFERRED` / `NOT_IMPLEMENTED`.
 
 ## 14. Working conventions

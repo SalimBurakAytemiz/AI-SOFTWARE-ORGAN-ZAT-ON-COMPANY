@@ -1,0 +1,87 @@
+{
+  "site": {
+    "title": "QA Mühendisi Portföyü",
+    "tagline": "Yazılım Kalite Güvence — test stratejisi, otomasyon, API ve veritabanı doğrulama",
+    "skipToContent": "İçeriğe geç"
+  },
+  "nav": {
+    "home": "Ana Sayfa",
+    "projects": "Projeler",
+    "qaLab": "QA Lab",
+    "experience": "Deneyim",
+    "services": "Hizmetler",
+    "about": "Hakkımda",
+    "contact": "İletişim",
+    "hireMe": "Benimle çalış",
+    "menu": "Menü",
+    "close": "Kapat"
+  },
+  "home": {
+    "heroKicker": "Yazılım QA Mühendisi",
+    "heroTitle": "Yazılımı ben kırarım ki kullanıcılarınız kırmasın.",
+    "heroSubtitle": "Güvenle yayına çıkmak isteyen ekipler için test stratejisi, otomasyon, API ve veritabanı doğrulama.",
+    "viewCaseStudies": "Vaka çalışmalarını gör",
+    "downloadCv": "CV indir",
+    "featuredTitle": "Öne çıkan projeler",
+    "allProjects": "Tüm projeler",
+    "whatITest": "Neleri test ederim",
+    "selectedCaseStudies": "Seçilmiş vaka çalışmaları",
+    "servicesTeaser": "Hizmetler",
+    "contactCtaTitle": "Henüz güvenmediğiniz bir sürüm mü var?",
+    "contactCtaAction": "İletişime geç"
+  },
+  "projects": {
+    "title": "Projeler",
+    "subtitle": "Ürünler genelinde QA çalışmalarının vaka analizleri.",
+    "filters": "Filtreler",
+    "clear": "Temizle",
+    "empty": "Bu filtrelerle eşleşen proje yok.",
+    "confidential": "Gizli",
+    "ndaBadge": "NDA",
+    "readCaseStudy": "Vaka çalışmasını oku",
+    "classification": {
+      "professional": "Profesyonel",
+      "supported": "Destek Verilen",
+      "personal": "Kişisel",
+      "qa_lab": "QA Lab"
+    }
+  },
+  "contact": {
+    "title": "İletişim",
+    "intro": "Ürününüzü ve kalitenin nerede zorlandığını anlatın.",
+    "name": "Ad Soyad",
+    "email": "E-posta",
+    "subject": "Konu",
+    "message": "Mesaj",
+    "consent": "Gizlilik bildirimini kabul ediyorum.",
+    "send": "Mesaj gönder",
+    "success": "Teşekkürler — mesajınız iletildi.",
+    "error": "Bir şeyler ters gitti. Lütfen tekrar deneyin.",
+    "otherWays": "Bana ulaşmanın diğer yolları",
+    "responseTime": "Yanıt süresi: yaklaşık 2 iş günü"
+  },
+  "footer": {
+    "rights": "Tüm hakları saklıdır.",
+    "privacy": "Gizlilik (KVKK / GDPR)",
+    "imprint": "Künye"
+  },
+  "notFound": {
+    "title": "Sayfa bulunamadı",
+    "body": "Aradığınız sayfa mevcut değil veya yayınlanmamış.",
+    "backHome": "Ana sayfaya dön"
+  },
+  "theme": {
+    "toggle": "Temayı değiştir"
+  },
+  "placeholderNotice": "Placeholder içerik — gerçek profesyonel bilgiler site sahibi tarafından sonradan girilecek.",
+  "pages": {
+    "phaseNote": "Bu sayfa faz 1'de iskelet olarak hazırdır. Tam içeriği ve veri bağlantıları sonraki geliştirme fazında eklenecektir.",
+    "aboutDesc": "Kimlik, yetkinlik matrisi, sertifikalar ve eğitim.",
+    "experienceDesc": "Kariyer zaman çizelgesi, eğitim ve sertifikalar.",
+    "servicesDesc": "QA ekiplerine sunulan hizmetler ve çalışma modeli.",
+    "qaLabDesc": "Deneyler, demolar ve teknik incelemeler.",
+    "legalPrivacyTitle": "Gizlilik Bildirimi (KVKK / GDPR)",
+    "legalImprintTitle": "Künye",
+    "legalDesc": "Bu metin faz 2'de nihai hale getirilecektir."
+  }
+}

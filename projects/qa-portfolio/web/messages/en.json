@@ -1,0 +1,87 @@
+{
+  "site": {
+    "title": "QA Engineer Portfolio",
+    "tagline": "Software Quality Assurance — test strategy, automation, API & database validation",
+    "skipToContent": "Skip to content"
+  },
+  "nav": {
+    "home": "Home",
+    "projects": "Projects",
+    "qaLab": "QA Lab",
+    "experience": "Experience",
+    "services": "Services",
+    "about": "About",
+    "contact": "Contact",
+    "hireMe": "Hire me",
+    "menu": "Menu",
+    "close": "Close"
+  },
+  "home": {
+    "heroKicker": "Software QA Engineer",
+    "heroTitle": "I break software so your users don't.",
+    "heroSubtitle": "Test strategy, automation, API and database validation for teams that need to ship with confidence.",
+    "viewCaseStudies": "View case studies",
+    "downloadCv": "Download CV",
+    "featuredTitle": "Featured projects",
+    "allProjects": "All projects",
+    "whatITest": "What I test",
+    "selectedCaseStudies": "Selected case studies",
+    "servicesTeaser": "Services",
+    "contactCtaTitle": "Have a release you don't trust yet?",
+    "contactCtaAction": "Get in touch"
+  },
+  "projects": {
+    "title": "Projects",
+    "subtitle": "Case studies of QA work across products.",
+    "filters": "Filters",
+    "clear": "Clear",
+    "empty": "No projects match these filters.",
+    "confidential": "Confidential",
+    "ndaBadge": "NDA",
+    "readCaseStudy": "Read case study",
+    "classification": {
+      "professional": "Professional",
+      "supported": "Supported",
+      "personal": "Personal",
+      "qa_lab": "QA Lab"
+    }
+  },
+  "contact": {
+    "title": "Contact",
+    "intro": "Tell me about your product and where quality hurts.",
+    "name": "Name",
+    "email": "Email",
+    "subject": "Subject",
+    "message": "Message",
+    "consent": "I agree to the privacy notice.",
+    "send": "Send message",
+    "success": "Thanks — your message has been sent.",
+    "error": "Something went wrong. Please try again.",
+    "otherWays": "Other ways to reach me",
+    "responseTime": "Response time: about 2 business days"
+  },
+  "footer": {
+    "rights": "All rights reserved.",
+    "privacy": "Privacy (KVKK / GDPR)",
+    "imprint": "Imprint"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "body": "The page you are looking for does not exist or is not published.",
+    "backHome": "Back to home"
+  },
+  "theme": {
+    "toggle": "Toggle theme"
+  },
+  "placeholderNotice": "Placeholder content — real professional information is provided later by the site owner.",
+  "pages": {
+    "phaseNote": "This page is scaffolded in phase 1. Its full content and data wiring arrive in the next development phase.",
+    "aboutDesc": "Identity, skills matrix, certifications and education.",
+    "experienceDesc": "Career timeline, education and certifications.",
+    "servicesDesc": "Services offered to QA teams and the engagement model.",
+    "qaLabDesc": "Experiments, demos and technical teardowns.",
+    "legalPrivacyTitle": "Privacy Notice (KVKK / GDPR)",
+    "legalImprintTitle": "Imprint",
+    "legalDesc": "This text will be finalised in phase 2."
+  }
+}

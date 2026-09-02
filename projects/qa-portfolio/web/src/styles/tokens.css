@@ -1,0 +1,112 @@
+/*
+ * Tasarım sistemi token'ları - planning/06-design-system.md karşılığı.
+ *
+ * Renk stratejisi (üç durum):
+ *  1. Çıplak :root            -> tam AÇIK (light) paleti.
+ *  2. @media (dark) + :not([data-theme="light"]) -> işletim sistemi koyu ise
+ *     token'lar KOYU olur, ancak kullanıcı açıkça "light" seçtiyse açık kalır.
+ *  3. :root[data-theme="dark"] -> kullanıcı açıkça "dark" seçtiyse her durumda koyu.
+ *
+ * Ürün KOYU temadır; açık tema V1 kapsamında değil ama token yapısı hazır
+ * (planning/06 §6.3 "Light theme").
+ *
+ * WCAG 2.1 AA: aşağıdaki metin/zemin eşleşmeleri AA kontrastını karşılamalıdır;
+ * otomatik kontrast testi faz 2'de eklenecek (planning/11 §11.7).
+ */
+
+:root {
+  /* Nötrler - açık tema (hafif yeşil-mavi bias, "teknik enstrüman" hissi) */
+  --bg: #f4f7f5;
+  --bg-subtle: #eef2f0;
+  --surface: #ffffff;
+  --surface-raised: #f6f9f7;
+  --border: #d9e1dd;
+  --border-strong: #c1cdc7;
+  --text: #141a18;
+  --text-muted: #556360;
+  --text-faint: #8a9793;
+
+  /* Aksan - "test geçti" yeşili. Açık temada beyaz üzerinde okunaklı olması
+     için koyulaştırılmış tonu kullanılır. */
+  --accent: #0e7a4f;
+  --accent-hover: #0b6743;
+  --accent-contrast: #f2fbf6;
+  --accent-muted: #e2f2ea;
+  --focus: #0e7a4f;
+
+  /* Anlamsal durum renkleri (QA sözlüğü: pass / fail / flaky / info) */
+  --pass: #0e7a4f;
+  --fail: #b23a31;
+  --warn: #8a6212;
+  --info: #1f5fa8;
+  --neutral-status: #6a7572;
+
+  /* Yarıçap ve gölge */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --shadow-e1: 0 1px 2px rgba(20, 30, 26, 0.06);
+  --shadow-e2: 0 1px 2px rgba(20, 30, 26, 0.06), 0 8px 24px rgba(20, 30, 26, 0.05);
+
+  /* Ölçü */
+  --max-content: 1200px;
+  --max-prose: 68ch;
+}
+
+/* İşletim sistemi koyu tema ve kullanıcı açıkça "light" SEÇMEDİYSE */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0a0b0d;
+    --bg-subtle: #0f1214;
+    --surface: #14171b;
+    --surface-raised: #1b1f24;
+    --border: #262b31;
+    --border-strong: #333c40;
+    --text: #e8ebef;
+    --text-muted: #a2abb5;
+    --text-faint: #6b747e;
+
+    --accent: #3ddc97;
+    --accent-hover: #34c588;
+    --accent-contrast: #04140d;
+    --accent-muted: #12291f;
+    --focus: #6fe9b6;
+
+    --pass: #3ddc97;
+    --fail: #ff7a78;
+    --warn: #f5c451;
+    --info: #5aa7ff;
+    --neutral-status: #8a929b;
+
+    --shadow-e1: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-e2: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
+  }
+}
+
+/* Kullanıcı açıkça "dark" seçtiyse (işletim sisteminden bağımsız) */
+:root[data-theme="dark"] {
+  --bg: #0a0b0d;
+  --bg-subtle: #0f1214;
+  --surface: #14171b;
+  --surface-raised: #1b1f24;
+  --border: #262b31;
+  --border-strong: #333c40;
+  --text: #e8ebef;
+  --text-muted: #a2abb5;
+  --text-faint: #6b747e;
+
+  --accent: #3ddc97;
+  --accent-hover: #34c588;
+  --accent-contrast: #04140d;
+  --accent-muted: #12291f;
+  --focus: #6fe9b6;
+
+  --pass: #3ddc97;
+  --fail: #ff7a78;
+  --warn: #f5c451;
+  --info: #5aa7ff;
+  --neutral-status: #8a929b;
+
+  --shadow-e1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-e2: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
+}

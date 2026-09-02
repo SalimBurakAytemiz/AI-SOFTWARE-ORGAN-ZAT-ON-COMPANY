@@ -1,0 +1,17 @@
+# Supabase CLI yapılandırması (yapılandırma-kod olarak - planning/14 review R6/R8).
+# Yerel geliştirme ve staging için. Gerçek proje referansı `supabase link` ile bağlanır.
+
+project_id = "qa-portfolio"
+
+[db]
+major_version = 15
+
+[auth]
+# İŞ KURALI (planning/10 §10.2): kayıt (sign-up) KAPALI. Hesaplar yalnızca
+# Human Founder tarafından sağlanır.
+enable_signup = false
+enable_confirmations = true
+
+[storage]
+# 'media' bucket'ı manuel oluşturulur (public read, admin write) - bkz. README.md.
+enabled = true

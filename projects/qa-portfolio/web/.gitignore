@@ -1,0 +1,30 @@
+# Bağımlılıklar
+/node_modules
+/.pnp
+.pnp.*
+
+# Next.js derleme çıktısı
+/.next/
+/out/
+/build
+next-env.d.ts
+
+# Test / kapsam
+/coverage
+
+# Ortam değişkenleri - GERÇEK DEĞERLER ASLA COMMIT EDİLMEZ
+.env
+.env*.local
+.env.development
+.env.production
+
+# Supabase yerel çalışma dizini
+/supabase/.branches
+/supabase/.temp
+
+# Editör / işletim sistemi
+.DS_Store
+*.pem
+*.tsbuildinfo
+.vscode/*
+!.vscode/extensions.json
