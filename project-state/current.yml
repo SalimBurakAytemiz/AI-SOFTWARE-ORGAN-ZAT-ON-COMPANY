@@ -4,7 +4,7 @@ version: Real Agent Execution V1.1
 scope: real-agent-execution-and-software-factory-proof
 state: HUMAN_APPROVAL_REQUIRED
 status: APPROVAL_REQUIRED
-updated: "2026-09-02T17:10:00Z"
+updated: "2026-09-02T17:45:00Z"
 owner: engineering-director
 summary: >
   Organization V1.0 (85 tests) and Agent Runtime V1.0 (accepted into main via
@@ -131,25 +131,41 @@ summary: >
 human_approval:
   required: true
   granted: false
+  granted_by: null
+  granted_at: null
   notes: >
+    PROOF ARTIFACT APPROVAL (recorded 2026-09-02T17:42:45Z): the Human Founder
+    APPROVED the pending proof approval request
+    apr_03ac3263-7dc5-49d9-b978-d8b6cd57bd26 (run
+    run_254a2876-f20e-4d85-b8c6-4e8248d0fd2f, state APPROVED, decided_by
+    human-founder). Scope is strict: it applies ONLY to the existing disposable
+    Software Factory proof artifact (the GET /health change in the fixture
+    demo-service workspace). It does NOT authorize real production deployment,
+    customer-data access, financial actions, destructive database operations, or
+    external production release. The workflow run is deliberately HELD at the
+    human_approval step - NOT advanced into the PRODUCTION stage. `granted`
+    stays false: PR #2 is open and NOT merged, and accepting Runtime V1.1 into
+    main is a separate explicit Human Founder decision still pending.
     Runtime V1.1 is source-complete and fully covered by deterministic tests
     (225 runtime + 85 organization, all green, offline). The Groq strict
     JSON-Schema incompatibility that BLOCKED business_analysis, and the later
     Groq qa-stage HTTP 400 `tool_use_failed`, are both fixed and verified
     against the real preferred provider. The one required real-provider Software
-    Factory proof run HAS NOW reached HUMAN_APPROVAL_REQUIRED: run
-    run_254a2876-f20e-4d85-b8c6-4e8248d0fd2f drove the full
-    feature-development chain on real providers (Groq gpt-oss-120b for every
-    model-backed stage; Codex CLI ChatGPT-login premium implementer), every gate
-    PASSED on machine evidence, the independent reviewer was not the implementer,
-    and the run STOPPED at the Human Founder approval gate with a pending
-    approval (apr_03ac3263-7dc5-49d9-b978-d8b6cd57bd26). The milestone is now
-    pushed on feat/real-agent-execution-v1.1 with a PR into main for CI.
-    It awaits explicit per-instance Human Founder review and approval to accept
-    V1.1 into main: review the generated evidence
-    (build/proof/task_52d90ea5-dc78-4cfc-8162-d1216895b974/,
+    Factory proof run reached HUMAN_APPROVAL_REQUIRED (run
+    run_254a2876-f20e-4d85-b8c6-4e8248d0fd2f: full feature-development chain on
+    real providers - Groq gpt-oss-120b for every model-backed stage, Codex CLI
+    ChatGPT-login premium implementer - every gate PASSED on machine evidence,
+    the independent reviewer was not the implementer). On 2026-09-02T17:42Z the
+    Human Founder APPROVED the pending proof approval artifact
+    (apr_03ac3263-7dc5-49d9-b978-d8b6cd57bd26), scoped strictly to that
+    disposable proof; the workflow run stays parked at the human_approval step
+    and is NOT driven into PRODUCTION. Separately, the milestone is pushed on
+    feat/real-agent-execution-v1.1 with PR #2 open into main (CI green,
+    mergeStateStatus CLEAN). It still awaits an explicit per-instance Human
+    Founder decision to accept V1.1 into main by merging PR #2 - review the
+    generated evidence (build/proof/task_52d90ea5-dc78-4cfc-8162-d1216895b974/,
     `ai-company audit --task task_52d90ea5-dc78-4cfc-8162-d1216895b974`) and the
-    PR, then decide. It is NOT merged. The prior V1.0
+    PR, then decide. PR #2 is NOT merged. The prior V1.0
     acceptance into main is unaffected. Every critical-action approval
     requirement is unchanged: production deployment, merge to protected main of
     future work, production DB migration/destructive op/data deletion,
@@ -557,3 +573,20 @@ history:
       then committed and pushed feat/real-agent-execution-v1.1 with a PR into
       main for CI. NOT merged - accepting Runtime V1.1 into main is a separate,
       explicit Human Founder decision.
+  - state: HUMAN_APPROVAL_REQUIRED
+    status: APPROVAL_REQUIRED
+    at: "2026-09-02"
+    note: >
+      Human Founder APPROVED the pending proof approval artifact
+      apr_03ac3263-7dc5-49d9-b978-d8b6cd57bd26 (run run_254a2876; state APPROVED,
+      decided_by human-founder, decided_at 2026-09-02T17:42:45Z). The approval is
+      scoped strictly to the existing disposable Software Factory proof artifact
+      and explicitly does NOT authorize real production deployment, customer-data
+      access, financial actions, destructive database operations, or external
+      production release. The workflow run was NOT resumed/driven past the
+      human_approval step - it stays parked at APPROVAL_REQUIRED /
+      HUMAN_APPROVAL_REQUIRED, deliberately held before the PRODUCTION stage. No
+      deploy. PR #2 remains open and NOT merged; accepting Runtime V1.1 into main
+      is still a separate pending Human Founder decision. Runtime architecture
+      unchanged; no new proof started; nothing committed/pushed/merged/deployed
+      beyond this state-file update.

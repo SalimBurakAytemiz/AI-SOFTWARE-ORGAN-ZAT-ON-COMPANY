@@ -207,10 +207,17 @@ proof driver gained a `resume` path (`RunOptions.resume` +
 in a prior run, and `RequestBudget` accepts a `used` seed. No gate, schema or
 validation was weakened. The Groq strict-Structured-Output blocker and the
 Groq→NVIDIA free-first fallback remain fixed/proven. 225 runtime + 85
-organization tests pass; typecheck clean; gitleaks clean. V1.1 is now **pushed**
-on `feat/real-agent-execution-v1.1` with a **PR into `main` for CI**; it is
-**not merged** and **not approved** — accepting Runtime V1.1 into `main` is a
-separate, explicit Human Founder decision. See
+organization tests pass; typecheck clean; gitleaks clean.
+
+On 2026-09-02 the Human Founder **APPROVED the proof approval artifact**
+(`apr_03ac3263…`, run `run_254a2876`, state `APPROVED`) — **scoped strictly to
+the disposable Software Factory proof**; it does not authorize production
+deployment, customer data, financial actions, destructive DB ops, or external
+release. The workflow run is deliberately **held at the `human_approval` step**
+(not driven into `PRODUCTION`). Separately, V1.1 is **pushed** on
+`feat/real-agent-execution-v1.1` with **PR #2 into `main`** (CI green,
+`mergeStateStatus: CLEAN`); PR #2 is **not merged** — accepting Runtime V1.1
+into `main` is a separate, still-pending Human Founder decision. See
 [`docs/real-agent-execution.md`](docs/real-agent-execution.md).
 
 Neither approval authorizes deploying anything, onboarding a *paid* model provider,
