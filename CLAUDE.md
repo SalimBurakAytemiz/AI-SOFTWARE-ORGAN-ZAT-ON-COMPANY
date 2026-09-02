@@ -335,3 +335,32 @@ behind the `AgentRunner` interface). Anything only planned must be labeled `PLAN
   matters more than speed.
 - Never claim work is complete because files were created. Working, tested, verified
   output with evidence is required (Constitution Article 5.4).
+
+## 15. Language & code-comment standard
+
+The Human Founder is not a fluent English speaker. Two standing rules, detailed in
+[`docs/coding-standards.md`](docs/coding-standards.md):
+
+- **Communicate with the Human Founder in Turkish.** All user-facing explanations,
+  questions, decision requests, progress/error reports, test results and next-step
+  instructions are written in Turkish. Technical identifiers (code, file/branch
+  names, commands, framework/API terms) stay in English but are always explained in
+  Turkish; never leave the Founder to interpret English terminal output. Decisions:
+  state the situation, the options, each option's consequence, and a clear
+  recommendation. Errors: what it is, whether it is critical, the cause if known,
+  what happens next. End every significant development step with a Turkish report
+  (files changed · feature · what it does · tests run · results · risks · next step).
+- **Source-code comments are written in Turkish; identifiers stay English.** Naming
+  (variables, functions, classes, files, folders, API/route names, DB table/column
+  names, framework terms) follows international convention in English. Comments and
+  JSDoc/TSDoc explain **why** the code exists and **which business rule** it enforces,
+  in Turkish — mandatory for auth, authorization, RLS, Supabase/DB operations, the
+  admin CMS, draft/published/archived and featured/supported rules, TR/EN
+  localization, API handlers, form validation, cache/revalidation, error handling,
+  security-critical code, complex hooks and state. Comment **why**, not **what**; no
+  noise comments. Per-filetype format (`//`, `/** */`, `--`, `<!-- -->`, `#`); no
+  comments in JSON. Comments must not break lint/build or contain secrets.
+- Applies to this repo and every `projects/<slug>/` project from now on, first in
+  `projects/qa-portfolio/`. The existing `runtime/` code is not retrofitted; only
+  new files added there follow it. This standard weakens no quality gate, security
+  rule, or Human-Founder approval requirement.
