@@ -35,6 +35,17 @@ test("CLI: doctor, agents list, workflows list and proof run offline with no API
   try {
     const doctorOut = await run("node", [BIN, "doctor"], { env });
     assert.match(doctorOut.stdout, /healthy/);
+    assert.match(doctorOut.stdout, /Groq Direct proof provider/);
+    assert.match(doctorOut.stdout, /OpenRouter proof provider/);
+
+    // --probe adds a live proof-provider row; with no key it is NOT_CONFIGURED,
+    // offline, and never makes the runtime unhealthy.
+    const probeEnv = { ...env };
+    delete probeEnv.GROQ_API_KEY;
+    delete probeEnv.OPENROUTER_API_KEY;
+    const probeOut = await run("node", [BIN, "doctor", "--probe"], { env: probeEnv });
+    assert.match(probeOut.stdout, /\(live\)/);
+    assert.match(probeOut.stdout, /healthy/);
 
     const agentsOut = await run("node", [BIN, "agents", "list"], { env });
     assert.match(agentsOut.stdout, /backend-engineer/);

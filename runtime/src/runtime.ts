@@ -17,7 +17,13 @@ import { ModelRouter } from "./models/router.ts";
 import { MockModelProvider } from "./models/mock-provider.ts";
 import { LiteLlmProvider } from "./models/litellm-provider.ts";
 import type { ModelProvider } from "./models/provider.ts";
-import { buildRealProvider, type RealProviderStatus } from "./models/real-provider.ts";
+import {
+  resolveProofProviderChain,
+  resolvePremiumImplProvider,
+  type RealProviderStatus,
+  type ProofProviderChain,
+  type PremiumImplProviderStatus,
+} from "./models/real-provider.ts";
 import { dataDir } from "./config/paths.ts";
 
 export interface RuntimeOptions {
@@ -54,6 +60,21 @@ export class Runtime {
   readonly providers: ModelProvider[];
   /** Status of the configured real / proof model provider (build spec sections 6, 27). */
   readonly realProvider: RealProviderStatus;
+  /**
+   * The free-first proof provider chain: the configured primary (default Groq
+   * Direct) plus any auto-resolved free fallback (NVIDIA NIM when NVIDIA_API_KEY
+   * is present). The fallback engages ONLY when the primary reaches a bounded
+   * RATE_LIMIT_EXHAUSTED during the Software Factory proof - never a paid
+   * provider, never auto-selected for ordinary work.
+   */
+  readonly realProviderChain: ProofProviderChain;
+  /**
+   * PAID implementation-stage escalation provider (OpenAI), used ONLY when the
+   * Human Founder has authorized it for this run via
+   * AI_COMPANY_PREMIUM_IMPL_PROVIDER. Never in the free proof chain, never
+   * auto-selected, only for the `implementation` stage.
+   */
+  readonly premiumImplProvider: PremiumImplProviderStatus;
 
   private constructor(opts: RuntimeOptions) {
     this.registries = loadRegistries();
@@ -72,7 +93,9 @@ export class Runtime {
     // provider rotation: ordinary tasks and the mock proof never spend on it, and
     // there is no silent fall-through from mock to a paid provider (build spec
     // sections 27, 45).
-    this.realProvider = buildRealProvider(opts.env ?? process.env, opts.fetchImpl);
+    this.realProviderChain = resolveProofProviderChain(opts.env ?? process.env, opts.fetchImpl);
+    this.realProvider = this.realProviderChain.primary;
+    this.premiumImplProvider = resolvePremiumImplProvider(opts.env ?? process.env, opts.fetchImpl);
     this.providers = [
       ...(opts.providers ?? []),
       new MockModelProvider(),

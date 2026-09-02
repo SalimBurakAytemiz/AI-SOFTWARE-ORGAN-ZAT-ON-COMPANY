@@ -1,12 +1,55 @@
 // Typed runtime errors. The runtime fails safe: on any uncertainty it denies or
 // blocks rather than proceeding (build spec section 36).
 
+import type { RateLimitSnapshot } from "../models/rate-limit.ts";
+
 export class RuntimeError extends Error {
   readonly code: string;
   constructor(code: string, message: string) {
     super(`[${code}] ${message}`);
     this.name = "RuntimeError";
     this.code = code;
+  }
+}
+
+/**
+ * The provider returned HTTP 429. Carries the parsed, credential-free
+ * `RateLimitSnapshot` so the scheduler can wait for the exact reset window.
+ * Keeps `code` = "PROVIDER_RATE_LIMITED" for backward compatibility.
+ */
+export class RateLimitError extends RuntimeError {
+  readonly rateLimit: RateLimitSnapshot | null;
+  constructor(message: string, rateLimit: RateLimitSnapshot | null = null) {
+    super("PROVIDER_RATE_LIMITED", message);
+    this.name = "RateLimitError";
+    this.rateLimit = rateLimit;
+  }
+}
+
+/**
+ * Repeated 429s survived the bounded rate-limit retry cycles. The stage BLOCKS
+ * cleanly - the workflow state is preserved and can be resumed later.
+ */
+export class RateLimitExhaustedError extends RuntimeError {
+  readonly rateLimit: RateLimitSnapshot | null;
+  constructor(message: string, rateLimit: RateLimitSnapshot | null = null) {
+    super("RATE_LIMIT_EXHAUSTED", message);
+    this.name = "RateLimitExhaustedError";
+    this.rateLimit = rateLimit;
+  }
+}
+
+/**
+ * The provider returned HTTP 429 (or 402) with a billing/quota-exhaustion body
+ * (`insufficient_quota`, `credit_balance_exhausted`, "no credits remaining",
+ * "billing", "payment required"). This is NOT a rate limit - waiting will not
+ * clear it - so it is non-retryable and never fed to the rate-limit scheduler.
+ * The stage BLOCKS immediately with a clear, credential-free reason.
+ */
+export class ProviderQuotaExhaustedError extends RuntimeError {
+  constructor(message: string) {
+    super("PROVIDER_QUOTA_EXHAUSTED", message);
+    this.name = "ProviderQuotaExhaustedError";
   }
 }
 

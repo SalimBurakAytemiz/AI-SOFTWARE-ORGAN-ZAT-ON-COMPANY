@@ -32,9 +32,13 @@ export class RequestBudget {
   readonly ceiling: number;
   private used = 0;
 
-  constructor(opts: { target?: number; ceiling?: number } = {}) {
+  constructor(opts: { target?: number; ceiling?: number; used?: number } = {}) {
     this.target = opts.target ?? 20;
     this.ceiling = opts.ceiling ?? 30;
+    // `used` seeds the counter when continuing a run that already spent part of
+    // the budget (proof resume) so the shared ceiling keeps counting across the
+    // interruption.
+    this.used = Math.max(0, Math.floor(opts.used ?? 0));
   }
 
   /** Call BEFORE issuing a real request. Throws if this request would exceed the ceiling. */

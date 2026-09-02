@@ -96,10 +96,11 @@ export class LiteLlmProvider implements ModelProvider {
       throw new RuntimeError("PROVIDER_HTTP", `gateway responded ${res.status}`);
     }
     const body = (await res.json()) as {
-      choices: { message: { content: string } }[];
+      choices: { message: { content: string }; finish_reason?: string | null }[];
       usage?: { prompt_tokens?: number; completion_tokens?: number };
       cost?: number;
     };
+    const rawFinish = body.choices[0]?.finish_reason;
     return {
       provider: this.name,
       model,
@@ -111,6 +112,8 @@ export class LiteLlmProvider implements ModelProvider {
       },
       estimated_cost_usd: typeof body.cost === "number" ? body.cost : null,
       duration_ms: Date.now() - started,
+      finish_reason: typeof rawFinish === "string" ? rawFinish.toLowerCase() : null,
+      max_output_tokens: req.maxOutputTokens ?? 1024,
     };
   }
 

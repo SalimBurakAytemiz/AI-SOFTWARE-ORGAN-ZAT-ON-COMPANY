@@ -71,10 +71,35 @@ export interface WorkspaceFile {
   content: string;
 }
 
+/** Deterministic, non-secret description of the seeded project (see projectFacts). */
+export interface ProjectFacts {
+  language: "JavaScript" | "TypeScript";
+  packageManager: string;
+  moduleType: "ESM" | "CommonJS";
+  /** One-line rule the model must obey for module syntax. */
+  moduleSyntax: string;
+  /** The exact `scripts.test` command, or "(none)". */
+  testCommand: string;
+  testRunner: "node:test" | "jest" | "vitest" | "mocha" | "unknown";
+  /** Human-readable description of what that runner discovers, and where to add a test. */
+  testDiscoveryRule: string;
+  /** Where a new test file should go (an existing test's dir/pattern, else a safe default). */
+  recommendedTestPath: string;
+  sourceDirs: string[];
+  /** The server/library entrypoint file, or null if none was found. */
+  serverEntrypoint: string | null;
+  /** Symbols the entrypoint exports (so a test imports the real thing). */
+  entrypointExports: string[];
+  existingTests: string[];
+  npmScripts: Record<string, string>;
+}
+
 export class ProofWorkspace {
   readonly root: string;
   readonly taskId: string;
   private gitReady = false;
+  /** The seed commit; every diff is computed against this, not against HEAD. */
+  private seedRev = "";
 
   constructor(opts: { buildRoot: string; taskId: string; seedFrom: string }) {
     this.taskId = opts.taskId;
@@ -129,7 +154,7 @@ export class ProofWorkspace {
     const out: string[] = [];
     const walk = (dir: string) => {
       for (const name of readdirSync(dir)) {
-        if (name === "node_modules" || name === ".git") continue;
+        if (name === "node_modules" || name === ".git" || name === ".npm") continue;
         const abs = join(dir, name);
         if (statSync(abs).isDirectory()) walk(abs);
         else out.push(relative(this.root, abs));
@@ -137,6 +162,117 @@ export class ProofWorkspace {
     };
     walk(this.root);
     return out.sort();
+  }
+
+  /**
+   * Deterministic, credential-free analysis of the seeded project - the
+   * AUTHORITATIVE description of the fixture handed to the implementation stage
+   * so a model never has to (and is told not to) guess the stack. Computed from
+   * the real files only: nothing here comes from a model or an earlier stage.
+   * Every field is best-effort and defensive - a missing/oddly-shaped project
+   * still returns a usable object.
+   */
+  projectFacts(): ProjectFacts {
+    const files = this.list();
+    const readSafe = (p: string): string => {
+      try {
+        return this.read(p);
+      } catch {
+        return "";
+      }
+    };
+
+    let pkg: Record<string, unknown> = {};
+    try {
+      pkg = JSON.parse(readSafe("package.json")) as Record<string, unknown>;
+    } catch {
+      /* no / invalid package.json */
+    }
+    const scripts = (pkg.scripts && typeof pkg.scripts === "object" ? pkg.scripts : {}) as Record<string, string>;
+    const moduleType: ProjectFacts["moduleType"] = pkg.type === "module" ? "ESM" : "CommonJS";
+    const testCommand = typeof scripts.test === "string" && scripts.test.trim() ? scripts.test.trim() : "(none)";
+
+    let testRunner: ProjectFacts["testRunner"] = "unknown";
+    let testDiscoveryRule = "unknown - inspect the test command and existing tests before adding one";
+    if (/\bnode\s+--test\b/.test(testCommand)) {
+      testRunner = "node:test";
+      testDiscoveryRule =
+        "`node --test` with no path args recursively discovers every file named `*.test.js` / " +
+        "`*-test.js` / `*_test.js` AND every `*.js` file inside a directory named `test/`. " +
+        "Put a new test at `test/<name>.test.js`.";
+    } else if (/\bjest\b/.test(testCommand)) {
+      testRunner = "jest";
+      testDiscoveryRule = "Jest discovers `*.test.js` / `*.spec.js` and files under `__tests__/`.";
+    } else if (/\bvitest\b/.test(testCommand)) {
+      testRunner = "vitest";
+      testDiscoveryRule = "Vitest discovers `*.test.js` / `*.spec.js`.";
+    } else if (/\bmocha\b/.test(testCommand)) {
+      testRunner = "mocha";
+      testDiscoveryRule = "Mocha discovers `test/*.js` by default (or the `--spec` glob).";
+    }
+
+    const ext = moduleType === "ESM" ? "js" : "js";
+    const codeFiles = files.filter((p) => /\.(m?js|cjs|ts)$/.test(p));
+    const existingTests = codeFiles.filter(
+      (p) => /(^|\/)test\//.test(p) || /\.(test|spec)\.(m?js|cjs|ts)$/.test(p) || /-test\.(m?js|cjs|ts)$/.test(p),
+    );
+    const sourceDirs = [
+      ...new Set(
+        codeFiles
+          .filter((p) => !existingTests.includes(p) && p.includes("/"))
+          .map((p) => p.split("/")[0]!),
+      ),
+    ].sort();
+
+    // The server / library entrypoint: package.json main, then the start
+    // script's target, then a conventional file.
+    const startScript = typeof scripts.start === "string" ? scripts.start : "";
+    const startTarget = startScript.match(/\b([\w./-]+\.(?:m?js|cjs|ts))\b/)?.[1];
+    const entryCandidates = [
+      typeof pkg.main === "string" ? (pkg.main as string) : "",
+      startTarget ?? "",
+      "src/server.js",
+      "src/index.js",
+      "src/app.js",
+      "server.js",
+      "index.js",
+    ]
+      .map((p) => p.replace(/^\.\//, ""))
+      .filter(Boolean);
+    const serverEntrypoint = entryCandidates.find((p) => files.includes(p)) ?? null;
+
+    const entrypointExports: string[] = [];
+    if (serverEntrypoint) {
+      const src = readSafe(serverEntrypoint);
+      for (const m of src.matchAll(/export\s+(?:async\s+)?function\s+([A-Za-z0-9_$]+)/g)) entrypointExports.push(m[1]!);
+      for (const m of src.matchAll(/export\s+(?:const|let|var)\s+([A-Za-z0-9_$]+)/g)) entrypointExports.push(m[1]!);
+      for (const m of src.matchAll(/export\s*\{([^}]+)\}/g)) {
+        for (const name of m[1]!.split(",")) {
+          const clean = name.trim().split(/\s+as\s+/)[0]!.trim();
+          if (clean) entrypointExports.push(clean);
+        }
+      }
+      if (/\bmodule\.exports\b/.test(src)) entrypointExports.push("module.exports");
+    }
+
+    return {
+      language: codeFiles.some((p) => p.endsWith(".ts")) ? "TypeScript" : "JavaScript",
+      packageManager: files.includes("package-lock.json") || files.includes("package.json") ? "npm" : "unknown",
+      moduleType,
+      moduleSyntax:
+        moduleType === "ESM"
+          ? "ESM only - use `import ... from` / `export`; NEVER `require(...)`, `module.exports` or `__dirname`"
+          : "CommonJS - use `require(...)` / `module.exports`",
+      testCommand,
+      testRunner,
+      testDiscoveryRule,
+      recommendedTestPath: existingTests[0] ?? `test/feature.test.${ext}`,
+      sourceDirs: sourceDirs.length ? sourceDirs : ["(project root)"],
+      serverEntrypoint,
+      entrypointExports: [...new Set(entrypointExports)],
+      existingTests,
+      npmScripts: scripts,
+    };
   }
 
   /** Key files a model needs to understand the fixture, bounded in size. */
@@ -263,21 +399,51 @@ export class ProofWorkspace {
       execFileSyncQuiet("git", ["init", "-q"], this.root);
       execFileSyncQuiet("git", ["config", "user.email", "proof@ai-software-company.local"], this.root);
       execFileSyncQuiet("git", ["config", "user.name", "proof-runtime"], this.root);
+      // A workspace that was already seeded and committed in a previous run
+      // (proof resume) keeps its history. Adopt its existing root commit as the
+      // seed base instead of creating a second "seed" commit - a fresh seed
+      // commit on top of completed stages would fold their changes into the diff
+      // base and make diff()/hasChanges() blind to the work already done. A fresh
+      // workspace has no HEAD yet and falls through to the normal seed commit.
+      let existingRoot = "";
+      try {
+        execFileSyncQuiet("git", ["rev-parse", "--verify", "-q", "HEAD"], this.root);
+        existingRoot = execFileSyncCapture(
+          "git",
+          ["rev-list", "--max-parents=0", "-n", "1", "HEAD"],
+          this.root,
+        ).trim();
+      } catch {
+        existingRoot = "";
+      }
+      if (existingRoot) {
+        this.seedRev = existingRoot;
+        this.gitReady = true;
+        return;
+      }
       execFileSyncQuiet("git", ["add", "-A"], this.root);
       execFileSyncQuiet("git", ["commit", "-q", "-m", "proof: seed fixture", "--no-verify"], this.root);
+      this.seedRev = execFileSyncCapture("git", ["rev-parse", "HEAD"], this.root).trim();
       this.gitReady = true;
     } catch {
       this.gitReady = false;
     }
   }
 
-  /** Unified diff of everything changed since the seed commit. */
+  /**
+   * Unified diff of everything changed since the SEED commit (not since HEAD).
+   * `snapshot()` adds checkpoint commits on top of the seed; comparing to the
+   * seed keeps `diff()` / `hasChanges()` correct across those checkpoints.
+   */
   diff(): string {
     if (!this.gitReady) this.ensureGit();
     if (!this.gitReady) return "(git unavailable; diff not computed)";
     try {
       execFileSyncQuiet("git", ["add", "-A"], this.root);
-      const out = execFileSyncCapture("git", ["diff", "--cached", "--stat", "-p"], this.root);
+      const args = this.seedRev
+        ? ["diff", "--cached", this.seedRev, "--stat", "-p"]
+        : ["diff", "--cached", "--stat", "-p"];
+      const out = execFileSyncCapture("git", args, this.root);
       return out.trim() || "(no changes)";
     } catch (err) {
       return `(diff failed: ${String(err)})`;
@@ -287,6 +453,66 @@ export class ProofWorkspace {
   hasChanges(): boolean {
     const d = this.diff();
     return d !== "(no changes)" && !d.startsWith("(git unavailable");
+  }
+
+  /**
+   * Workspace-relative paths changed since a given revision (default: the seed
+   * commit). Used to validate exactly which files an implementation harness
+   * (e.g. Codex CLI) touched. Gitignored paths (`.npm/`, `node_modules/`) never
+   * appear. Empty array if git is unavailable or nothing changed.
+   */
+  changedFilesSince(rev?: string): string[] {
+    if (!this.gitReady) this.ensureGit();
+    if (!this.gitReady) return [];
+    try {
+      execFileSyncQuiet("git", ["add", "-A"], this.root);
+      const base = rev || this.seedRev;
+      const args = base ? ["diff", "--cached", "--name-only", base] : ["diff", "--cached", "--name-only"];
+      return execFileSyncCapture("git", args, this.root)
+        .split("\n")
+        .map((s) => s.trim())
+        .filter(Boolean);
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Capture the current workspace state as a restore point and return its id.
+   * Used by the proof driver right before a real stage so a provider fallback
+   * (Groq RATE_LIMIT_EXHAUSTED -> NVIDIA) can retry that stage from a clean
+   * checkpoint - NEVER re-applying a partial stage's tool writes. Returns "" if
+   * git is unavailable (fallback then simply retries without restore).
+   */
+  snapshot(label = "checkpoint"): string {
+    if (!this.gitReady) this.ensureGit();
+    if (!this.gitReady) return "";
+    try {
+      execFileSyncQuiet("git", ["add", "-A"], this.root);
+      execFileSyncQuiet(
+        "git",
+        ["commit", "-q", "--allow-empty", "-m", `proof-checkpoint:${label}`, "--no-verify"],
+        this.root,
+      );
+      return execFileSyncCapture("git", ["rev-parse", "HEAD"], this.root).trim();
+    } catch {
+      return "";
+    }
+  }
+
+  /**
+   * Restore the workspace to a `snapshot()` id: revert tracked files and remove
+   * any files created after the snapshot. Idempotent; a no-op for "" or when git
+   * is unavailable. `-x` is NOT passed, so nothing gitignored is touched.
+   */
+  restore(rev: string): void {
+    if (!rev || !this.gitReady) return;
+    try {
+      execFileSyncQuiet("git", ["reset", "--hard", "-q", rev], this.root);
+      execFileSyncQuiet("git", ["clean", "-fdq"], this.root);
+    } catch {
+      /* best effort; the stage still re-runs and its gates still enforce */
+    }
   }
 
   dispose(keepArtifacts = true): void {

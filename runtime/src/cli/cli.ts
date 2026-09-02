@@ -1,8 +1,10 @@
 import { Runtime } from "../runtime.ts";
-import { doctor } from "../core/doctor.ts";
+import { doctor, probeRealProvider } from "../core/doctor.ts";
 import { runProof } from "../proof/proof.ts";
 import { runSoftwareFactoryProof } from "../proof/software-factory.ts";
 import { RequestBudget } from "../proof/request-budget.ts";
+import { CodexCliHarness } from "../agents/codex-cli-harness.ts";
+import { dataDir } from "../config/paths.ts";
 import { table, kv, heading, parseFlags } from "./format.ts";
 import { UsageError, RuntimeError } from "../core/errors.ts";
 import { HUMAN_FOUNDER } from "../approvals/approval-engine.ts";
@@ -11,7 +13,7 @@ const HELP = `ai-company - AI Software Company Agent Runtime V1.0
 
 Usage: ai-company <command> [args] [--json]
 
-  doctor                         Check runtime health
+  doctor [--probe]               Check runtime health (--probe: live proof-provider check)
   status                         One-line runtime status
   pause "<reason>"               Engage the global pause (blocks all writes)
   resume                         Lift the global pause
@@ -38,6 +40,7 @@ Usage: ai-company <command> [args] [--json]
   proof                          Run the safe end-to-end (mock) proof workflow
   proof software-factory [--real]  Real-agent Software Factory proof (mock by default)
   proof real-agent               Alias for 'proof software-factory --real'
+  proof resume [<run-id>]        Continue an interrupted REAL proof from its checkpoint
   proof status                   Show the latest Software Factory proof run
 
 The Human Founder is the supreme authority. No critical action executes without an
@@ -88,6 +91,9 @@ async function dispatch(
   switch (command) {
     case "doctor": {
       const report = doctor(rt);
+      if (flags.probe === true) {
+        report.checks.push(await probeRealProvider(rt));
+      }
       out(report, () => {
         console.log(heading("ai-company doctor"));
         console.log(
@@ -187,7 +193,7 @@ async function dispatch(
     }
 
     case "proof":
-      return proofCmd(rt, sub, flags, json);
+      return proofCmd(rt, sub, rest, flags, json);
 
     default:
       throw new UsageError(`unknown command '${command}'. Run 'ai-company help'.`);
@@ -477,6 +483,7 @@ async function approvalsCmd(
 async function proofCmd(
   rt: Runtime,
   sub: string | undefined,
+  rest: string[],
   flags: Record<string, string | boolean>,
   json: boolean,
 ): Promise<number> {
@@ -531,9 +538,66 @@ async function proofCmd(
     return 0;
   }
 
+  // Resume an interrupted REAL Software Factory proof from its persisted
+  // checkpoint (e.g. after an environment shutdown). Completed stages and the
+  // implementation are NOT re-run - the workflow engine's persisted run drives
+  // the remaining stages (qa -> security -> release_review -> HUMAN_APPROVAL).
+  if (sub === "resume") {
+    if (!rt.realProvider.ready) {
+      const reason = rt.realProvider.reason;
+      if (json) console.log(JSON.stringify({ blocked: true, mode: "REAL", reason }, null, 2));
+      else console.log(`REAL PROOF RESUME BLOCKED: ${reason}`);
+      return 1;
+    }
+    let runId = rest[0] ?? (typeof flags.run === "string" ? flags.run : undefined);
+    if (!runId) {
+      const tasks = rt.orchestrator.tasks.list().filter((t) => t.project === "runtime-proof-v1.1");
+      for (const t of [...tasks].reverse()) {
+        const r = rt.store.getRunByTask(t.id);
+        if (r && r.status === "RUNNING") {
+          runId = r.id;
+          break;
+        }
+      }
+    }
+    if (!runId) {
+      if (json) console.log(JSON.stringify({ blocked: true, reason: "no RUNNING Software Factory proof run to resume" }, null, 2));
+      else console.log("no RUNNING Software Factory proof run found to resume. Pass a run id: ai-company proof resume <run-id>");
+      return 1;
+    }
+    const priorRealRequests = rt.audit
+      .list(1_000_000)
+      .filter((e) => e.action.startsWith("real_model_call:") && !e.action.includes("_repair")).length;
+    const result = await runSoftwareFactoryProof(rt, {
+      mode: "REAL",
+      resume: { runId },
+      descriptor: rt.realProvider.descriptor ?? undefined,
+      fallbackDescriptors: rt.realProviderChain.fallbacks,
+      budget: new RequestBudget({ used: priorRealRequests }),
+    });
+    if (json) {
+      console.log(JSON.stringify(result, null, 2));
+      return result.ok && !result.blocked ? 0 : 1;
+    }
+    console.log(heading("AI SOFTWARE COMPANY - Software Factory proof RESUME"));
+    console.log(`\nProvider:\n  ${result.provider?.label ?? "-"}` + (result.provider?.model ? ` (model ${result.provider.model})` : ""));
+    for (const tr of result.providerTransitions) {
+      console.log(`  fallback: ${tr.from_provider} -> ${tr.to_provider} at stage '${tr.stage}' (${tr.reason}; checkpoint preserved)`);
+    }
+    if (result.blocked) {
+      console.log(`\nSTATUS: BLOCKED\n  ${result.blockReason}`);
+      return 1;
+    }
+    console.log(`\nWorkflow (resumed):`);
+    for (const s of result.stages) console.log(`  ${s.stage.padEnd(20)} ${s.outcome}`);
+    console.log(`\nPRODUCTION:\n  ${result.humanApprovalStatus === "HUMAN_APPROVAL_REQUIRED" ? "HUMAN APPROVAL REQUIRED" : "NOT REACHED"}`);
+    console.log(`\n${result.assertion}`);
+    return result.ok && !result.blocked ? 0 : 1;
+  }
+
   const real = sub === "real-agent" || flags.real === true;
   if (sub !== "software-factory" && sub !== "real-agent") {
-    throw new UsageError("proof [software-factory [--real] | real-agent | status]");
+    throw new UsageError("proof [software-factory [--real] | real-agent | resume [<run-id>] | status]");
   }
 
   const mode: "REAL" | "MOCK" = real ? "REAL" : "MOCK";
@@ -543,17 +607,69 @@ async function proofCmd(
     else {
       console.log(heading("AI SOFTWARE COMPANY - Real Agent Proof"));
       console.log(msg);
-      console.log("\nConfigure a provider credential securely, then re-run:");
-      console.log("  export OPENROUTER_API_KEY=...        # never commit this");
-      console.log("  ai-company doctor");
+      console.log("\nConfigure a proof provider credential securely, then re-run:");
+      console.log("  export AI_COMPANY_REAL_PROVIDER=groq          # preferred proof provider");
+      console.log("  export AI_COMPANY_REAL_MODEL=openai/gpt-oss-120b");
+      console.log("  export GROQ_API_KEY=...                       # environment only, never commit");
+      console.log("  ai-company doctor --probe                     # OK / NOT_CONFIGURED / RATE_LIMITED / ERROR");
       console.log("  ai-company proof real-agent");
+      console.log("  # (OpenRouter remains an optional fallback: AI_COMPANY_REAL_PROVIDER=openrouter + OPENROUTER_API_KEY)");
     }
     return 1;
+  }
+
+  // PREMIUM implementation escalation - only when explicitly authorized for this
+  // run. Report the plan BEFORE any real premium request (build spec: report
+  // provider/model/stage/risk/estimated request count/reason first).
+  const pi = real && rt.premiumImplProvider.authorized ? rt.premiumImplProvider : null;
+  let premiumImpl: import("../proof/software-factory.ts").PremiumImplOption | undefined;
+  if (pi) {
+    const lines = ["PREMIUM ESCALATION (implementation stage only) - Human Founder authorized"];
+    if (pi.kind === "codex-cli") {
+      const harness = new CodexCliHarness({
+        model: pi.codex?.model || undefined,
+        timeoutMs: pi.codex?.timeoutMs,
+        scratchDir: dataDir(),
+      });
+      const det = await harness.detect();
+      lines.push(
+        `  provider                : codex-cli (local Codex CLI, ChatGPT login - no paid API)`,
+        `  codex                   : ${det.version ?? "not found"} | logged in: ${det.loggedIn ? "yes (ChatGPT)" : "NO"}`,
+        `  model                   : ${pi.codex?.model || "account default"}`,
+        `  stage                   : implementation`,
+        `  risk                    : 2 (MEDIUM / standard development)`,
+        `  estimated request count : 1 primary + at most 1 targeted repair`,
+        `  escalation reason       : FREE_IMPLEMENTATION_QUALITY_BUDGET exhausted on both free proof models`,
+        `  ready                   : ${det.available && det.loggedIn ? "yes" : "NO - " + det.reason}`,
+      );
+      premiumImpl = {
+        kind: "codex-cli",
+        codexHarness: harness,
+        codexLabel: pi.codex?.label ?? "PREMIUM / Codex CLI (ChatGPT)",
+        codexModel: pi.codex?.model ?? "",
+      };
+    } else if (pi.kind === "openai") {
+      const d = pi.descriptor;
+      lines.push(
+        `  provider                : ${d?.provider.name ?? "-"} (${d?.baseUrl ?? "-"}) [PAID API]`,
+        `  model                   : ${d?.model ?? "-"} (source: ${d?.modelSource ?? "-"})`,
+        `  stage                   : implementation`,
+        `  risk                    : 2 (MEDIUM / standard development)`,
+        `  estimated request count : 1 primary + at most 1 targeted test-repair`,
+        `  escalation reason       : FREE_IMPLEMENTATION_QUALITY_BUDGET exhausted on both free proof models`,
+        `  ready                   : ${pi.ready ? "yes" : "NO - " + pi.reason}`,
+      );
+      premiumImpl = pi.ready ? { kind: "openai", openaiDescriptor: pi.descriptor ?? undefined } : undefined;
+    }
+    if (json) console.error(lines.join("\n"));
+    else console.log("\n" + lines.join("\n"));
   }
 
   const result = await runSoftwareFactoryProof(rt, {
     mode,
     descriptor: real ? rt.realProvider.descriptor ?? undefined : undefined,
+    fallbackDescriptors: real ? rt.realProviderChain.fallbacks : undefined,
+    premiumImpl,
     budget: new RequestBudget(),
   });
 
@@ -566,6 +682,23 @@ async function proofCmd(
   console.log(`\nTask:\n  ${PROOF_TITLE}`);
   console.log(`\nProvider:\n  ${result.provider?.label ?? "-"}` +
     (result.provider?.model ? ` (model ${result.provider.model})` : ""));
+  for (const tr of result.providerTransitions) {
+    console.log(
+      `  fallback: ${tr.from_provider} -> ${tr.to_provider} at stage '${tr.stage}' (${tr.reason}; checkpoint preserved)`,
+    );
+  }
+  if (result.premiumEscalation) {
+    const p = result.premiumEscalation;
+    const usage =
+      p.kind === "codex-cli"
+        ? `~${p.codexTokensUsed ?? "?"} tokens (ChatGPT plan, not API billing)`
+        : `${p.tokenUsage.input_tokens ?? "?"} in / ${p.tokenUsage.output_tokens ?? "?"} out tokens`;
+    console.log(
+      `  premium: implementation stage on ${p.provider}:${p.model} -> ${p.outcome} ` +
+        `(${p.requests} run(s), ${p.repairs} repair(s); ${usage})`,
+    );
+    if (p.changedFiles.length) console.log(`           changed files: ${p.changedFiles.join(", ")}`);
+  }
   if (result.blocked) {
     console.log(`\nSTATUS: BLOCKED\n  ${result.blockReason}`);
     return 1;
@@ -573,7 +706,11 @@ async function proofCmd(
   console.log(`\nWorkflow:\n`);
   for (const s of result.stages) {
     const label = `${s.role}`.padEnd(30);
-    const kind = s.modelBacked ? (s.real ? "real-model" : "mock-model") : "auxiliary";
+    const kind = s.modelBacked
+      ? s.real
+        ? `real-model${s.providerId ? `(${s.providerId})` : ""}`
+        : "mock-model"
+      : "auxiliary";
     const flagsStr = [
       kind,
       s.testEvidence ? `tests ${s.testEvidence.passed}p/${s.testEvidence.failed}f` : "",
@@ -589,6 +726,12 @@ async function proofCmd(
     ["token usage", `${result.tokenUsage.input_tokens ?? "?"} in / ${result.tokenUsage.output_tokens ?? "?"} out`],
     ["cost", `$${result.cost.known_usd} / ${result.cost.note}`],
     ["real model(s)", result.realModelsUsed.join(", ") || "-"],
+    [
+      "rate-limit waits",
+      result.rateLimitWaits.length > 0
+        ? `${result.rateLimitWaits.length} (~${Math.round(result.totalRateLimitWaitMs / 1000)}s total; free-tier quota, no approval needed)`
+        : "0",
+    ],
     ["pending approval", result.approval_id ?? "-"],
     ["artifacts", result.artifactsDir ?? "-"],
     ["workspace", result.workspaceDir ?? "-"],
@@ -602,7 +745,15 @@ const PROOF_TITLE = "Add a GET /health endpoint to the demo service";
 
 function statusIcon(status: string): string {
   return (
-    { OK: "[ ok ]", NOT_CONFIGURED: "[n/c ]", OPTIONAL: "[opt ]", DEFERRED: "[defr]", FAIL: "[FAIL]" } as Record<
+    {
+      OK: "[ ok ]",
+      NOT_CONFIGURED: "[n/c ]",
+      OPTIONAL: "[opt ]",
+      DEFERRED: "[defr]",
+      RATE_LIMITED: "[rate]",
+      ERROR: "[ERR ]",
+      FAIL: "[FAIL]",
+    } as Record<
       string,
       string
     >

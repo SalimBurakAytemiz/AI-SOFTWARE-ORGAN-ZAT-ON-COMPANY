@@ -1,5 +1,6 @@
 import type { AgentDefinition, WorkflowStep, Task, WorkflowDefinition } from "../core/types.ts";
 import type { Registries } from "../registry/index.ts";
+import type { ProjectFacts } from "../proof/proof-workspace.ts";
 
 /**
  * Reusable agent prompt / context assembler (build spec sections 11, 20, 25).
@@ -26,6 +27,19 @@ export interface StageInput {
   workspaceDiff?: string;
   /** Optional: a file listing / key file contents for the implementation stage. */
   workspaceFiles?: { path: string; content: string }[];
+  /**
+   * Optional: deterministic, runtime-computed facts about the target project
+   * (module system, test command + discovery rule, entrypoint, existing tests).
+   * Rendered as AUTHORITATIVE so the model never guesses the stack and is told
+   * to ignore any earlier stage that described it differently.
+   */
+  projectFacts?: ProjectFacts;
+  /**
+   * Optional: stage-specific, acceptance-critical directives the caller derives
+   * from the StagePlan (e.g. "this is a code stage - apply changes via tool
+   * calls, not artifacts"). Rendered verbatim near the output contract.
+   */
+  stageDirectives?: string[];
   /** Hard cap on assembled context size in bytes (build spec section 21). */
   contextBudgetBytes?: number;
 }
@@ -50,30 +64,44 @@ const CONSTITUTION_CONSTRAINTS = [
   "This is a disposable, isolated proof. No production system, no real customer data, no money.",
 ];
 
-const OUTPUT_CONTRACT = `You MUST respond with exactly one JSON object and nothing else - no prose
-before or after, no markdown fence required. The object has these fields:
+const OUTPUT_CONTRACT = `Respond with EXACTLY ONE JSON object and nothing else: no prose before or after,
+no markdown fence, no comments. Every field below is required (use [] or null,
+never omit a field). Fields:
 
 {
   "status": "PASS" | "FAIL" | "BLOCKED",
-  "summary": "<= 400 chars, what you did and the outcome",
-  "reasoningSummary": "<= 600 chars, concise decision rationale for engineering audit (NOT hidden chain-of-thought)",
-  "artifacts": [ { "path": "relative/path.md", "kind": "report|doc|code|test|plan|evidence", "content": "<full content>" } ],
-  "recommendations": [ "string", ... ],
-  "requestedToolCalls": [ { "tool": "workspace.write|workspace.patch|workspace.exec|workspace.read", "args": { ... }, "reason": "string" } ],
-  "handoff": { "to": "<agent-id>", "why": "string" } | null,
-  "qualityEvidence": [ { "check": "string", "result": "PASS|FAIL|NOT_RUN", "detail": "string" } ],
-  "risks": [ "string", ... ],
-  "errors": [ "string", ... ]
+  "summary": "<= 300 chars: what you did and the outcome",
+  "reasoningSummary": "<= 300 chars: the decision rationale for audit (NOT chain-of-thought)",
+  "artifacts": [ { "path": "relative/path.md", "kind": "report|doc|code|test|plan|evidence", "content": "the artifact body" } ],
+  "fileChanges": [ { "path": "src/server.js", "operation": "create|modify", "content": "the COMPLETE new file text" } ],
+  "recommendations": [ "short string", ... ],
+  "requestedToolCalls": [ { "tool": "workspace.read|workspace.list|workspace.write|workspace.patch|workspace.exec", "args_json": "<JSON object literal as a string>", "reason": "short string" } ],
+  "handoff": { "to": "<agent-id>", "why": "short string" } | null,
+  "qualityEvidence": [ { "check": "string", "result": "PASS|FAIL|NOT_RUN", "detail": "short string" } ],
+  "risks": [ "short string", ... ],
+  "errors": [ "short string", ... ]
 }
 
 Rules:
-- Produce the artifacts your role is responsible for (see "Your outputs").
-- Only list tools in requestedToolCalls that appear in "Tools you may request".
-- workspace.write args: { "path": "<relative>", "content": "<full file text>" }.
-- workspace.patch args: { "path": "<relative>", "find": "<exact text>", "replace": "<new text>" }.
-- workspace.exec args: { "command": "<npm script name or safe dev command>" }.
-- If you cannot complete the stage safely, use status "BLOCKED" and explain in errors.
-- Do not claim a test passed unless you ran it via workspace.exec and saw the result.`;
+- Produce ONLY the artifacts your role owns (see "Your outputs"). One artifact per file. Keep each
+  "content" tight - a focused report or the actual file text, not an essay; do not restate the task,
+  the context, or another artifact back to us.
+- CODE CHANGES go in "fileChanges", NOT in "artifacts" and NOT in "requestedToolCalls". Each
+  fileChanges entry is ONE COMPLETE file (never a fragment, never a prose stub, never a diff). The
+  runtime applies each one to the workspace through the permission gateway. "artifacts" are
+  documentation only and are NEVER written to the repository.
+- Only list tools in requestedToolCalls that appear in "Tools you may request". You do NOT need a
+  tool call to run tests - the runtime runs the project's own test command itself after this stage.
+- "args_json" is a STRING containing one JSON object (escape the inner quotes); use "{}" when there
+  are no arguments. Use requestedToolCalls only for read-only inspection (workspace.read/list).
+- Match the project EXACTLY as described in "project_facts" (below): its module system, its test
+  command, its entrypoint and exports. Do not introduce a framework, dependency or test runner that
+  is not already there. Make the SMALLEST change that satisfies the task.
+- Every file you write must be syntactically valid in the project's module system before tests run.
+- If you cannot complete the stage safely, use status "BLOCKED" and explain in "errors".
+- Do not claim a test passed unless the evidence shows it ran and passed.
+- The response must be a single valid JSON object on its own - strict JSON, double-quoted keys and
+  strings, no trailing commas, no truncation. This applies to the first response and any retry.`;
 
 export function assembleAgentPrompt(input: StageInput): AssembledPrompt {
   const {
@@ -171,6 +199,31 @@ export function assembleAgentPrompt(input: StageInput): AssembledPrompt {
         .join("\n\n"),
     });
   }
+  if (input.projectFacts) {
+    const pf = input.projectFacts;
+    sections.push({
+      name: "project_facts",
+      keep: true,
+      body: [
+        "AUTHORITATIVE - computed directly from the current workspace. If any earlier stage's",
+        "artifact describes a different framework, language, module system or test runner, that",
+        "earlier stage was IMPRECISE: follow these facts, not the prior artifact.",
+        "",
+        `- language: ${pf.language}`,
+        `- package manager: ${pf.packageManager}`,
+        `- module system: ${pf.moduleType}  (${pf.moduleSyntax})`,
+        `- test command (run by the runtime after this stage): ${pf.testCommand}`,
+        `- test runner: ${pf.testRunner}`,
+        `- test discovery: ${pf.testDiscoveryRule}`,
+        `- add new tests at: ${pf.recommendedTestPath}`,
+        `- source dir(s): ${pf.sourceDirs.join(", ")}`,
+        `- server/library entrypoint: ${pf.serverEntrypoint ?? "(none found)"}`,
+        `- entrypoint exports: ${pf.entrypointExports.length ? pf.entrypointExports.join(", ") : "(none detected)"}`,
+        `- existing tests: ${pf.existingTests.length ? pf.existingTests.join(", ") : "(none)"}`,
+        `- npm scripts: ${Object.entries(pf.npmScripts).map(([k, v]) => `${k}="${v}"`).join("  ") || "(none)"}`,
+      ].join("\n"),
+    });
+  }
   if (workspaceFiles && workspaceFiles.length > 0) {
     sections.push({
       name: "proof_workspace_files",
@@ -216,8 +269,12 @@ export function assembleAgentPrompt(input: StageInput): AssembledPrompt {
     }
   }
 
+  const directives = input.stageDirectives ?? [];
   const prompt = [
     ...rendered,
+    ...(directives.length > 0
+      ? ["## stage_directives (acceptance-critical)", directives.map((d) => `- ${d}`).join("\n"), ""]
+      : []),
     "## required_output_contract",
     OUTPUT_CONTRACT,
     "",

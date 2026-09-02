@@ -16,12 +16,13 @@ gate. See [`../docs/real-agent-execution.md`](../docs/real-agent-execution.md).
 ## REAL AGENT PROOF (Founder quickstart)
 
 ```
-cd runtime && npm install && npm run check      # offline, no key, 103 tests
+cd runtime && npm install && npm run check      # offline, no key, 170 tests
 
-export AI_COMPANY_REAL_PROVIDER=openrouter
-export OPENROUTER_API_KEY=...                    # your key — shell only, never commit
+export AI_COMPANY_REAL_PROVIDER=groq             # preferred proof provider
+export AI_COMPANY_REAL_MODEL=openai/gpt-oss-120b
+export GROQ_API_KEY=...                          # your key — shell/env only, never commit
 
-node bin/ai-company.js doctor                    # OpenRouter proof provider -> OK
+node bin/ai-company.js doctor --probe            # Groq Direct (live) -> OK
 node bin/ai-company.js proof real-agent          # watch the agents execute
 node bin/ai-company.js proof status              # what ran, which gates passed
 node bin/ai-company.js audit --task <task-id>    # full evidence
@@ -29,9 +30,11 @@ node bin/ai-company.js audit --task <task-id>    # full evidence
 
 The run stops at `PRODUCTION: HUMAN APPROVAL REQUIRED`. Nothing is deployed,
 merged or released. Without a key it reports `REAL PROOF BLOCKED` and does not
-fake success. OpenRouter free inference is a **PROOF_PROVIDER**
-(`NON_SENSITIVE_PROOF_ONLY`), not an approved production provider — moving to a
-paid provider needs separate Human Founder authorization.
+fake success. **Groq Direct** is the preferred proof provider and **OpenRouter**
+(`AI_COMPANY_REAL_PROVIDER=openrouter` + `OPENROUTER_API_KEY`) the optional
+fallback — both **PROOF_PROVIDER** / `NON_SENSITIVE_PROOF_ONLY`, not approved
+production providers; moving to a paid provider needs separate Human Founder
+authorization.
 
 - **Language / platform:** TypeScript, run natively by Node.js 22.6+ (type stripping;
   no build step). Decision and alternatives: [`../architecture/adr-agent-runtime.md`](../architecture/adr-agent-runtime.md).

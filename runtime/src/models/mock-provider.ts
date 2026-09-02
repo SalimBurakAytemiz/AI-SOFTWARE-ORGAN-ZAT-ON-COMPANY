@@ -46,6 +46,7 @@ export class MockModelProvider implements ModelProvider {
     this.inTokens += input_tokens;
     this.outTokens += output_tokens;
 
+    const maxOutputTokens = req.maxOutputTokens ?? 1500;
     return {
       provider: this.name,
       model: `mock-${req.tier.toLowerCase()}`,
@@ -54,6 +55,9 @@ export class MockModelProvider implements ModelProvider {
       usage: { input_tokens, output_tokens },
       estimated_cost_usd: 0, // the mock provider genuinely costs zero
       duration_ms: Math.max(1, Date.now() - started),
+      // The deterministic mock always emits a complete response; never truncated.
+      finish_reason: "stop",
+      max_output_tokens: maxOutputTokens,
     };
   }
 
@@ -103,6 +107,7 @@ function renderStructuredResult(req: GenerateRequest, digest: string): string {
       },
     ],
     recommendations: [`Proceed to the next stage after '${stage}'.`],
+    fileChanges: [] as unknown[],
     requestedToolCalls: [] as unknown[],
     handoff: { to: "next-stage", why: `'${stage}' complete` },
     qualityEvidence: [
@@ -113,32 +118,12 @@ function renderStructuredResult(req: GenerateRequest, digest: string): string {
   };
 
   if (stage === "implementation") {
-    base.requestedToolCalls = [
-      {
-        tool: "workspace.write",
-        args: {
-          path: "src/server.js",
-          content: MOCK_SERVER_JS,
-        },
-        reason: "add the GET /health endpoint required by the task",
-      },
-      {
-        tool: "workspace.write",
-        args: {
-          path: "test/health.test.js",
-          content: MOCK_HEALTH_TEST_JS,
-        },
-        reason: "add an automated test for the GET /health endpoint",
-      },
-      {
-        tool: "workspace.write",
-        args: {
-          path: "package.json",
-          content: MOCK_PACKAGE_JSON,
-        },
-        reason: "ensure `npm test` runs the new test directory",
-      },
-      { tool: "workspace.exec", args: { command: "npm test" }, reason: "run the tests I just added" },
+    // The first-class code-change channel (matches the hardened contract): each
+    // entry is a complete file, no double-escaped args_json. The runtime runs
+    // `npm test` itself after the stage, so no exec tool call is needed.
+    base.fileChanges = [
+      { path: "src/server.js", operation: "modify", content: MOCK_SERVER_JS },
+      { path: "test/health.test.js", operation: "create", content: MOCK_HEALTH_TEST_JS },
     ];
     base.summary = `[mock ${tag}] backend-engineer added GET /health + a test to the disposable workspace.`;
   }
@@ -198,19 +183,6 @@ test("GET /health returns 200 and { status: 'ok' }", async () => {
   assert.equal(r.status, 200);
   assert.deepEqual(JSON.parse(r.body), { status: "ok" });
 });
-`;
-
-const MOCK_PACKAGE_JSON = `{
-  "name": "demo-service",
-  "version": "0.0.1",
-  "private": true,
-  "type": "module",
-  "description": "Disposable fixture service for the Agent Runtime proof workflow. Not a product.",
-  "scripts": {
-    "start": "node src/server.js",
-    "test": "node --test"
-  }
-}
 `;
 
 function estimateTokens(s: string): number {
