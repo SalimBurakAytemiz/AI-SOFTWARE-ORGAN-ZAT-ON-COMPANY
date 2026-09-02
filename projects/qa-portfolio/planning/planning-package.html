@@ -1,0 +1,889 @@
+<title>QA Portfolio Planning Package</title>
+<meta name="description" content="Pre-development planning package for the QA Engineer Portfolio Platform — architecture, data model, wireframes, backlog, security and test strategy.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+  :root{
+    --bg:#F4F7F5; --bg-subtle:#ECF1EE; --surface:#FFFFFF; --surface-2:#F6F9F7;
+    --border:#D9E1DD; --border-strong:#C1CDC7;
+    --text:#151A18; --muted:#556360; --faint:#8A9793;
+    --accent:#0E7A4F; --accent-ink:#F2FBF6; --accent-bg:#E2F2EA; --accent-line:#8FCcae;
+    --fail:#B23A31; --fail-bg:#F6E4E2;
+    --warn:#8A6212; --warn-bg:#F6EDDA;
+    --ok:#0E7A4F; --ok-bg:#E2F2EA;
+    --shadow:0 1px 2px rgba(20,30,26,.06), 0 6px 20px rgba(20,30,26,.05);
+    --maxw:74ch;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0B0D0F; --bg-subtle:#0F1214; --surface:#14181B; --surface-2:#171D20;
+      --border:#242B2E; --border-strong:#343E42;
+      --text:#E7EBEA; --muted:#95A1A0; --faint:#68716F;
+      --accent:#3DDC97; --accent-ink:#04140D; --accent-bg:#12291F; --accent-line:#245c44;
+      --fail:#FF7A78; --fail-bg:#2A1615;
+      --warn:#F5C451; --warn-bg:#2A2110;
+      --ok:#3DDC97; --ok-bg:#12291F;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0B0D0F; --bg-subtle:#0F1214; --surface:#14181B; --surface-2:#171D20;
+    --border:#242B2E; --border-strong:#343E42;
+    --text:#E7EBEA; --muted:#95A1A0; --faint:#68716F;
+    --accent:#3DDC97; --accent-ink:#04140D; --accent-bg:#12291F; --accent-line:#245c44;
+    --fail:#FF7A78; --fail-bg:#2A1615;
+    --warn:#F5C451; --warn-bg:#2A2110;
+    --ok:#3DDC97; --ok-bg:#12291F;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+  body{
+    margin:0;background:var(--bg);color:var(--text);
+    font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+    font-size:16px;line-height:1.62;-webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  code,kbd,samp{font-family:"IBM Plex Mono","SFMono-Regular",Menlo,Consolas,monospace}
+
+  .layout{display:grid;grid-template-columns:1fr;max-width:1280px;margin:0 auto}
+  @media (min-width:1000px){
+    .layout{grid-template-columns:266px minmax(0,1fr);gap:0}
+  }
+
+  /* Sidebar */
+  .side{
+    border-bottom:1px solid var(--border);background:var(--bg-subtle);
+    padding:18px 20px;
+  }
+  @media (min-width:1000px){
+    .side{
+      position:sticky;top:0;height:100vh;overflow:auto;
+      border-bottom:0;border-right:1px solid var(--border);padding:26px 22px;
+    }
+  }
+  .side .brand{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--faint)}
+  .side h1{font-size:16px;line-height:1.35;margin:.5rem 0 .1rem;font-weight:600}
+  .chip{
+    display:inline-flex;align-items:center;gap:.45em;margin-top:.7rem;
+    font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:500;
+    padding:.35em .6em;border-radius:6px;background:var(--accent-bg);color:var(--accent);
+    border:1px solid var(--accent-line);letter-spacing:.02em;
+  }
+  .chip::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent)}
+  nav.toc{margin-top:1.3rem}
+  nav.toc ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+  nav.toc a{
+    display:flex;gap:.7em;padding:.4em .5em;border-radius:6px;color:var(--muted);
+    font-size:13.5px;line-height:1.3;
+  }
+  nav.toc a:hover{background:var(--surface);color:var(--text);text-decoration:none}
+  nav.toc a .n{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--faint);
+    min-width:2.1em;font-weight:500}
+  .themetoggle{
+    margin-top:1.4rem;font-family:"IBM Plex Mono",monospace;font-size:11px;
+    background:var(--surface);border:1px solid var(--border-strong);color:var(--muted);
+    border-radius:6px;padding:.5em .7em;cursor:pointer;letter-spacing:.03em;
+  }
+  .themetoggle:hover{color:var(--text)}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+
+  /* Main */
+  main{padding:30px 22px 90px;min-width:0}
+  @media (min-width:1000px){main{padding:54px 56px 120px}}
+  .lede{max-width:var(--maxw)}
+  .lede p{color:var(--muted);font-size:16.5px}
+  .facts{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;
+    background:var(--border);border:1px solid var(--border);border-radius:10px;
+    overflow:hidden;margin:26px 0 8px;
+  }
+  .facts div{background:var(--surface);padding:12px 14px}
+  .facts dt{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.11em;
+    text-transform:uppercase;color:var(--faint);margin:0}
+  .facts dd{margin:.3em 0 0;font-size:13.5px;font-weight:500}
+
+  section{
+    max-width:100%;margin-top:64px;scroll-margin-top:20px;
+    padding-top:30px;border-top:1px solid var(--border);
+  }
+  section.intro{border-top:0;margin-top:34px;padding-top:0}
+  .eyebrow{font-family:"IBM Plex Mono",monospace;font-size:11.5px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--accent);font-weight:500}
+  section h2{font-size:26px;line-height:1.2;margin:.35rem 0 0;font-weight:600;text-wrap:balance;
+    letter-spacing:-.01em}
+  section h3{font-size:16.5px;margin:2.2rem 0 .6rem;font-weight:600}
+  section h4{font-size:13.5px;margin:1.5rem 0 .4rem;font-weight:600;color:var(--muted);
+    font-family:"IBM Plex Mono",monospace;letter-spacing:.02em}
+  section p,section li{max-width:var(--maxw)}
+  section p{color:var(--text)}
+  .muted{color:var(--muted)}
+  ul,ol{padding-left:1.2em}
+  li{margin:.28em 0}
+
+  .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:10px}
+  pre{
+    font-family:"IBM Plex Mono",monospace;font-size:12px;line-height:1.5;
+    background:var(--surface-2);border:1px solid var(--border);border-radius:10px;
+    padding:16px 18px;margin:1rem 0;color:var(--text);white-space:pre;
+  }
+  pre.mermaid{white-space:normal;text-align:center;color:var(--muted)}
+
+  table{border-collapse:collapse;width:100%;font-size:13px;margin:1rem 0;min-width:520px}
+  .scroll table{margin:0}
+  th,td{text-align:left;padding:8px 11px;border-bottom:1px solid var(--border);vertical-align:top}
+  thead th{
+    font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--faint);font-weight:500;
+    border-bottom:1px solid var(--border-strong);white-space:nowrap;
+  }
+  tbody tr:hover{background:var(--surface-2)}
+  td code{font-size:12px;background:var(--bg-subtle);padding:.1em .35em;border-radius:4px}
+
+  .tag{font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:500;
+    padding:.15em .5em;border-radius:5px;white-space:nowrap;display:inline-block}
+  .t-ok{background:var(--ok-bg);color:var(--ok)}
+  .t-warn{background:var(--warn-bg);color:var(--warn)}
+  .t-fail{background:var(--fail-bg);color:var(--fail)}
+  .t-n{background:var(--bg-subtle);color:var(--muted)}
+
+  .callout{
+    border:1px solid var(--border-strong);border-left:3px solid var(--accent);
+    background:var(--surface);border-radius:8px;padding:14px 16px;margin:1.2rem 0;
+    max-width:var(--maxw);
+  }
+  .callout.warn{border-left-color:var(--warn)}
+  .callout p{margin:.3em 0}
+  .callout strong{font-weight:600}
+
+  .grid2{display:grid;gap:14px;margin:1rem 0}
+  @media (min-width:760px){.grid2{grid-template-columns:1fr 1fr}}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:15px 16px}
+  .card h4{margin-top:0}
+
+  .swatch{display:flex;align-items:center;gap:.6em;font-size:12.5px;margin:.3em 0}
+  .swatch i{width:22px;height:22px;border-radius:5px;border:1px solid var(--border-strong);display:inline-block}
+
+  footer{max-width:var(--maxw);margin-top:70px;padding-top:24px;border-top:1px solid var(--border);
+    color:var(--muted);font-size:13.5px}
+  .cmd{font-family:"IBM Plex Mono",monospace;background:var(--surface-2);border:1px solid var(--border);
+    border-radius:8px;padding:12px 14px;font-size:12.5px;color:var(--text);overflow-x:auto;white-space:pre}
+</style>
+
+<div class="layout">
+<aside class="side">
+  <div class="brand">AI Software Company · Project Factory</div>
+  <h1>QA Engineer Portfolio Platform</h1>
+  <div class="chip">READY_FOR_BUILD · awaiting authorize-build</div>
+  <button class="themetoggle" id="tt" type="button" aria-label="Toggle colour theme">◑ theme</button>
+  <nav class="toc" aria-label="Planning outputs">
+    <ol>
+      <li><a href="#intro"><span class="n">00</span><span>Overview &amp; governance</span></a></li>
+      <li><a href="#o01"><span class="n">01</span><span>System architecture</span></a></li>
+      <li><a href="#o02"><span class="n">02</span><span>Database &amp; ER diagram</span></a></li>
+      <li><a href="#o03"><span class="n">03</span><span>Page &amp; route map</span></a></li>
+      <li><a href="#o04"><span class="n">04</span><span>Public wireframes</span></a></li>
+      <li><a href="#o05"><span class="n">05</span><span>Admin wireframes</span></a></li>
+      <li><a href="#o06"><span class="n">06</span><span>Design system</span></a></li>
+      <li><a href="#o07"><span class="n">07</span><span>Epics / stories / tasks</span></a></li>
+      <li><a href="#o08"><span class="n">08</span><span>Sprint plan</span></a></li>
+      <li><a href="#o09"><span class="n">09</span><span>Dependency analysis</span></a></li>
+      <li><a href="#o10"><span class="n">10</span><span>Security plan</span></a></li>
+      <li><a href="#o11"><span class="n">11</span><span>Test strategy</span></a></li>
+      <li><a href="#o12"><span class="n">12</span><span>Risks &amp; open questions</span></a></li>
+      <li><a href="#o13"><span class="n">13</span><span>Content intake checklist</span></a></li>
+      <li><a href="#o14"><span class="n">14</span><span>Planning review</span></a></li>
+    </ol>
+  </nav>
+</aside>
+
+<main>
+  <section class="intro" id="intro">
+    <div class="lede">
+      <p class="eyebrow">Mandatory pre-development planning gate</p>
+      <h2 style="font-size:30px;margin-top:.4rem">Planning package for a premium, bilingual QA case-study platform</h2>
+      <p>A public marketing website plus a private headless CMS for a professional Software QA
+      Engineer. The public site renders only published content; the owner creates, translates,
+      previews and publishes every project and résumé module from the admin panel without
+      touching source code. Turkish and English throughout.</p>
+      <p>This page is a review surface. The authoritative documents live in the repository at
+      <code>projects/qa-portfolio/planning/01…14</code>. Nothing here is built — the project sits at
+      <code>READY_FOR_BUILD</code> with <code>build_authorization.granted = false</code>.</p>
+    </div>
+
+    <dl class="facts">
+      <div><dt>Type</dt><dd>web_app</dd></div>
+      <div><dt>Stack</dt><dd>Next.js 15 · Supabase · Vercel</dd></div>
+      <div><dt>Risk level</dt><dd>3 / 5</dd></div>
+      <div><dt>Security</dt><dd>elevated</dd></div>
+      <div><dt>Workflow</dt><dd>feature-development</dd></div>
+      <div><dt>Locales</dt><dd>tr · en</dd></div>
+      <div><dt>Handoff checksum</dt><dd>sha256:6383fa…f7579</dd></div>
+      <div><dt>Build authorized</dt><dd>No — Human Founder</dd></div>
+    </dl>
+
+    <div class="callout">
+      <p><strong>Governance position.</strong> The master spec asks the team to continue into
+      implementation after planning. <code>CLAUDE.md</code> §13 prohibits writing any project
+      application code in this phase, and Project Factory requires
+      <code>ai-company project authorize-build qa-portfolio</code> by the Human Founder
+      (RISK 5, audited) before Runtime V1.1 may execute the project.</p>
+      <p><strong>Resolution:</strong> complete this planning package, then stop at the
+      build-authorization gate. The repository constitution overrides the inline rule. Recorded as
+      ADR-0001 / OQ-000.</p>
+    </div>
+  </section>
+
+  <!-- 01 -->
+  <section id="o01">
+    <p class="eyebrow">Output 01</p><h2>System architecture</h2>
+    <p>One Next.js deployment serves the public site and the admin panel. A deliberately thin
+    <code>middleware.ts</code> does two things only: locale resolution and a first-gate
+    <code>/admin</code> session check. Authorisation is enforced at the database by Row Level
+    Security, so a wrong query cannot leak a draft.</p>
+
+    <div class="scroll">
+<pre>                        USERS  (recruiters · clients · peers · owner-as-admin)
+                          │  HTTPS
+                          ▼
+                  VERCEL EDGE  (CDN · TLS · security headers · basic WAF)
+                          │
+                          ▼
+        ┌───────────────  NEXT.JS APP (one deployment)  ───────────────┐
+        │   middleware.ts : locale resolution + /admin session guard   │
+        │                                                             │
+        │   PUBLIC SYSTEM  /[locale]/(site)/*      ADMIN SYSTEM  /admin/*  (noindex)
+        │   RSC pages · SSG/ISR · anon client      RSC lists + client editors (RHF+zod)
+        │   read-only · RLS: published only        Server Actions → Capability re-check
+        │   sitemap · robots · OG · JSON-LD        → zod → write (RLS) → audit → revalidateTag
+        └───────────────────────────┬─────────────────────────────────┘
+                                    ▼
+                                 SUPABASE
+        ┌──────────────┬───────────────────────┬────────────────────────┐
+        │  PostgreSQL   │        Auth           │        Storage         │
+        │ content +     │ email+password        │ bucket "media"         │
+        │ *_translations│ cookie sessions (PKCE)│ public read /          │
+        │ + RLS + RPC   │ auth.uid() ∈          │ is_admin() write       │
+        │ is_admin()    │ admin_users → ADMIN   │ MIME + size allowlist  │
+        └──────┬───────┴───────────────────────┴────────────────────────┘
+               ▼
+   status='published' AND visible=true  →  PUBLIC CONTENT
+               │
+      email provider (contact notifications)      Vercel Cron (keep-alive · retention)</pre>
+    </div>
+
+    <h4>Component responsibilities</h4>
+    <div class="scroll"><table>
+      <thead><tr><th>Component</th><th>Owns</th><th>Does not</th></tr></thead>
+      <tbody>
+        <tr><td>Vercel Edge</td><td>TLS, CDN cache of SSG/ISR output, security response headers, network-layer protection</td><td>business logic</td></tr>
+        <tr><td>middleware.ts</td><td>redirect <code>/</code>→default locale, validate <code>[locale]</code>, first <code>/admin</code> session gate</td><td>the security boundary (RLS + layout do that)</td></tr>
+        <tr><td>Public System</td><td>server-render published content via the <em>anonymous</em> Supabase client; SEO surface; no writes, no secrets</td><td>hold the service-role key</td></tr>
+        <tr><td>Admin System</td><td>RSC lists + client editors; every mutation re-checks <code>is_admin()</code> → zod → write → <code>content_audit</code> → <code>revalidateTag</code></td><td>trust the middleware alone</td></tr>
+        <tr><td>PostgreSQL</td><td>content in base + <code>*_translations</code>; <code>status/visible/published_at</code> drive publication; RLS on every table; <code>is_admin()</code> = single authz source</td><td>allow any table to rely on "the app won't query it"</td></tr>
+        <tr><td>Auth</td><td>email+password sessions; sign-up disabled; a session is an <em>admin</em> session only if <code>auth.uid()</code> ∈ <code>admin_users</code></td><td>equate authenticated with authorised</td></tr>
+        <tr><td>Storage</td><td>one <code>media</code> bucket, public read, <code>is_admin()</code> write, MIME/size allowlist, generated paths</td><td>trust the client filename or Content-Type</td></tr>
+        <tr><td>Contact form</td><td>anon INSERT only + honeypot + timing + rate limit + DB trigger backstop; admin-only read</td><td>ever return stored messages to the public</td></tr>
+      </tbody>
+    </table></div>
+
+    <h4>Caching &amp; revalidation</h4>
+    <p>Public pages are static + ISR with a <code>revalidate</code> safety net; the primary
+    freshness mechanism is <strong>on-demand revalidation</strong> — every successful admin write
+    calls <code>revalidateContent(entity, id?)</code>, which fires the right tags
+    (<code>projects</code>, <code>project:{slug}</code>, <code>sitemap</code>, per-module tags).
+    Admin is <code>force-dynamic</code>, <code>no-store</code>, never indexed.</p>
+
+    <h4>Environments &amp; secrets</h4>
+    <p>Three environments — local, staging (Supabase <code>staging</code>), production (Supabase
+    <code>prod</code>, <strong>prepared not deployed</strong>). Secrets
+    (<code>SUPABASE_SERVICE_ROLE_KEY</code>, <code>MAIL_PROVIDER_API_KEY</code>,
+    <code>REVALIDATE_WEBHOOK_SECRET</code>) live only in Vercel encrypted env + git-ignored
+    <code>.env.local</code>; never in a <code>NEXT_PUBLIC_*</code> name; gitleaks in CI; the
+    service-role client is an isolated server module an ESLint rule + a bundle test forbid
+    importing anywhere else.</p>
+  </section>
+
+  <!-- 02 -->
+  <section id="o02">
+    <p class="eyebrow">Output 02</p><h2>Database schema &amp; ER diagram</h2>
+    <p>Base table + <code>*_translations</code> child for every localised content type. Repeatable
+    QA artifacts (scenarios, bugs, API examples, SQL examples) are typed rows with typed columns —
+    never a JSON/HTML blob. Long-form prose is Markdown text, sanitised on render. ~25 logical
+    tables.</p>
+
+    <h4>Normalisation decisions (answering the raw table list)</h4>
+    <div class="scroll"><table>
+      <thead><tr><th>Raw list</th><th>Decision</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td><code>project_platforms</code>, <code>project_tools</code>, <code>project_test_types</code></td><td><span class="tag t-warn">merge</span> → <code>taxonomy_terms</code> (kind) + <code>project_taxonomy</code></td><td>three identical dimension+join structures → one; one tag-picker in the admin</td></tr>
+        <tr><td><code>project_sections</code>, <code>project_challenges</code>, <code>project_impact</code>, <code>project_responsibilities</code></td><td><span class="tag t-fail">drop</span> → Markdown columns / one <code>project_highlights</code> list</td><td>the sections are a fixed known set; a generic section table is harder to edit &amp; validate</td></tr>
+        <tr><td><code>qa_lab_projects</code>, <code>qa_lab_translations</code></td><td><span class="tag t-fail">drop</span> → <code>projects.classification='qa_lab'</code></td><td>~90% field overlap; a lighter template + separate admin list give the different UX without a duplicate schema</td></tr>
+        <tr><td><code>test_scenarios</code>, <code>bug_reports</code>, <code>api_examples</code>, <code>sql_examples</code></td><td><span class="tag t-ok">keep</span> (+ translations)</td><td>repeatable, structured, filterable — structure earns its place</td></tr>
+        <tr><td><code>admin_profiles</code></td><td><span class="tag t-fail">drop</span> → <code>admin_users</code> (role + display_name)</td><td>redundant with <code>auth.users</code> + the allow-list</td></tr>
+      </tbody>
+    </table></div>
+
+    <h4>Enumerated types</h4>
+    <div class="scroll"><pre>locale                : tr | en
+content_status        : draft | published | archived
+project_classification: professional | supported | personal | qa_lab
+taxonomy_kind         : platform | tool | test_type | industry
+bug_severity          : blocker | critical | major | minor | trivial
+test_priority         : p0 | p1 | p2 | p3
+contact_state         : new | read | replied | archived | spam</pre></div>
+
+    <h4>ER diagram</h4>
+    <pre class="mermaid">
+erDiagram
+  auth_users ||--o| admin_users : "allow-list"
+  auth_users ||--o{ media : uploaded_by
+  profile ||--o{ profile_translations : has
+  site_settings ||--o{ site_settings_translations : has
+  projects ||--o{ project_translations : has
+  projects ||--o{ project_highlights : has
+  projects ||--o{ project_media : has
+  project_media }o--|| media : uses
+  projects ||--o{ test_scenarios : has
+  test_scenarios ||--o{ test_scenario_translations : has
+  projects ||--o{ bug_reports : has
+  bug_reports ||--o{ bug_report_translations : has
+  projects ||--o{ api_examples : has
+  projects ||--o{ sql_examples : has
+  projects ||--o{ project_taxonomy : tagged
+  taxonomy_terms ||--o{ project_taxonomy : tags
+  projects }o--o| media : cover
+  experience ||--o{ experience_translations : has
+  skill_categories ||--o{ skills : groups
+  services ||--o{ service_translations : has
+  education ||--o{ education_translations : has
+  media ||--o{ media_translations : has
+  contact_messages }o--o| auth_users : "read by admin"
+  content_audit }o--o| auth_users : actor
+    </pre>
+
+    <div class="grid2">
+      <div class="card"><h4>Translation strategy</h4>
+        <p class="muted" style="font-size:13.5px">Base row = locale-neutral facts; <code>*_translations</code> keyed by <code>(parent_id, locale)</code>. Per-locale <code>translation_status</code> lets the owner publish EN while TR is still draft. Fallback → <code>site_settings.default_locale</code>. UI chrome lives in <code>next-intl</code> catalogs, not the DB. Slugs are locale-neutral.</p></div>
+      <div class="card"><h4>Publication strategy</h4>
+        <p class="muted" style="font-size:13.5px">Public read predicate = <code>status='published' AND visible=true</code>, enforced by RLS. Transitions (publish / unpublish / hide / archive / restore) are transactional RPCs that each write one <code>content_audit</code> row and revalidate. Archive ≠ delete.</p></div>
+    </div>
+
+    <h4>RLS strategy</h4>
+    <ul>
+      <li>RLS enabled on <strong>every</strong> table in <code>public</code>. Default deny.</li>
+      <li>Base tables: <code>select</code> where published+visible <code>OR is_admin()</code>. Child/translation tables gate on the <em>parent's</em> publication state.</li>
+      <li>All writes: <code>USING (is_admin()) WITH CHECK (is_admin())</code>.</li>
+      <li><code>contact_messages</code>: anon <code>INSERT</code> only; admin <code>SELECT</code>/<code>UPDATE</code>; a <code>BEFORE INSERT</code> trigger caps inserts per <code>ip_hash</code>/hour.</li>
+      <li><code>content_audit</code>: admin <code>INSERT</code>+<code>SELECT</code> only → append-only. <code>admin_users</code>: not app-editable.</li>
+      <li>An automated <code>{role × op × row-state}</code> <strong>test matrix is a release gate</strong>; a new table with no matrix entry fails CI.</li>
+    </ul>
+  </section>
+
+  <!-- 03 -->
+  <section id="o03">
+    <p class="eyebrow">Output 03</p><h2>Page &amp; route map</h2>
+    <p>Public routes are locale-prefixed (<code>/tr</code>, <code>/en</code>). Admin is
+    locale-less (<code>/admin</code>), single-operator, UI language by cookie.</p>
+
+    <h4>Public routes</h4>
+    <div class="scroll"><table>
+      <thead><tr><th>Route</th><th>Purpose</th><th>Data</th><th>Auth</th><th>SEO</th></tr></thead>
+      <tbody>
+        <tr><td><code>/</code></td><td>root redirect</td><td>default locale</td><td>none</td><td class="muted">307</td></tr>
+        <tr><td><code>/[locale]</code></td><td>home — hero, featured rail, selected case studies, CTA</td><td>profile, featured projects, skills, services</td><td>none</td><td><span class="tag t-ok">index</span></td></tr>
+        <tr><td><code>/[locale]/about</code></td><td>identity, skills matrix, certs, education</td><td>profile_translations, skills, certifications, education</td><td>none</td><td><span class="tag t-ok">index</span></td></tr>
+        <tr><td><code>/[locale]/experience</code></td><td>career timeline + education + certs</td><td>experience(+t), education(+t)</td><td>none</td><td><span class="tag t-ok">index</span></td></tr>
+        <tr><td><code>/[locale]/projects</code></td><td>catalogue + URL-param filters + pagination</td><td>projects, translations, taxonomy</td><td>none</td><td><span class="tag t-ok">index</span></td></tr>
+        <tr><td><code>/[locale]/projects/[slug]</code></td><td>case study — fixed section order, meta sidebar, NDA handling</td><td>projects + all project_* tables</td><td>published (RLS)</td><td><span class="tag t-ok">index</span></td></tr>
+        <tr><td><code>/[locale]/qa-lab</code> · <code>/qa-lab/[slug]</code></td><td>experiments/demos — lighter template</td><td>projects where <code>classification='qa_lab'</code></td><td>none / published</td><td><span class="tag t-ok">index</span></td></tr>
+        <tr><td><code>/[locale]/services</code></td><td>offerings + engagement stepper</td><td>services(+t)</td><td>none</td><td><span class="tag t-ok">index</span></td></tr>
+        <tr><td><code>/[locale]/contact</code></td><td>form island + details</td><td><code>POST /api/contact</code></td><td>none</td><td><span class="tag t-ok">index</span></td></tr>
+        <tr><td><code>/[locale]/legal/privacy</code> · <code>/imprint</code></td><td>KVKK + GDPR notice, imprint <span class="tag t-n">added</span></td><td>static MDX</td><td>none</td><td><span class="tag t-ok">index</span></td></tr>
+        <tr><td><code>sitemap.xml</code> · <code>robots.txt</code> · <code>opengraph-image</code></td><td>SEO system routes</td><td>published routes</td><td>none</td><td class="muted">n/a</td></tr>
+      </tbody>
+    </table></div>
+
+    <h4>Admin &amp; auth routes</h4>
+    <div class="scroll"><table>
+      <thead><tr><th>Route</th><th>Purpose</th><th>Auth</th></tr></thead>
+      <tbody>
+        <tr><td><code>/admin/login</code>, <code>/auth/callback</code>, <code>/auth/confirm</code>, reset flow</td><td>Supabase PKCE sign-in; sign-up disabled</td><td>none</td></tr>
+        <tr><td><code>/admin/dashboard</code></td><td>stat cards, recent activity, translation-gap list</td><td>admin</td></tr>
+        <tr><td><code>/admin/projects</code> · <code>/new</code> · <code>/[id]</code> · <code>/[id]/preview</code></td><td>list (drag-reorder, ★ featured), tabbed editor, draft preview (noindex, no-store)</td><td>admin</td></tr>
+        <tr><td><code>/admin/qa-lab</code> · <code>/experience</code> · <code>/skills</code> · <code>/services</code> · <code>/education</code> · <code>/certifications</code></td><td>module CRUD, list + TR/EN form</td><td>admin</td></tr>
+        <tr><td><code>/admin/media</code></td><td>library, upload dropzone, alt text TR/EN, usage guard</td><td>admin</td></tr>
+        <tr><td><code>/admin/messages</code> <span class="tag t-n">added</span></td><td>contact inbox, plain-text render, state machine</td><td>admin</td></tr>
+        <tr><td><code>/admin/settings</code></td><td>general, localization, profile, social, SEO defaults, flags</td><td>admin (owner-only fields)</td></tr>
+      </tbody>
+    </table></div>
+    <p class="muted">All <code>/admin/**</code> and <code>/auth/**</code>: <code>X-Robots-Tag:
+    noindex</code> + <code>robots Disallow</code>. Adding an admin account is a Human-Founder-only
+    action via Supabase — treated like an access-control escalation.</p>
+  </section>
+
+  <!-- 04 -->
+  <section id="o04">
+    <p class="eyebrow">Output 04</p><h2>Public website wireframes</h2>
+    <p class="muted">Low-fidelity — information architecture, hierarchy and content flow, not visual
+    design. Full set (home, projects, case study, QA Lab, about/experience, contact) in
+    <code>planning/04-public-wireframes.md</code>.</p>
+
+    <h4>Project case study — the hardest layout</h4>
+    <div class="scroll">
+<pre>&gt; Projects / Title                                             [TR|EN]
+====  PROJECT TITLE  ====   summary sentence
+[ hero cover image ]
+┌────────────────────────────────────────┬──────────────────────────┐
+│ MAIN COLUMN                             │ META SIDEBAR (sticky)    │
+│ ## Overview / Testing scope / Strategy  │ Company: Acme / Confid.  │
+│ ## Coverage        [ coverage meter ]   │ Role · Industry · Period │
+│ ## Test scenarios  (TS-01 P0 · accordion)│ Platforms · Tools · Types│
+│ ## Bug examples    (BUG-01 · Critical)   │ &gt; GitHub  &gt; Live         │
+│ ## API testing     (GET /v1/orders 200)  │ ⚠ Some details withheld  │
+│ ## Database validation  (SQL-01)         │    (NDA)                  │
+│ ## Challenges / Impact / Lessons         │                          │
+│ ## Gallery  [ ][ ][ ]  (lightbox)        │                          │
+├────────────────────────────────────────┴──────────────────────────┤
+│ ‹ Prev project          Next project ›     ( Contact )             │
+└───────────────────────────────────────────────────────────────────┘
+Section order is FIXED. Empty sections are omitted. NDA hides company + links.
+Mobile: sidebar → compact card above; accordions full-width; "On this page ▾".</pre>
+    </div>
+
+    <h4>Information-architecture rules</h4>
+    <ul>
+      <li>Primary nav = Projects · QA Lab · Experience · Services · About · Contact.</li>
+      <li>"Featured" = a curated home rail (max 3–4). "Supported" = a classification badge + filter, not a page.</li>
+      <li>QA visual content is concentrated on case-study + QA Lab detail: scenario tables, coverage meters, bug cards, code blocks, galleries.</li>
+      <li>Every list has a designed empty state and a URL-param filter (shareable, indexable base).</li>
+    </ul>
+  </section>
+
+  <!-- 05 -->
+  <section id="o05">
+    <p class="eyebrow">Output 05</p><h2>Admin panel wireframes</h2>
+    <p>Priorities: fast content entry, obvious publication state, TR/EN parity visible at all
+    times, no way to accidentally publish a half-translated page.</p>
+
+    <h4>Project editor — tabbed, side-by-side TR/EN</h4>
+    <div class="scroll">
+<pre>‹ Projects   "API contract testing"      ○Draft   ( Save draft ) ( Preview ↗ ) ( Publish ▸ )
+[ Details ] [ Classification ] [ Taxonomy ] [ TR/EN Content ]
+[ Test scenarios ] [ Bug reports ] [ API testing ] [ SQL ] [ Media ] [ SEO ]
+──────────────────────────────────────────────────────────────────────────────
+TAB: TR/EN Content            Completeness:  TR ▓▓▓▓░ 80%   EN ▓▓░ 40%
+┌──────────── TR ────────────┐  ┌──────────── EN ────────────┐
+│ Title / Summary / Overview │  │ Title / Summary (copy ◄TR) │
+│ Scope / Strategy / Coverage│  │ Scope / Strategy / Coverage│
+│ Challenges / Impact / Lessons  │ Challenges / Impact / Lessons
+│ Highlights (sortable bullets) │ Highlights (sortable bullets)
+└───────────────────────────┘  └───────────────────────────┘
+Markdown toolbar · live sanitised preview · media picker for images</pre>
+    </div>
+
+    <h4>Content workflow</h4>
+    <div class="scroll">
+<pre>( + New project ) → Enter info (metadata + slug) → Enter Turkish content
+   → Enter English content → Enter technical QA content (scenarios/bugs/API/SQL/media)
+   → ( Save draft )  [status=draft · RLS: not public]
+   → ( Preview ↗ )   [/admin/projects/[id]/preview · noindex · no-store]
+   → ( Publish ▸ )   checks → status=published, visible=true, published_at=now()
+                     + content_audit + revalidateTag  →  PUBLIC SITE
+
+Also: Unpublish → draft · Hide → visible=false · Archive → archived (kept in admin)
+      Restore → draft (then re-publish).  Every transition writes an audit row.</pre>
+    </div>
+    <p class="muted">The publish dialog runs a checklist (slug unique, TR/EN required fields, cover
+    set, ≥1 taxonomy term) and can publish one locale while the other stays draft.</p>
+  </section>
+
+  <!-- 06 -->
+  <section id="o06">
+    <p class="eyebrow">Output 06</p><h2>Design system proposal</h2>
+    <p>Direction: <strong>premium, technical, precise, reliable, software-engineering oriented</strong>
+    — a focused instrument panel, not a neon dashboard. Dark-first, one decisive accent, monospace
+    as a domain signal. The team owns the visual identity; no design files were provided and none
+    are expected.</p>
+
+    <div class="grid2">
+      <div class="card">
+        <h4>Colour — dark (product)</h4>
+        <div class="swatch"><i style="background:#0A0B0D"></i> <code>--bg</code> #0A0B0D</div>
+        <div class="swatch"><i style="background:#14171B"></i> <code>--surface</code> #14171B</div>
+        <div class="swatch"><i style="background:#262B31"></i> <code>--border</code> #262B31</div>
+        <div class="swatch"><i style="background:#E8EBEF"></i> <code>--text</code> #E8EBEF</div>
+        <div class="swatch"><i style="background:#3DDC97"></i> <code>--accent</code> #3DDC97 <span class="muted">("test passed" green)</span></div>
+        <div class="swatch"><i style="background:#FF6B6B"></i> <code>--fail</code> · <i style="background:#F5C451"></i> <code>--warn</code> · <i style="background:#5AA7FF"></i> <code>--info</code></div>
+      </div>
+      <div class="card">
+        <h4>Type</h4>
+        <p class="muted" style="font-size:13.5px">Display/body: <strong>Geist</strong> or Inter
+        Tight / Inter. Mono: <strong>Geist Mono / JetBrains Mono</strong> for code, endpoints, IDs,
+        metrics, badges. Self-hosted via <code>next/font</code> (no CLS, CSP-friendly).
+        Turkish glyph check (İ ı ğ ş ç ö ü) at every weight.</p>
+        <p class="muted" style="font-size:13px">Scale (1.25): 11 · 12 · 14 · 16 · 18 · 20 · 25 · 31
+        · 39 · 49 · 61. Body 68ch. Headings 600–680, tracking −0.02em.</p>
+      </div>
+    </div>
+
+    <h4>QA visual language</h4>
+    <p>The recurring vocabulary that makes the site legibly "a QA engineer's": monospace type ·
+    PASS/FAIL pills · coverage meters · scenario tables · bug cards with severity rails ·
+    request/response code blocks · SQL blocks · status dots · "evidence" chips · terminal snippets ·
+    diff highlights. Every published case study surfaces <strong>at least two</strong>.</p>
+    <p class="muted">Spacing base 4px; radius 6/10/16; motion 120–260ms ease-out, full
+    <code>prefers-reduced-motion</code>. Breakpoints 360 / 640 / 768 / 1024 / 1280 / 1536. All
+    documented pairings meet WCAG 2.1 AA (validated by an automated contrast test).</p>
+  </section>
+
+  <!-- 07 -->
+  <section id="o07">
+    <p class="eyebrow">Output 07</p><h2>Epic / story / task breakdown</h2>
+    <p>20 epics → stories → ~180 tasks. Complexity is a T-shirt size of
+    <strong>uncertainty × surface area × integration count</strong>, not a time promise
+    (<span class="tag t-n">S</span> ≤ ½d · <span class="tag t-n">M</span> ½–1.5d ·
+    <span class="tag t-n">L</span> 2–4d · <span class="tag t-n">XL</span> must be split). No
+    calendar dates — team size and content-entry pace are unknown.</p>
+
+    <div class="scroll"><table>
+      <thead><tr><th>#</th><th>Epic</th><th>Heaviest work</th></tr></thead>
+      <tbody>
+        <tr><td>01</td><td>Planning &amp; Architecture</td><td>this package + 10-perspective review + build authorization</td></tr>
+        <tr><td>02</td><td>Design System &amp; UX</td><td>QA components (L), key comps (L)</td></tr>
+        <tr><td>03</td><td>Application Foundation</td><td>CI pipeline, security headers, env schema</td></tr>
+        <tr><td>04</td><td>Supabase &amp; Database</td><td>RLS policies (L) + generated types + seed</td></tr>
+        <tr><td>05</td><td>Authentication &amp; Authorization</td><td>middleware + admin gate + login rate limiting</td></tr>
+        <tr><td>06</td><td>Public Website</td><td>case-study page (XL → 5 sub-tasks)</td></tr>
+        <tr><td>07</td><td>Admin Panel</td><td>DataTable (L), mutation infra (L)</td></tr>
+        <tr><td>08</td><td>Project CMS</td><td>artifact editors (XL → 4), publish workflow (L)</td></tr>
+        <tr><td>09</td><td>QA Case Study System</td><td>content contract, coverage meter, partial states</td></tr>
+        <tr><td>10</td><td>QA Lab</td><td>reduced editor preset + lighter public template</td></tr>
+        <tr><td>11</td><td>TR / EN Localization</td><td>UI catalogs (L), fallback policy, hreflang</td></tr>
+        <tr><td>12</td><td>Media Management</td><td>library (L), upload pipeline, SVG policy, delete guard</td></tr>
+        <tr><td>13</td><td>Services / Experience / Skills / Education</td><td>nested sortable skills, settings/profile</td></tr>
+        <tr><td>14</td><td>Contact System</td><td><code>/api/contact</code> (L) + Mailer + inbox</td></tr>
+        <tr><td>15</td><td>SEO</td><td>metadata, sitemap, robots, JSON-LD, OG images, CWV budget</td></tr>
+        <tr><td>16</td><td>Accessibility</td><td>keyboard operability (L), CI axe, admin pass</td></tr>
+        <tr><td>17</td><td>Security</td><td>RLS test matrix (L), CSP, uploads, pre-launch review</td></tr>
+        <tr><td>18</td><td>Automated Testing</td><td>E2E for 25 critical flows (XL → 6)</td></tr>
+        <tr><td>19</td><td>Performance</td><td>render strategy, image + JS budget, Lighthouse ≥95</td></tr>
+        <tr><td>20</td><td>Deployment &amp; Documentation</td><td>prod config (prepared), runbooks, approval package</td></tr>
+      </tbody>
+    </table></div>
+    <p class="muted">Cross-cutting P0 gates: build authorization · DB + <code>is_admin()</code> ·
+    RLS + its test matrix · Supabase clients · locale routing.</p>
+  </section>
+
+  <!-- 08 -->
+  <section id="o08">
+    <p class="eyebrow">Output 08</p><h2>Sprint / development phase plan</h2>
+    <p>Ordered by technical dependency, not feature glamour. Each phase has demonstrable entry/exit
+    criteria; a phase is done when its exit criteria are met with evidence, not when time runs out.</p>
+
+    <div class="scroll"><table>
+      <thead><tr><th>Sprint</th><th>Theme</th><th>Exit criterion (abridged)</th></tr></thead>
+      <tbody>
+        <tr><td>0</td><td>Planning, design foundation, project skeleton</td><td>Founder runs <code>authorize-build</code>; <code>next build</code>/<code>tsc</code>/<code>lint</code> clean; tokens v0</td></tr>
+        <tr><td>1</td><td>Supabase, schema, RLS, auth</td><td>RLS <code>{role×op×row-state}</code> matrix green in CI; admin logs in, non-admin can't</td></tr>
+        <tr><td>2</td><td>Design system complete, locale + app shell</td><td>component gallery + snapshots; <code>/tr</code>/<code>/en</code> shells; no hard-coded strings; headers grade A</td></tr>
+        <tr><td>3</td><td>Public read site ‖ Admin shell + CMS core</td><td>create → draft → preview → publish → public works; a draft is never publicly reachable</td></tr>
+        <tr><td>4</td><td>Structured QA content, QA Lab, Media</td><td>full case study with all 4 artifact types renders; media upload→attach→public image with alt text</td></tr>
+        <tr><td>5</td><td>TR/EN parity, résumé modules, Contact</td><td>every route has TR+EN + reciprocal hreflang; contact happy + spam + rate-limit paths pass</td></tr>
+        <tr><td>6</td><td>SEO · Accessibility · Security · Performance (4 tracks)</td><td>axe 0 serious/critical; Lighthouse ≥95; CSP enforced; security review 0 criticals</td></tr>
+        <tr><td>7</td><td>Full automated testing + fix pass</td><td>25 critical-flow E2E specs green on 3 browsers; coverage floors; 0 open P0/P1</td></tr>
+        <tr><td>8</td><td>Deployment prep, docs, release</td><td>pre-launch checklist 100%; restore-from-backup verified; approval package assembled — pipeline STOPS at <code>HUMAN_APPROVAL_REQUIRED</code></td></tr>
+      </tbody>
+    </table></div>
+    <p class="muted">Milestones (dependency-defined, not dated): M1 secure data layer · M2 walking
+    skeleton · M3 publish loop closed · M4 content-complete CMS · M5 quality bar met · M6
+    release-ready.</p>
+  </section>
+
+  <!-- 09 -->
+  <section id="o09">
+    <p class="eyebrow">Output 09</p><h2>Dependency analysis</h2>
+    <pre class="mermaid">
+graph TD
+  A[authorize-build] --> B[Next.js skeleton + CI]
+  B --> C[Supabase projects]
+  C --> D[DB schema]
+  D --> E["is_admin()"]
+  E --> F[RLS policies]
+  F --> G[RLS test matrix]
+  D --> H[typed query layer]
+  E --> I[Supabase clients]
+  I --> J[auth + middleware + admin gate]
+  J --> S[admin shell + mutation infra]
+  H --> S
+  S --> T[Markdown sanitisation]
+  T --> U[project editor / TR-EN content]
+  U --> V[structured artifact editors]
+  V --> W[publish workflow + revalidate]
+  W --> Y[public queries reflect publication]
+  F --> Y
+  H --> P[public read pages]
+  I2[design tokens] --> N[design system]
+  N --> P
+  Y --> Z[TR/EN parity + hreflang]
+  U --> Z
+  Z --> E2E[full E2E: critical flows]
+  W --> E2E
+  G --> SEC[security hardening + pre-launch review]
+  T --> SEC
+  SEC --> REL[deployment prep + docs]
+  E2E --> REL
+  PERF[perf + a11y + SEO] --> REL
+  P --> PERF
+  REL --> APPROVE[Human Founder production-deploy approval]
+    </pre>
+
+    <h4>Critical dependencies the spec asked to document</h4>
+    <div class="scroll"><table>
+      <thead><tr><th>Upstream</th><th>Dependent</th><th>If it's wrong…</th></tr></thead>
+      <tbody>
+        <tr><td>DB schema</td><td>the entire CMS, every query, generated types</td><td>migrations + type regen + query rewrites — most expensive to change late</td></tr>
+        <tr><td><code>is_admin()</code> / RLS</td><td>every write policy, admin gate, mutation infra, preview</td><td>authorization holes or total admin lockout; draft/PII leakage</td></tr>
+        <tr><td>Authentication</td><td>admin panel, all mutations, preview</td><td>admin unusable or unprotected</td></tr>
+        <tr><td>Project data model</td><td>case-study pages, list filters, home rail, publish checks</td><td>ambiguous "is this published?" states, broken filters</td></tr>
+        <tr><td>Translation architecture</td><td>all TR/EN content, hreflang, editor UX, publish gate</td><td>can't publish one locale independently; SEO alternate errors</td></tr>
+        <tr><td>Design system / tokens</td><td>every public component and admin screen</td><td>inconsistent UI, contrast failures, expensive restyle</td></tr>
+        <tr><td>Publishing rules + revalidation</td><td>public queries, sitemap, hreflang, "I published but nothing changed"</td><td>drafts indexed, or published work invisible / stale</td></tr>
+      </tbody>
+    </table></div>
+    <h4>External dependencies (team can't control)</h4>
+    <p class="muted">Supabase free-tier limits + 7-day inactivity pause · Vercel Hobby commercial-use
+    terms · transactional email provider choice + domain verification · custom domain + DNS · real
+    professional content (the intake checklist) · Human Founder approvals (build authorization; prod
+    migration; prod deploy).</p>
+  </section>
+
+  <!-- 10 -->
+  <section id="o10">
+    <p class="eyebrow">Output 10</p><h2>Security plan</h2>
+    <p><strong>"<code>/admin</code> is hidden" ≠ "<code>/admin</code> is secure."</strong> Every
+    protection is enforced at the layer that owns the data.</p>
+
+    <div class="scroll"><table>
+      <thead><tr><th>Asset</th><th>Threats</th><th>Primary control</th></tr></thead>
+      <tbody>
+        <tr><td>Draft / unpublished content</td><td>disclosure via wrong query, direct URL</td><td>RLS <code>status='published' AND visible</code> on every read; <code>notFound()</code> for misses</td></tr>
+        <tr><td>Contact submissions (PII)</td><td>disclosure, spam flooding</td><td>RLS insert-only for anon, admin-only read; rate limit + DB trigger; retention job</td></tr>
+        <tr><td>Admin session</td><td>theft, fixation, CSRF</td><td><code>HttpOnly/Secure/SameSite=Lax</code>, PKCE, origin check on mutations, MFA/TOTP</td></tr>
+        <tr><td>Admin authorization</td><td>privilege escalation</td><td><code>is_admin()</code> in RLS <code>WITH CHECK</code> + server re-check; allow-list not app-editable</td></tr>
+        <tr><td>Storage</td><td>malicious upload, path abuse</td><td>MIME + magic-byte + size allowlist, SVG disallowed by default, generated paths</td></tr>
+        <tr><td>Secrets</td><td>leak via client bundle / logs / repo</td><td>env schema, <code>NEXT_PUBLIC_</code> audit, gitleaks, isolated service-role module + bundle test</td></tr>
+        <tr><td>Rendered content</td><td>stored XSS via Markdown</td><td>strict sanitiser, no raw HTML, build-time highlighting, CSP with no <code>unsafe-inline</code> scripts, XSS corpus test</td></tr>
+      </tbody>
+    </table></div>
+
+    <h4>Content-Security-Policy (target)</h4>
+    <div class="scroll"><pre>default-src 'self';
+script-src 'self' 'nonce-&lt;per-request&gt;';          # no unsafe-inline for scripts
+img-src   'self' data: https://&lt;project&gt;.supabase.co https://&lt;cdn&gt;;
+connect-src 'self' https://&lt;project&gt;.supabase.co;
+form-action 'self';  frame-ancestors 'none';  object-src 'none';  base-uri 'self';
+Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+X-Content-Type-Options: nosniff · X-Frame-Options: DENY · Referrer-Policy: strict-origin-when-cross-origin</pre></div>
+    <p class="muted">Roll CSP out report-only first (Sprint 2), then enforce (Sprint 6). Layered
+    scanning mirrors the repo policy: gitleaks, Semgrep, Trivy/<code>npm audit</code>,
+    axe, Lighthouse, the RLS matrix, the XSS corpus, a manual pre-launch review (0 criticals is a
+    hard gate), optional ZAP baseline.</p>
+  </section>
+
+  <!-- 11 -->
+  <section id="o11">
+    <p class="eyebrow">Output 11</p><h2>Test strategy</h2>
+    <p>This site belongs to a Software QA Engineer — the test suite is itself a portfolio artifact.
+    Pyramid, not ice-cream cone; shift left; every bug fix ships with a fail-first regression test;
+    red required check = no merge.</p>
+
+    <div class="scroll"><table>
+      <thead><tr><th>Layer</th><th>Tool</th><th>Gate</th></tr></thead>
+      <tbody>
+        <tr><td>Static</td><td>tsc, ESLint, Prettier, knip</td><td>pre-commit + CI</td></tr>
+        <tr><td>Unit</td><td>Vitest — <code>lib/</code> ≥ 80% lines</td><td>CI</td></tr>
+        <tr><td>Integration</td><td>Vitest + Postgres (migrations) — query layer + <strong>RLS policies</strong></td><td>CI</td></tr>
+        <tr><td>E2E</td><td>Playwright (Chromium/Firefox/WebKit) — 25 critical flows on a preview deploy</td><td>CI + nightly</td></tr>
+        <tr><td>Visual regression</td><td>Playwright screenshots — gallery + key pages, TR &amp; EN</td><td>diff gate</td></tr>
+        <tr><td>Accessibility</td><td>@axe-core/playwright + manual NVDA/VoiceOver</td><td>0 serious/critical</td></tr>
+        <tr><td>Performance</td><td>Lighthouse CI + bundle-size</td><td>CWV budget</td></tr>
+        <tr><td>Security</td><td>gitleaks, Semgrep, Trivy, XSS corpus, RLS matrix, ZAP</td><td>block on high/critical</td></tr>
+      </tbody>
+    </table></div>
+
+    <h4>Critical business-flow tests (CF-01…CF-25)</h4>
+    <div class="scroll"><table>
+      <thead><tr><th>ID</th><th>Flow</th><th>Key assertion</th></tr></thead>
+      <tbody>
+        <tr><td>CF-01/02</td><td>Admin login (happy / bad)</td><td>lands on dashboard / generic error + backoff after 5, no user enumeration</td></tr>
+        <tr><td>CF-03</td><td>Unauthorized admin access</td><td>no session → login redirect; authed non-allow-listed → 403, not the panel</td></tr>
+        <tr><td>CF-04/05</td><td>Create project / save draft</td><td>draft row + audit; autosave fires; status stays draft</td></tr>
+        <tr><td>CF-06</td><td>Draft not public</td><td>anon hits the slug → 404 (RLS); absent from list &amp; sitemap</td></tr>
+        <tr><td>CF-07</td><td>Preview project</td><td>admin sees draft in the public template, noindex + no-store; anon → login</td></tr>
+        <tr><td>CF-08/09</td><td>Publish → public</td><td>status=published, published_at, audit, revalidate; appears in list + detail both locales, correct hreflang</td></tr>
+        <tr><td>CF-10/11/12/13</td><td>Hide / Unpublish / Archive / Restore</td><td>gone from every public surface as appropriate; archived stays in admin; content intact on restore</td></tr>
+        <tr><td>CF-14/15/16/17</td><td>Featured / Supported / classification / reorder</td><td>home rail + list order + badges reflect the admin after revalidation</td></tr>
+        <tr><td>CF-18</td><td>TR / EN content + switch + fallback</td><td>each locale shows its own content; switch preserves slug; EN-only publish → fallback/hidden per setting</td></tr>
+        <tr><td>CF-19/20</td><td>Media upload / project image</td><td>row + object + dimensions + checksum; bad type rejected server-side; locale-correct alt; no-alt blocks publish</td></tr>
+        <tr><td>CF-21/22/23</td><td>Contact happy / abuse / inbox</td><td>row + email + success without reload; honeypot/timing/rate-limit blocked; body renders as inert plain text</td></tr>
+        <tr><td>CF-24/25</td><td>Sitemap+robots correctness / revalidation freshness</td><td>only published URLs, reciprocal hreflang, <code>/admin</code> disallowed; edit reflects within one revalidation cycle</td></tr>
+      </tbody>
+    </table></div>
+    <p class="muted">A traceability matrix (<code>requirement → acceptance criterion → test id</code>)
+    is kept in the repo; CI fails if a <code>must</code> requirement has no linked passing test.</p>
+  </section>
+
+  <!-- 12 -->
+  <section id="o12">
+    <p class="eyebrow">Output 12</p><h2>Risks &amp; open questions</h2>
+
+    <h4>Genuine spec contradictions (resolved)</h4>
+    <div class="scroll"><table>
+      <thead><tr><th>Conflict</th><th>Resolution</th></tr></thead>
+      <tbody>
+        <tr><td><strong>OQ-000</strong> — "continue to implementation" vs the constitution</td><td>plan now, stop at the Human Founder <code>authorize-build</code> gate; constitution wins (ADR-0001)</td></tr>
+        <tr><td><strong>CONFLICT-01</strong> — "Featured"/"Archived" as both a type and a status</td><td><code>classification ∈ {professional,supported,personal,qa_lab}</code>; <code>featured</code> = flag; <code>archived</code> = a <code>status</code> value (ADR-0002)</td></tr>
+        <tr><td><strong>CONFLICT-03</strong> — ~30 tables vs "avoid overengineering"</td><td>merge taxonomy, fold prose sections, reuse <code>projects</code> for QA Lab, drop <code>admin_profiles</code> → ~25 tables, no blob (ADR-0004)</td></tr>
+      </tbody>
+    </table></div>
+
+    <h4>Top risks</h4>
+    <div class="scroll"><table>
+      <thead><tr><th>ID</th><th>Risk</th><th>L·I</th><th>Mitigation</th></tr></thead>
+      <tbody>
+        <tr><td>RISK-001</td><td>RLS misconfiguration leaks drafts / PII</td><td><span class="tag t-warn">M·H</span></td><td>RLS + automated matrix as a release gate; child tables gate on parent state</td></tr>
+        <tr><td>RISK-002</td><td>service-role key ends up in a client bundle</td><td><span class="tag t-warn">M·H</span></td><td>isolated module + ESLint rule + a CI test that greps the built bundle</td></tr>
+        <tr><td>RISK-003</td><td>stored XSS via Markdown</td><td><span class="tag t-warn">M·H</span></td><td>strict sanitiser, no raw HTML, CSP, XSS corpus test in CI</td></tr>
+        <tr><td>RISK-004</td><td>Supabase free tier pauses after 7 days inactivity</td><td><span class="tag t-n">M·M</span></td><td>keep-alive cron; document the paid-tier path; decide before launch</td></tr>
+        <tr><td>RISK-005</td><td>Vercel Hobby "commercial use" terms</td><td><span class="tag t-n">M·M</span></td><td>confirm terms early; budget for Pro; the app is portable</td></tr>
+        <tr><td>RISK-050</td><td>missing professional content blocks launch</td><td><span class="tag t-n">H·M</span></td><td>build with visible placeholders; the intake checklist; launch gated on content, not engineering</td></tr>
+        <tr><td>RISK-051</td><td>NDA breach — a case study reveals a confidential detail</td><td><span class="tag t-warn">M·H</span></td><td><code>nda</code>/<code>company_hidden</code> fields; NDA banner; pre-publish self-check; Founder is sole author/approver</td></tr>
+        <tr><td>RISK-052</td><td>invented / inaccurate professional claims</td><td><span class="tag t-warn">L·H</span></td><td>hard rule: the team never writes professional facts; placeholders are visibly fake</td></tr>
+        <tr><td>RISK-060</td><td>draft/preview/admin pages get indexed</td><td><span class="tag t-warn">L·H</span></td><td><code>noindex</code> + robots + RLS 404 + a <code>noindex</code>-correctness test; sitemap lists only published</td></tr>
+      </tbody>
+    </table></div>
+
+    <h4>Open questions (defaults applied if unanswered)</h4>
+    <ul>
+      <li><strong>OQ-001</strong> Default locale — TR or EN? <span class="muted">Default: <code>en</code>, TR fully available.</span></li>
+      <li><strong>OQ-003</strong> Missing-translation behaviour — show the other language with a tag, or hide? <span class="muted">Default: show + tag.</span></li>
+      <li><strong>OQ-004</strong> Enable MFA/TOTP for the admin? <span class="muted">Default (and review recommendation): required.</span></li>
+      <li><strong>OQ-005</strong> Who owns KVKK/GDPR data-protection responsibility? <span class="muted">Default: Founder as data controller, documented.</span></li>
+      <li><strong>OQ-007</strong> Supabase free + keep-alive, or Pro? <span class="muted">Default: free + keep-alive cron.</span></li>
+      <li><strong>OQ-008</strong> Contact-message retention period? <span class="muted">Default: 180 days, stated in the privacy notice.</span></li>
+    </ul>
+  </section>
+
+  <!-- 13 -->
+  <section id="o13">
+    <p class="eyebrow">Output 13</p><h2>Content intake checklist</h2>
+    <p>The platform is fully functional with placeholder content. To make it <em>real</em>, the
+    Founder fills one structured form —
+    <code>planning/13-content-intake-checklist.md</code> — field names match the database so
+    content can be entered directly through the admin. <strong>The team never invents professional
+    information.</strong></p>
+
+    <div class="scroll"><table>
+      <thead><tr><th>Section</th><th>Feeds</th><th>TR + EN?</th></tr></thead>
+      <tbody>
+        <tr><td>A · Identity &amp; profile</td><td><code>profile</code>, <code>profile_translations</code>, <code>site_settings</code></td><td>headline, bio, summary, meta</td></tr>
+        <tr><td>B · Social &amp; external links</td><td><code>social_links</code></td><td>no</td></tr>
+        <tr><td>C · Skills</td><td><code>skill_categories</code>, <code>skills</code> (proficiency, years)</td><td>category labels only</td></tr>
+        <tr><td>D · Experience</td><td><code>experience(+t)</code> — roles, dates, NDA flag</td><td>role title, summary, highlights</td></tr>
+        <tr><td>E · Education / F · Certifications</td><td><code>education(+t)</code>, <code>certifications</code></td><td>degree title, notes</td></tr>
+        <tr><td>G · Services</td><td><code>services(+t)</code> — title, description, outcome</td><td>yes</td></tr>
+        <tr><td>H · Taxonomy terms</td><td><code>taxonomy_terms</code> — platforms, tools, test types, industries</td><td>label per term</td></tr>
+        <tr><td>I · Projects &amp; case studies</td><td><code>projects</code> + all <code>project_*</code> tables — metadata, prose, scenarios, bugs, API, SQL, media, NDA confirmations</td><td>all prose + artifact titles/notes</td></tr>
+        <tr><td>K · Legal / compliance</td><td>legal name, data-controller, retention period, analytics disclosure</td><td>optional privacy text</td></tr>
+        <tr><td>L · Infrastructure &amp; accounts</td><td>domain, Supabase/Vercel plans, email provider, monitoring/analytics choices</td><td>—</td></tr>
+        <tr><td>M · Brand / voice preferences</td><td>accent colour, tone, references (for rigour, not cloning)</td><td>—</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="callout">
+      <p><strong>Minimum set to launch:</strong> Section A · B (GitHub + LinkedIn) · C (partial
+      skills) · D (current + previous role) · I — <strong>at least 3 published projects</strong>
+      with metadata + prose in one language and NDA confirmed · K (legal name, retention,
+      analytics) · L (domain + email provider).</p>
+      <p class="muted">Certifications, education, services, QA Lab, more projects, and the second
+      language are all added incrementally through the admin after launch.</p>
+    </div>
+  </section>
+
+  <!-- 14 -->
+  <section id="o14">
+    <p class="eyebrow">Output 14</p><h2>Planning review — 10 perspectives</h2>
+    <p>The package reviewed from ten senior roles. Verdicts:
+    <span class="tag t-ok">✅ approve</span>
+    <span class="tag t-warn">⚠️ approve with conditions</span>
+    <span class="tag t-fail">⛔ blocker</span></p>
+
+    <div class="scroll"><table>
+      <thead><tr><th>Reviewer</th><th>Verdict</th><th>Key required change</th></tr></thead>
+      <tbody>
+        <tr><td>Senior Product Designer</td><td><span class="tag t-warn">conditions</span></td><td>pick one home-page curation mechanism; define a success metric (contact conversions)</td></tr>
+        <tr><td>Senior UX/UI Designer</td><td><span class="tag t-warn">conditions</span></td><td>case-study "TL;DR" band above the fold; mobile "on this page" menu</td></tr>
+        <tr><td>Senior Software Architect</td><td><span class="tag t-warn">conditions</span></td><td>preview-mechanism ADR; choose a shared rate-limit store; <code>supabase db diff</code> drift gate</td></tr>
+        <tr><td>Senior Frontend Engineer</td><td><span class="tag t-warn">conditions</span></td><td>pick the Markdown editor component; eliminate <code>style-src 'unsafe-inline'</code></td></tr>
+        <tr><td>Senior Backend Engineer</td><td><span class="tag t-warn">conditions</span></td><td>transactional publish RPC; one <code>public_projects</code> view; <code>project_slug_history</code> + redirect</td></tr>
+        <tr><td>Database Architect</td><td><span class="tag t-warn">conditions</span></td><td>tighten <code>media</code> RLS (no blanket anon SELECT); constrain <code>project_highlights.kind</code></td></tr>
+        <tr><td>Security Engineer</td><td><span class="tag t-fail">blockers</span> for prod</td><td>MFA required; shared rate-limit store; Supabase project hardening; CSP without <code>unsafe-inline</code></td></tr>
+        <tr><td>DevOps Engineer</td><td><span class="tag t-warn">conditions</span></td><td>Supabase CLI config-as-code + migration tooling; Founder plan decisions before Sprint 6</td></tr>
+        <tr><td>QA Lead</td><td><span class="tag t-warn">conditions</span></td><td>E2E data isolation per run; CI integration DB = plain Postgres; "revalidate the right tags" test</td></tr>
+        <tr><td>Technical SEO Specialist</td><td><span class="tag t-warn">conditions</span></td><td>canonical filtered list pages; reconsider localised route segments for TR</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="callout">
+      <p><strong>Overall: ⚠️ approve the plan to proceed to <code>authorize-build</code>, with 24
+      tracked required changes (R1–R24).</strong> None of the findings invalidate the architecture,
+      the data model, or the sequencing. The blockers identified (MFA, shared rate-limit store,
+      Supabase hardening, CSP, transactional publish, media RLS) are implementation-level and are
+      gated before <em>production</em>, not before <em>build start</em>. The plan is technically
+      coherent.</p>
+    </div>
+  </section>
+
+  <footer>
+    <p><strong>Recommended next step.</strong> The Human Founder reviews this package — especially
+    Outputs 12 (risks / open questions) and 13 (content intake checklist) — and then, to begin
+    implementation:</p>
+    <div class="cmd">ai-company project authorize-build qa-portfolio --note "Approved for build"</div>
+    <p style="margin-top:1rem">That records a RISK 5, approval-required audit event and flips the
+    build gate. It does <em>not</em> start a build — Runtime V1.1 executes the
+    <code>feature-development</code> workflow separately, under Human Founder control, and stops at
+    <code>HUMAN_APPROVAL_REQUIRED</code> before any production step. No deployment, paid provider,
+    production cloud, real customer data, or financial action is authorised by this planning
+    package.</p>
+    <p class="muted" style="margin-top:1.4rem">Authoritative documents:
+    <code>projects/qa-portfolio/planning/01…14</code> · decision log:
+    <code>projects/qa-portfolio/decisions/decision-log.md</code> · handoff package:
+    <code>projects/qa-portfolio/artifacts/runtime-handoff.json</code>
+    (<code>sha256:6383fa…f7579</code>, build not authorized).</p>
+  </footer>
+</main>
+</div>
+
+<script>
+  (function(){
+    var root=document.documentElement, btn=document.getElementById('tt');
+    var KEY='qa-plan-theme';
+    try{var s=localStorage.getItem(KEY); if(s){root.setAttribute('data-theme',s);}}catch(e){}
+    function cur(){
+      var a=root.getAttribute('data-theme');
+      if(a) return a;
+      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark':'light';
+    }
+    btn.addEventListener('click',function(){
+      var next=cur()==='dark'?'light':'dark';
+      root.setAttribute('data-theme',next);
+      try{localStorage.setItem(KEY,next);}catch(e){}
+    });
+  })();
+</script>
