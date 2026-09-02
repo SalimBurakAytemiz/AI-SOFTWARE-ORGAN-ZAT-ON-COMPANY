@@ -2,7 +2,14 @@ import { execFileSync } from "node:child_process";
 import type { Runtime } from "../runtime.ts";
 import { loadRegistries } from "../registry/index.ts";
 
-export type CheckStatus = "OK" | "NOT_CONFIGURED" | "OPTIONAL" | "DEFERRED" | "FAIL";
+export type CheckStatus =
+  | "OK"
+  | "NOT_CONFIGURED"
+  | "OPTIONAL"
+  | "DEFERRED"
+  | "RATE_LIMITED"
+  | "ERROR"
+  | "FAIL";
 
 export interface Check {
   name: string;
@@ -84,6 +91,74 @@ export function doctor(rt: Runtime): DoctorReport {
     "deterministic; the acceptance suite needs no paid API key",
   );
 
+  // Real / proof model provider (build spec sections 4, 5, 6, 27). One generic
+  // OpenAI-compatible adapter serves every proof provider - Groq Direct is the
+  // preferred one, OpenRouter is the optional fallback. Both rows always show so
+  // the Human Founder can see at a glance which credential is present.
+  const rp = rt.realProvider;
+  add(
+    "OpenAI-compatible provider",
+    "OK",
+    `generic OpenAI-compatible adapter present (one HTTP/model client for every real proof provider)`,
+  );
+
+  const activeNote = (id: string) =>
+    rp.active === id
+      ? " [ACTIVE - AI_COMPANY_REAL_PROVIDER]"
+      : "";
+  for (const k of rp.known) {
+    const rowName = `${k.label} proof provider`;
+    if (!k.configured) {
+      add(
+        rowName,
+        "NOT_CONFIGURED",
+        `set AI_COMPANY_REAL_PROVIDER=${k.id} and ${k.apiKeyEnv} to enable` +
+          (k.preferred ? " (preferred proof provider)" : " (optional fallback proof provider)") +
+          activeNote(k.id),
+      );
+    } else {
+      const detailReady =
+        rp.active === k.id && rp.descriptor
+          ? `${rp.descriptor.label} ready: model ${rp.descriptor.model} [PROOF_PROVIDER, ${rp.descriptor.sensitivity}] - not an approved production provider`
+          : `${k.apiKeyEnv} is present; select with AI_COMPANY_REAL_PROVIDER=${k.id} [PROOF_PROVIDER, NON_SENSITIVE_PROOF_ONLY] - not an approved production provider`;
+      add(rowName, "OK", detailReady + activeNote(k.id));
+    }
+  }
+
+  if (rp.active === "unknown") {
+    add("real model provider (selection)", "ERROR", rp.reason);
+  }
+
+  // PREMIUM implementation escalation - off unless the Human Founder has
+  // authorized it for this run. Implementation stage ONLY, bounded, no free
+  // fallback on failure. Path: `codex-cli` (local Codex CLI / ChatGPT login, no
+  // paid API) or `openai` (paid HTTP API).
+  const pi = rt.premiumImplProvider;
+  add(
+    "premium implementation escalation",
+    pi.ready ? "OK" : pi.authorized ? "ERROR" : "OPTIONAL",
+    !pi.authorized
+      ? "not authorized (set AI_COMPANY_PREMIUM_IMPL_PROVIDER=codex-cli, or =openai + OPENAI_API_KEY, to authorize ONE bounded escalation for the implementation stage only)"
+      : pi.kind === "codex-cli"
+        ? `AUTHORIZED for this run via the Codex CLI (ChatGPT login, no paid API) - live readiness is checked with 'codex login status' at run time` +
+            (pi.codex?.model ? ` [model ${pi.codex.model}]` : " [account default model]")
+        : `AUTHORIZED for this run via the PAID OpenAI API - ${pi.reason}` +
+            (pi.descriptor ? ` [model source: ${pi.descriptor.modelSource}]` : ""),
+  );
+
+  // Free-first proof provider fallback chain (build spec: free-provider fallback).
+  // NVIDIA NIM is engaged ONLY on a bounded RATE_LIMIT_EXHAUSTED during the
+  // Software Factory proof - never auto-selected for ordinary work, never paid.
+  const chain = rt.realProviderChain;
+  add(
+    "proof provider fallback chain",
+    chain.fallbacks.length > 0 ? "OK" : "OPTIONAL",
+    chain.reason +
+      (chain.fallbacks.length === 0
+        ? ` (set ${chain.primary.active === "nvidia" ? "a different primary" : "NVIDIA_API_KEY"} to enable a free fallback)`
+        : ""),
+  );
+
   // Git availability (used for fixture repositories, not remote writes).
   try {
     const v = execFileSync("git", ["--version"], { encoding: "utf8" }).trim();
@@ -100,4 +175,38 @@ export function doctor(rt: Runtime): DoctorReport {
 
   const healthy = checks.every((c) => c.status !== "FAIL");
   return { healthy, checks };
+}
+
+/**
+ * Founder-friendly LIVE health of the selected real proof provider (build spec
+ * section 31). This is the ONLY doctor path that touches the network - it is run
+ * by `ai-company doctor --probe` and the diagnostic script, never by default.
+ * It spends no completion tokens (a `GET /models` reachability + auth check) and
+ * never logs, prints, persists or audits the API key.
+ *
+ * Maps to the four founder-facing states: OK / NOT_CONFIGURED / RATE_LIMITED / ERROR.
+ */
+export async function probeRealProvider(rt: Runtime): Promise<Check> {
+  const rp = rt.realProvider;
+  const label =
+    rp.known.find((k) => k.active)?.label ??
+    (rp.active === "disabled" ? "real model provider" : "real model provider");
+  const name = `${label} (live)`;
+
+  if (rp.active === "disabled") {
+    return { name, status: "NOT_CONFIGURED", detail: "AI_COMPANY_REAL_PROVIDER is disabled" };
+  }
+  if (!rp.descriptor) {
+    return { name, status: rp.active === "unknown" ? "ERROR" : "NOT_CONFIGURED", detail: rp.reason };
+  }
+  const h = await rp.descriptor.provider.probe();
+  const status: CheckStatus =
+    h.status === "OK"
+      ? "OK"
+      : h.status === "NOT_CONFIGURED"
+        ? "NOT_CONFIGURED"
+        : h.status === "RATE_LIMITED"
+          ? "RATE_LIMITED"
+          : "ERROR";
+  return { name, status, detail: `${rp.descriptor.label}: ${h.detail}` };
 }

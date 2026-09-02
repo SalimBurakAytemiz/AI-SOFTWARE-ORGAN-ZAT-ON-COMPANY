@@ -100,16 +100,130 @@ runtime. See [`tools/registry.yml`](tools/registry.yml),
 
 ## 9. Current project state
 
-**Agent Runtime V1.0** is built, tested (61 runtime tests + 85 organization tests,
-all green, offline, no API keys), documented, and — after Human Founder final
-approval and green CI on PR #1 — **merged into `main`**. `project-state/current.yml`
-records the approval (`status: PASS`, `human_approval.granted: true`). The runtime is
-source-complete and accepted; it is **not production-deployed**. See
-[`docs/agent-runtime.md`](docs/agent-runtime.md). That approval was scoped to
-accepting the runtime into `main` only — it does **not** authorize deploying
-anything, onboarding paid model providers, a production cloud, real customer data,
-financial transactions, or starting Cleaning Commerce / a Commerce AI Workforce, and
-it does **not** weaken any future critical-action approval requirement.
+**Agent Runtime V1.0** is built, documented, and — after Human Founder final
+approval and green CI on PR #1 — **merged into `main`**. That approval was scoped to
+accepting the runtime into `main` only.
+
+**Runtime V1.1 — Real Agent Execution + Software Factory Proof** is on branch
+`feat/real-agent-execution-v1.1` (pushed, PR open into `main` for CI, **not
+merged**). It *extends* the existing
+runtime (no new agent framework): ONE generic OpenAI-compatible model provider
+(no per-vendor client), a reusable prompt/context assembler, a validated
+`AgentExecutionResult` contract (malformed / truncated → one bounded classified
+retry → BLOCK) that is also sent as a provider-native `response_format`
+JSON Schema where supported (Groq gpt-oss), a `RealAgentRunner` that routes model
+tool-call requests through the Capability Gateway, a disposable proof workspace
+with default-deny `workspace.read/list/write/patch/exec`, a real-request budget
+(target ≤ 20, ceiling 30), a proof-provider privacy guard, a **provider-agnostic
+rate-limit scheduler** (learns per-window request/token budget from `Retry-After`
+/ `x-ratelimit-*` headers, paces real calls sequentially, waits out HTTP 429
+reset windows over bounded retry cycles → `RATE_LIMIT_EXHAUSTED`; waiting for
+free-tier quota needs no Human Founder approval), stage-aware output-token
+budgets (~2000–3000, configurable global default + ceiling), low reasoning
+effort by default, and a Software Factory proof that drives `feature-development`
+with real agents to `HUMAN_APPROVAL_REQUIRED`.
+The V1.1 proof-provider strategy is **FREE-FIRST**: **Groq Direct = preferred /
+primary** (`AI_COMPANY_REAL_PROVIDER=groq`, `GROQ_API_KEY`, default model
+`openai/gpt-oss-120b`); **NVIDIA NIM = free fallback** (`NVIDIA_API_KEY`,
+`nvidia/nemotron-3.5-lightning-30b-a3b`), auto-engaged **only** on a bounded Groq
+`RATE_LIMIT_EXHAUSTED` — the runner preserves the workflow checkpoint, records a
+`provider_transition` audit event (`from_provider` / `to_provider` /
+`reason=RATE_LIMIT_EXHAUSTED` / `stage`), switches provider, and retries **only
+the blocked stage** (no completed stage / tool write / artifact is repeated;
+shared request budget keeps counting). **OpenRouter = optional manual fallback**
+(`AI_COMPANY_REAL_PROVIDER=openrouter`), never auto-added to the chain. Every
+real provider is a `PROOF_PROVIDER` / `NON_SENSITIVE_PROOF_ONLY`, never
+auto-selected for ordinary work, no paid provider. Disable the auto fallback with
+`AI_COMPANY_REAL_FALLBACK=none`.
+
+**PREMIUM implementation escalation (authorization-gated per run).** When the
+Human Founder sets `AI_COMPANY_PREMIUM_IMPL_PROVIDER`, the `implementation` stage
+ONLY uses the premium path; every other stage stays on the free-first chain. Two
+paths: **`codex-cli`** (preferred — the locally authenticated Codex CLI / ChatGPT
+login, no paid API credit; `codex exec --sandbox workspace-write --ephemeral`
+confined to the proof workspace; `OPENAI_API_KEY` stripped from the Codex child;
+`~/.codex/auth.json` never read) or **`openai`** (paid Chat Completions API,
+default model priority `gpt-5.1 → gpt-5 → gpt-4.1`). It is **bounded** (one
+primary attempt + one targeted repair), records a `premium_escalation` audit
+event before the first request, runs the change through the **same** deterministic
+gates as the free runner (`decideImplementationOutcome` in
+`runtime/src/agents/implementation-gates.ts` — one source of truth — plus a
+changed-file scope check for Codex), keeps independent review intact
+(`code_review` = `senior-code-reviewer`), and on ANY failure — bad code that fails
+a gate, Codex non-zero exit / not-logged-in, or `insufficient_quota` →
+`PROVIDER_QUOTA_EXHAUSTED` — STOPS with `PREMIUM_IMPLEMENTATION_FAILED`: no free
+fallback, no premium retry, no further spend. Never auto-engaged. Standing routing
+policy: LOW→free; MEDIUM→free-first, escalate a stage to `PREMIUM_ELIGIBLE` only
+after its genuine free budget is exhausted AND a Human Founder authorizes that
+run; HIGH→premium implementer behind a Founder budget gate; CRITICAL→independent
+premium + Founder. Never auto-spend premium. See `docs/real-agent-execution.md` §7.
+
+223 runtime tests + 85 organization tests pass offline; the full real-agent pipeline
+is proven against local OpenAI-compatible fake servers + a mocked Codex CLI
+(Groq + NVIDIA + OpenRouter + OpenAI-premium + codex-cli config, provider HTTP
+error [redacted body], 5xx, 404
+`MODEL_UNAVAILABLE`, `insufficient_quota` → `PROVIDER_QUOTA_EXHAUSTED`
+[non-retryable, not a rate limit], output-token
+truncation [`OUTPUT_TRUNCATED`, bounded retry], rate-limit header parsing +
+scheduler [pace / Retry-After wait / bounded cycles / `RATE_LIMIT_EXHAUSTED` /
+checkpoint preserved / no duplicate stage or tool execution], HTTP-400
+`rate_limit_exceeded` treated as a rate limit, strict JSON-Schema
+structured output + the `json_schema → json_object → prompt-only` self-heal
+cascade, a bounded one-shot implementation test-repair pass, the
+**Groq→NVIDIA free-first fallback** [transition audit, checkpoint resume, no
+duplicate stages/writes/artifacts, NVIDIA-also-fails stays fail-safe, secret
+protection], the **implementation-stage hardening** [deterministic `projectFacts()`
+authoritative context, first-class `fileChanges` channel replacing double-escaped
+`args_json`, inspect-first directives, `requireTestChange` gate, evidence-driven
+repair, `.npm` diff-pollution fix, snapshot/restore on fallback — no gate weakened],
+the **premium implementation escalation** [`codex-cli` + `openai` paths,
+implementation-only, bounded 1+1, never auto-engaged, no free fallback on failure,
+Codex `OPENAI_API_KEY`-stripped + auth-file-never-read + changed-file scope check,
+`codex exec` run with **stdin closed (`/dev/null`)** — an open stdin pipe hung
+Codex 0.152.1 forever in "Reading additional input from stdin" — and killed as a
+process **group** on timeout; classified `CODEX_SUCCESS`/`CODEX_TIMEOUT`/
+`CODEX_AUTH_REQUIRED`/`CODEX_APPROVAL_BLOCKED`/`CODEX_PROCESS_ERROR`/
+`CODEX_NO_WORKSPACE_CHANGE`; shared `decideImplementationOutcome` gates,
+independent review intact], and
+`doctor --probe` live health OK/NOT_CONFIGURED/RATE_LIMITED/ERROR).
+**`project-state/current.yml` is `state: HUMAN_APPROVAL_REQUIRED` /
+`status: APPROVAL_REQUIRED`**. The one required real Software Factory proof run
+**reached `HUMAN_APPROVAL_REQUIRED`** (run `run_254a2876`, 2026-09-02). It was
+completed in two parts across a GitHub Codespace shutdown: run 7 drove `idea →
+code_review` on real providers (Codex CLI premium implementer, every
+deterministic gate PASS), then the `qa` model call hit a Groq HTTP 400
+`tool_use_failed` and the environment stopped; run 8 **resumed the same persisted
+run** from the `pre:qa` checkpoint via `ai-company proof resume` and drove `qa →
+security → release_review → HUMAN_APPROVAL_REQUIRED` on Groq `gpt-oss-120b` with
+**no completed stage or the implementation re-run**. The `qa` 400 root cause (the
+`qa`/`security` StagePlans advertised `workspace.exec` to the tool-native Groq
+model while the OpenAI-compatible provider by design sends no `tools` array) is
+fixed with the minimum provider-compat change: `PLANS.qa` / `PLANS.security` use
+`allowedRuntimeTools: []` (their gates are the runner's own `npm test` and
+`deterministicSecurityChecks`, not model tool calls) and `stageDirectives` only
+asks for a `workspace.exec` test run when that tool is actually offered. The
+proof driver gained a `resume` path (`RunOptions.resume` +
+`ai-company proof resume`), `ProofWorkspace` re-attaches to a workspace it seeded
+in a prior run, and `RequestBudget` accepts a `used` seed. No gate, schema or
+validation was weakened. The Groq strict-Structured-Output blocker and the
+Groq→NVIDIA free-first fallback remain fixed/proven. 225 runtime + 85
+organization tests pass; typecheck clean; gitleaks clean.
+
+On 2026-09-02 the Human Founder **APPROVED the proof approval artifact**
+(`apr_03ac3263…`, run `run_254a2876`, state `APPROVED`) — **scoped strictly to
+the disposable Software Factory proof**; it does not authorize production
+deployment, customer data, financial actions, destructive DB ops, or external
+release. The workflow run is deliberately **held at the `human_approval` step**
+(not driven into `PRODUCTION`). Separately, V1.1 is **pushed** on
+`feat/real-agent-execution-v1.1` with **PR #2 into `main`** (CI green,
+`mergeStateStatus: CLEAN`); PR #2 is **not merged** — accepting Runtime V1.1
+into `main` is a separate, still-pending Human Founder decision. See
+[`docs/real-agent-execution.md`](docs/real-agent-execution.md).
+
+Neither approval authorizes deploying anything, onboarding a *paid* model provider,
+a production cloud, real customer data, financial transactions, or starting Cleaning
+Commerce / a Commerce AI Workforce, and neither weakens any critical-action approval
+requirement.
 
 ## 10. Testing requirements
 
@@ -118,10 +232,31 @@ Both suites must pass, and CI runs both on every PR:
 - `python3 tests/run_all.py` — Organization V1.0: validates every YAML/JSON against
   its schema and asserts the organizational-security invariants (no agent can bypass
   Human Founder approval). See [`docs/testing.md`](docs/testing.md).
-- `npm --prefix runtime run check` — Agent Runtime V1.0: typecheck + 58 tests
+- `npm --prefix runtime run check` — Agent Runtime: typecheck + 223 tests
   (registry, policy, gateway, approval, workflow, model routing, persistence/resume,
-  audit, cost, global pause, security-policy, critical-approval, proof, CLI). Runs
-  offline with no API keys. See [`docs/agent-runtime.md`](docs/agent-runtime.md).
+  audit, cost, global pause, security-policy, critical-approval, proof, CLI, plus
+  V1.1: one OpenAI-compatible provider serving Groq Direct (primary) + NVIDIA NIM
+  (free fallback) + OpenRouter (manual fallback), the Groq→NVIDIA free-first
+  fallback (transition audit, checkpoint resume, no duplicate stages/writes/
+  artifacts, NVIDIA-also-fails fail-safe, secret protection),
+  missing-key/timeout/5xx/404-model-unavailable/malformed handling,
+  proof runner fails safe + structured on any provider error, output-token
+  truncation detection (`finish_reason`, bounded classified retry, `OUTPUT_TRUNCATED`
+  vs `MALFORMED`) with a configurable default / ceiling, rate-limit header parsing +
+  provider-agnostic scheduler (pacing, Retry-After / reset-window waits, bounded
+  429 cycles, `RATE_LIMIT_EXHAUSTED`, checkpoint preserved, no duplicate stage/tool
+  execution, credential-free telemetry), HTTP-400 `rate_limit_exceeded` classified
+  as a rate limit, strict JSON-Schema structured output + the
+  `json_schema → json_object → prompt-only` self-heal cascade (with a bounded
+  output-token bump) + redacted 400 bodies, a bounded one-shot implementation
+  test-repair pass, `doctor --probe` live proof-provider health
+  (OK/NOT_CONFIGURED/RATE_LIMITED/ERROR),
+  structured-result validation, tool-call adjudication, path traversal, unauthorized
+  write, arbitrary-shell rejection, request-budget ceiling, context assembly, agent
+  handoff, review independence, real-vs-mock identification, proof-provider privacy,
+  Human-Approval stop). Runs offline with no API keys. See
+  [`docs/agent-runtime.md`](docs/agent-runtime.md) and
+  [`docs/real-agent-execution.md`](docs/real-agent-execution.md).
 
 Never weaken either suite. The 15 critical actions reserved to the Human Founder are
 enforced in both.
@@ -141,7 +276,17 @@ Cheapest adequate tier. Per-agent budgets with auto-pause on breach. Bounded ret
 
 ## 13. Prohibited in this phase
 
-Agent Runtime V1.0 is built (`runtime/`). Still **do not build**: Cleaning Commerce,
+Agent Runtime V1.0 is built and merged; Runtime V1.1 real agent execution is built
+behind configuration (real model calls only via the explicit `proof real-agent`
+path; Groq Direct is the primary `PROOF_PROVIDER`, NVIDIA NIM the free-first
+auto-fallback, OpenRouter the optional manual fallback — all
+`NON_SENSITIVE_PROOF_ONLY`, never auto-selected for ordinary work). The premium
+`implementation`-stage escalation (Codex CLI / ChatGPT login, or the paid OpenAI
+API) may be used ONLY for the `implementation` stage, and ONLY for a run the Human
+Founder explicitly authorized via `AI_COMPANY_PREMIUM_IMPL_PROVIDER` — bounded, no
+free fallback on failure, never auto-engaged. Do not onboard any other paid
+provider, do not use premium for any other stage, and do not push/merge/deploy.
+Still **do not build**: Cleaning Commerce,
 any commerce frontend/backend, Vendure/Medusa/Saleor, a control tower, CRM/ERP,
 marketing/ops agents, n8n workflows, production cloud infra, mobile apps, payment
 integration, or any real production deployment. Do not push/merge/deploy the runtime,

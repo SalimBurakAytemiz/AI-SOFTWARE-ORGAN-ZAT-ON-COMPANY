@@ -1,60 +1,222 @@
 # Current project state. Validates against ../schemas/project-state.schema.json.
 project: AI Software Company
-version: Agent Runtime V1.0
-scope: agent-runtime-executing-organization-v1
+version: Real Agent Execution V1.1
+scope: real-agent-execution-and-software-factory-proof
 state: HUMAN_APPROVAL_REQUIRED
-status: PASS
-updated: "2026-09-01T01:30:00Z"
+status: APPROVAL_REQUIRED
+updated: "2026-09-02T17:45:00Z"
 owner: engineering-director
 summary: >
-  Organization V1.0 remains the source of truth and its 85-test suite still passes.
-  On top of it, the AI Software Company Agent Runtime V1.0 is now built: a
-  TypeScript-first runtime (Node.js, no build step) that loads and re-validates the
-  18 agents, 22 skills, 47 capabilities, 9 workflows and 14 policies, then
-  coordinates them for a Human Founder task. It provides an agent/skill/tool/workflow
-  registry loader, a default-deny capability gateway, a layered Human Approval Engine
-  (only 'human-founder' decides; no self-approval), a gated workflow engine with
-  durable checkpoint/resume on node:sqlite, an append-only schema-validated
-  secret-redacted audit ledger, a provider-independent model abstraction with a
-  deterministic MockModelProvider (no paid API key needed), a risk-based model
-  router, honest cost accounting, an OpenTelemetry-shaped span buffer, a local
-  sandbox, a global pause/kill switch, an ai-company CLI, and one safe end-to-end
-  proof workflow that stops at HUMAN_APPROVAL_REQUIRED. 61 runtime tests plus the 85
-  organization tests pass (typecheck clean; CI green including the gitleaks secret
-  scan). The Human Founder approval gate for Agent Runtime V1.0 has PASSED: the
-  Human Founder granted final approval to accept Agent Runtime V1.0 into main via
-  PR #1 (feat/agent-runtime-v1). The runtime is source-complete and accepted; it is
-  NOT production-deployed - no real money, no real customer data, no production
-  writes. Cleaning Commerce is still not implemented.
+  Organization V1.0 (85 tests) and Agent Runtime V1.0 (accepted into main via
+  PR #1) remain the source of truth and are unchanged. On top of them, Runtime
+  V1.1 - Real Agent Execution + Software Factory Proof - is built on branch
+  feat/real-agent-execution-v1.1. It EXTENDS the existing runtime (AgentRunner,
+  Orchestrator, WorkflowEngine, PolicyEngine, CapabilityGateway, ApprovalEngine,
+  StateStore, AuditLog, ModelProvider abstraction) without introducing any new
+  agent framework. New pieces: ONE generic OpenAI-compatible model provider
+  (baseUrl + apiKeyEnv + model + timeout + retry + headers + usage), an
+  environment-driven real-provider resolver with Groq Direct as the PREFERRED
+  proof provider (default; GROQ_API_KEY, openai/gpt-oss-120b) and OpenRouter as
+  the optional MANUAL fallback (never auto-added), and NVIDIA NIM
+  (nvidia/nemotron-3.5-lightning-30b-a3b, NVIDIA_API_KEY) as the FREE-FIRST
+  auto fallback engaged ONLY on a bounded Groq RATE_LIMIT_EXHAUSTED - the runner
+  preserves the workflow checkpoint, records a provider_transition audit event
+  (from_provider / to_provider / reason=RATE_LIMIT_EXHAUSTED / stage), switches
+  provider and retries ONLY the blocked stage with no completed stage / tool
+  write / artifact repeated; all PROOF_PROVIDER / NON_SENSITIVE_PROOF_ONLY, never
+  an approved production provider, no paid provider; a reusable prompt/context assembler with
+  acceptance-critical per-stage directives; a validated AgentExecutionResult
+  contract (malformed / truncated -> one bounded classified retry -> BLOCK,
+  never guessed) that is ALSO sent as a provider-native strict response_format
+  JSON Schema where supported; a RealAgentRunner routing model tool-call
+  requests through the Capability Gateway, with a bounded one-shot test-repair
+  pass on the implementation stage; a provider-agnostic rate-limit scheduler
+  (learns per-window request/token budget from Retry-After / x-ratelimit-*
+  headers, paces real calls sequentially, waits out 429 reset windows over
+  bounded cycles -> RATE_LIMIT_EXHAUSTED); a disposable proof workspace with
+  default-deny workspace.read/list/write/patch/exec (path jail + command
+  allow-list); a real-request budget (target <= 20, hard ceiling 30); a
+  per-stage context and output-token budget; an attributable PROOF_ONLY artifact
+  store under build/proof/<task>/; a proof-provider privacy guard that blocks
+  PII/payment/production-secret tasks; a Software Factory proof driving
+  feature-development with real agents for the 9 key roles, stopping at
+  HUMAN_APPROVAL_REQUIRED; doctor rows + doctor --probe for every provider; and
+  ai-company proof software-factory | real-agent | status plus audit --task.
+  223 runtime tests + 85 organization tests pass; typecheck clean; gitleaks clean;
+  offline. The full real-agent pipeline is proven end-to-end against local offline
+  OpenAI-compatible fake servers + a mocked Codex CLI (strict JSON-Schema output + the
+  json_schema -> json_object -> prompt-only self-heal cascade, bounded one-shot
+  test-repair, rate-limit pacing / 429 waits / RATE_LIMIT_EXHAUSTED, truncation
+  retry, provider HTTP/5xx/404, insufficient_quota -> PROVIDER_QUOTA_EXHAUSTED
+  (non-retryable, not a rate limit), doctor --probe, the Groq->NVIDIA free-first
+  fallback (transition audit, checkpoint resume, no duplicate stages / writes /
+  artifacts, NVIDIA-also-fails stays fail-safe, secret protection), the
+  2026-09-02 implementation-stage hardening (deterministic projectFacts()
+  authoritative context, first-class fileChanges channel replacing the
+  double-escaped args_json for code, inspect-first directives, requireTestChange
+  gate, evidence-driven repair, .npm diff-pollution fix, snapshot/restore on
+  fallback), and the PREMIUM implementation escalation (implementation stage only,
+  authorization-gated per run via AI_COMPANY_PREMIUM_IMPL_PROVIDER; two paths -
+  codex-cli (the local Codex CLI / ChatGPT login, no paid API; codex exec spawned
+  with stdin=/dev/null so it does not hang, its own process group SIGKILLed on
+  the deadline, classified CODEX_SUCCESS/TIMEOUT/AUTH_REQUIRED/APPROVAL_BLOCKED/
+  PROCESS_ERROR/NO_WORKSPACE_CHANGE, changed-file scope check, OPENAI_API_KEY
+  stripped, auth file never read) and openai (paid Chat Completions API); bounded
+  to one primary + one repair, never auto-engaged, no free fallback on failure,
+  the shared decideImplementationOutcome gates still authoritative, independent
+  review intact) - NO existing gate weakened.
+  The originally-confirmed real-provider blocker is FIXED and VERIFIED: Groq
+  strict Structured Output rejected the previous MODEL_AUTHORED_RESULT_JSON_SCHEMA
+  (unconstrained tool-arg object, type unions, missing additionalProperties:false
+  / required), so business_analysis returned MALFORMED. The schema is now a Groq
+  strict subset (args as a bounded args_json string, single-string types,
+  every object closed and fully required) and across repeated real Groq runs
+  business_analysis, spec_review, architecture and plan pass with native
+  structured_output_mode = json_schema.
+  COMPLETE: the one required real run to HUMAN_APPROVAL_REQUIRED has now
+  finished. Runs 1-6 each stopped before the approval gate (free-model code
+  quality, then the Groq free-tier per-day token cap, then the NVIDIA Nemotron
+  JSON-reliability flake - none a runtime defect); run 7 (2026-09-02 11:17)
+  drove the whole chain on real providers with the Codex CLI premium implementer
+  and got all the way through code_review, then the qa stage's real model call
+  hit Groq HTTP 400 `tool_use_failed` ("Tool choice is none, but model called a
+  tool") and the GitHub Codespace was stopped before the failure was handled -
+  leaving run run_254a2876-f20e-4d85-b8c6-4e8248d0fd2f persisted RUNNING at qa
+  with implementation + code_review already PASS.
+  Root cause of the qa 400: the qa StagePlan advertised workspace.exec to the
+  model AND the shared stageDirectives told it to "Run the test script via
+  workspace.exec", so the tool-native Groq gpt-oss-120b emitted a native
+  function call while the OpenAI-compatible provider (by design) sends no `tools`
+  array - which Groq rejects. The QA gate never needed that: the runner runs
+  `npm test` itself and gates on the real exit code + counts
+  (decideImplementationOutcome). Minimum provider-compat fix (no gate weakened,
+  no schema/validation change, no redesign): PLANS.qa and PLANS.security now
+  carry `allowedRuntimeTools: []` (the diff is already in context via
+  includeWorkspaceDiff), and stageDirectives only tells the model to run tests
+  via workspace.exec when that tool is actually offered. A small `resume`
+  capability was added to the Software Factory proof driver
+  (RunOptions.resume + `ai-company proof resume`) so the workflow engine's own
+  persisted run can continue from its current step without re-running any
+  completed stage or the implementation; ProofWorkspace now re-attaches to a
+  workspace it seeded in a previous run instead of trying to create a second
+  seed commit; RequestBudget accepts a `used` seed so the shared ceiling keeps
+  counting across the interruption. +2 deterministic tests
+  (software-factory-resume.test.ts): interrupted-at-qa run resumes to
+  HUMAN_APPROVAL with no completed stage / implementation re-run and the shared
+  budget preserved; resume refuses a run that has not passed implementation +
+  code_review. 225 runtime + 85 organization tests green; typecheck clean;
+  gitleaks clean.
+  Run 8 (2026-09-02 17:04) resumed run_254a2876 from the pre:qa checkpoint on
+  the live free chain: qa, security and release_review all PASSED on Groq
+  gpt-oss-120b (three real requests, no NVIDIA fallback needed, no provider
+  error), implementation and code_review were NOT re-executed (reused from the
+  persisted history / committed workspace), and the run STOPPED at
+  HUMAN_APPROVAL_REQUIRED with a pending approval
+  (apr_03ac3263-7dc5-49d9-b978-d8b6cd57bd26, requested_action
+  production_deployment, risk 5). Machine evidence in the approval packet:
+  `npm test` exit 0 / 1 passing / 0 failing; deterministic security checks
+  no-secret-in-diff=PASS, no-new-runtime-dependency=PASS,
+  no-dangerous-api-introduced=PASS; estimated cost $0. Every quality gate
+  remained authoritative and unweakened; the independent reviewer
+  (senior-code-reviewer) was never the implementer (backend-engineer via Codex
+  CLI). Proof evidence:
+  build/proof/task_52d90ea5-dc78-4cfc-8162-d1216895b974/ and
+  `ai-company audit --task task_52d90ea5-dc78-4cfc-8162-d1216895b974`.
+  Per the build spec the milestone is now pushed on feat/real-agent-execution-v1.1
+  with a PR into main for CI; it is NOT merged and NOT approved - accepting
+  Runtime V1.1 into main is a separate, explicit Human Founder decision. No
+  production deployment, no customer data, no financial operations, no Cleaning
+  Commerce; the pending approval is a PROOF artifact, not an authorization to
+  deploy anything.
 human_approval:
   required: true
-  granted: true
-  granted_by: human-founder
-  granted_at: "2026-09-01T01:30:00Z"
+  granted: false
+  granted_by: null
+  granted_at: null
   notes: >
-    Final Human Founder approval granted for AI Software Company Agent Runtime V1.0
-    after CI on PR #1 (feat/agent-runtime-v1 -> main) passed both the validate job
-    (85 organization tests + gitleaks secret scan) and the runtime job (typecheck +
-    61 tests). This approval applies ONLY to accepting Agent Runtime V1.0 into main.
-    It does NOT weaken any future Human Founder approval requirement: every critical
-    action (production deployment, merge to protected main of future work, production
-    DB migration/destructive op/data deletion, production infra change, secret
-    create/rotate/revoke, payment-config change, real financial transaction/refund,
-    ad-budget change, supplier payment, bulk customer messaging, customer-data
-    export, access-control escalation, critical security architecture change) still
-    requires a separate, explicit, per-instance Human Founder approval. It also does
-    NOT authorize: onboarding paid model providers, a production cloud, any
-    deployment, real customer data, financial transactions, or starting Cleaning
-    Commerce / the Commerce AI Workforce. Those remain open decisions.
+    PROOF ARTIFACT APPROVAL (recorded 2026-09-02T17:42:45Z): the Human Founder
+    APPROVED the pending proof approval request
+    apr_03ac3263-7dc5-49d9-b978-d8b6cd57bd26 (run
+    run_254a2876-f20e-4d85-b8c6-4e8248d0fd2f, state APPROVED, decided_by
+    human-founder). Scope is strict: it applies ONLY to the existing disposable
+    Software Factory proof artifact (the GET /health change in the fixture
+    demo-service workspace). It does NOT authorize real production deployment,
+    customer-data access, financial actions, destructive database operations, or
+    external production release. The workflow run is deliberately HELD at the
+    human_approval step - NOT advanced into the PRODUCTION stage. `granted`
+    stays false: PR #2 is open and NOT merged, and accepting Runtime V1.1 into
+    main is a separate explicit Human Founder decision still pending.
+    Runtime V1.1 is source-complete and fully covered by deterministic tests
+    (225 runtime + 85 organization, all green, offline). The Groq strict
+    JSON-Schema incompatibility that BLOCKED business_analysis, and the later
+    Groq qa-stage HTTP 400 `tool_use_failed`, are both fixed and verified
+    against the real preferred provider. The one required real-provider Software
+    Factory proof run reached HUMAN_APPROVAL_REQUIRED (run
+    run_254a2876-f20e-4d85-b8c6-4e8248d0fd2f: full feature-development chain on
+    real providers - Groq gpt-oss-120b for every model-backed stage, Codex CLI
+    ChatGPT-login premium implementer - every gate PASSED on machine evidence,
+    the independent reviewer was not the implementer). On 2026-09-02T17:42Z the
+    Human Founder APPROVED the pending proof approval artifact
+    (apr_03ac3263-7dc5-49d9-b978-d8b6cd57bd26), scoped strictly to that
+    disposable proof; the workflow run stays parked at the human_approval step
+    and is NOT driven into PRODUCTION. Separately, the milestone is pushed on
+    feat/real-agent-execution-v1.1 with PR #2 open into main (CI green,
+    mergeStateStatus CLEAN). It still awaits an explicit per-instance Human
+    Founder decision to accept V1.1 into main by merging PR #2 - review the
+    generated evidence (build/proof/task_52d90ea5-dc78-4cfc-8162-d1216895b974/,
+    `ai-company audit --task task_52d90ea5-dc78-4cfc-8162-d1216895b974`) and the
+    PR, then decide. PR #2 is NOT merged. The prior V1.0
+    acceptance into main is unaffected. Every critical-action approval
+    requirement is unchanged: production deployment, merge to protected main of
+    future work, production DB migration/destructive op/data deletion,
+    production infra change, secret create/rotate/revoke, payment-config change,
+    real financial transaction/refund, ad-budget change, supplier payment, bulk
+    customer messaging, customer-data export, access-control escalation and
+    critical security architecture change each still require a separate,
+    explicit Human Founder approval. V1.1 does NOT authorize onboarding a paid
+    model provider, a production cloud, any deployment, real customer data,
+    financial transactions, or starting Cleaning Commerce / the Commerce AI
+    Workforce. Moving from the zero-cost proof provider to any paid provider
+    requires separate Human Founder authorization.
 open_items:
-  - Human Founder to onboard model providers and set per-agent / per-task budget caps
-    (models/routing.yml budgets remain NOT_CONFIGURED until then).
-  - Human Founder to confirm the production cloud commitment (drives the PostgreSQL
-    StateStore, the secrets proxy, and sandbox isolation choices).
-  - Assign compliance / privacy responsibility (dedicated role or explicit mandate to
-    the Application Security Engineer) before any project handles real customer PII.
-  - Evaluate Mastra integration behind the AgentRunner interface when real multi-agent
-    LLM execution enters scope (Runtime V1.1).
+  - >
+    DONE - the one required real Software Factory proof run reached
+    HUMAN_APPROVAL_REQUIRED (run_254a2876, 2026-09-02), completed in two parts
+    across a Codespace shutdown. Run 7 drove idea through code_review on real
+    providers (Codex CLI premium implementer, every deterministic gate PASS),
+    then the qa model call hit a Groq HTTP 400 tool_use_failed and the
+    environment stopped. Run 8 resumed the SAME persisted run from the pre:qa
+    checkpoint via `ai-company proof resume` and drove qa, security and
+    release_review to HUMAN_APPROVAL_REQUIRED on Groq gpt-oss-120b with no
+    completed stage or the implementation re-run. The qa 400 root cause - the qa
+    StagePlan offered workspace.exec plus a "run it via workspace.exec" directive
+    to the tool-native Groq model while the provider sends no tools array - is
+    fixed with the minimum provider-compat change. PLANS.qa and PLANS.security
+    now use an empty allowedRuntimeTools list, and stageDirectives only asks for
+    a workspace.exec test run when that tool is actually offered. No gate, schema
+    or validation was weakened; the qa gate is still the runner's own `npm test`
+    exit code + counts. The proof driver gained a resume path (RunOptions.resume
+    plus `ai-company proof resume [<run-id>]`), ProofWorkspace re-attaches to a
+    workspace it previously seeded, and RequestBudget accepts a `used` seed.
+    +2 deterministic tests. 225 runtime + 85 organization tests green; typecheck
+    clean; gitleaks clean.
+  - >
+    Human Founder to review the PR (feat/real-agent-execution-v1.1 into main)
+    plus the proof evidence
+    (build/proof/task_52d90ea5-dc78-4cfc-8162-d1216895b974/ and `ai-company
+    audit --task task_52d90ea5-dc78-4cfc-8162-d1216895b974`) and decide whether
+    to accept Runtime V1.1 into main. DO NOT MERGE without the Human Founder. The
+    pending run approval apr_03ac3263-7dc5-49d9-b978-d8b6cd57bd26 is a PROOF
+    artifact for a disposable fixture workspace - deciding it does not deploy,
+    merge or release anything.
+  - Human Founder to onboard model providers and set per-agent / per-task budget
+    caps (models/routing.yml budgets remain NOT_CONFIGURED until then).
+  - Human Founder to confirm the production cloud commitment (PostgreSQL
+    StateStore, secrets proxy, microVM sandbox isolation) before any real project.
+  - Assign compliance / privacy responsibility before any project handles real
+    customer PII.
+  - Re-evaluate Mastra behind the AgentRunner interface now that real multi-agent
+    LLM execution is in scope (ADR-0014 keeps it DEFERRED).
 history:
   - state: HUMAN_APPROVAL_REQUIRED
     status: APPROVAL_REQUIRED
@@ -85,3 +247,346 @@ history:
       Final Human Founder approval granted to accept Agent Runtime V1.0 into main
       via PR #1. Approval scoped to this acceptance only; future critical actions
       still require explicit per-instance Human Founder approval.
+  - state: BUILD
+    status: RUNNING
+    at: "2026-09-01"
+    note: >
+      Runtime V1.1 (Real Agent Execution + Software Factory Proof) implemented on
+      feat/real-agent-execution-v1.1, extending the existing runtime components.
+  - state: TEST
+    status: PASS
+    at: "2026-09-01"
+    note: >
+      103 runtime tests + 85 organization tests green; typecheck clean; the full
+      real-agent pipeline proven end-to-end offline against a local
+      OpenAI-compatible fake server (real code, real npm test, independent
+      review, security checks, release gate, Human Founder approval gate).
+  - state: BUILD
+    status: BLOCKED
+    at: "2026-09-01"
+    note: >
+      The one required run against a real provider is BLOCKED_PROVIDER_UNAVAILABLE
+      (OPENROUTER_API_KEY not configured). Milestone not marked complete, not
+      pushed, not merged; awaiting a real credential + one real proof run, then
+      Human Founder review.
+  - state: BUILD
+    status: RUNNING
+    at: "2026-09-01"
+    note: >
+      Resumed with GROQ_API_KEY available. Diagnosed and fixed the confirmed
+      real-provider blocker: MODEL_AUTHORED_RESULT_JSON_SCHEMA was not a Groq
+      strict-Structured-Output subset (unconstrained tool-arg object, type
+      unions, missing additionalProperties:false / required), so business_analysis
+      returned MALFORMED. Rebuilt the schema as a strict subset (args_json string,
+      single-string types, every object closed + fully required), added a
+      json_schema -> json_object -> prompt-only provider self-heal cascade with a
+      bounded output-token bump, rate-limit-shaped-400 classification, redacted
+      400 bodies, all-low reasoning effort, sharpened stage directives, and a
+      bounded one-shot implementation test-repair pass. 170 runtime + 85
+      organization tests green; typecheck clean; +6 regression tests.
+  - state: BUILD
+    status: BLOCKED
+    at: "2026-09-01"
+    note: >
+      Real Groq runs now pass business_analysis, spec_review, architecture and
+      plan with native strict json_schema output (original blocker fixed). The
+      run still has not reached HUMAN_APPROVAL_REQUIRED: the free-tier Groq key
+      hit its per-day token quota (stage BLOCKED cleanly as RATE_LIMIT_EXHAUSTED,
+      checkpoint preserved), and the implementation stage intermittently fails
+      its own npm test on free-model code quality. Not pushed, not merged;
+      awaiting one real proof run to HUMAN_APPROVAL_REQUIRED on a fresh quota
+      window, then Human Founder review.
+  - state: BUILD
+    status: RUNNING
+    at: "2026-09-02"
+    note: >
+      Added the smallest safe NVIDIA NIM free-first fallback, reusing the
+      existing generic OpenAI-compatible provider. resolveProofProviderChain()
+      returns {primary: Groq, fallbacks: [NVIDIA]} when NVIDIA_API_KEY is set;
+      the Software Factory proof, on a BOUNDED Groq RATE_LIMIT_EXHAUSTED only
+      (never a plain 429 / 5xx / provider error / model-response failure),
+      preserves the workflow checkpoint, records a provider_transition audit
+      event (from_provider / to_provider / reason=RATE_LIMIT_EXHAUSTED / stage),
+      rebuilds the runner on NVIDIA and retries ONLY the blocked stage - no
+      completed stage / tool write / artifact repeated, shared request budget
+      keeps counting, ceiling still enforced. NVIDIA-also-fails stays fail-safe
+      (structured BLOCK, no third provider). OpenRouter is still fully supported
+      but never auto-added. +13 deterministic tests (NVIDIA provider, chain
+      resolution, Groq->NVIDIA end-to-end to HUMAN_APPROVAL, checkpoint resume /
+      no duplicate stages-writes-artifacts, transition audit, NVIDIA-also-fails
+      fail-safe, secret protection, doctor fallback-chain row). 183 runtime + 85
+      organization tests green; typecheck clean; gitleaks clean; NVIDIA_API_KEY
+      read from the environment only, never printed or persisted.
+  - state: BUILD
+    status: BLOCKED
+    at: "2026-09-02"
+    note: >
+      One real Software Factory proof run executed against the LIVE free
+      providers. The fallback worked exactly as designed: business_analysis
+      PASSED on Groq; Groq hit its free-tier per-day token cap on spec_review
+      (pre-call token-quota wait + 3x HTTP 429 cycles -> RATE_LIMIT_EXHAUSTED);
+      the run transitioned Groq->NVIDIA with the checkpoint preserved (audit
+      event recorded, no stage re-run); NVIDIA then PASSED spec_review,
+      architecture and plan. The run FAILed at the implementation stage on NVIDIA
+      Nemotron (free) code quality - NOT a runtime defect: malformed args_json on
+      the first tool calls, then after the bounded structured retry and the
+      one-shot test-repair pass no discoverable GET /health change was applied
+      (git diff empty), so the runner's own npm test found 0 tests and the stage
+      FAILed on the requireWorkspaceChange / 0-passing gates. Per the resume
+      instruction the session STOPPED: no further provider added, implementation
+      prompt not iterated, and NOT committed / pushed / PR'd (those are gated on
+      reaching HUMAN_APPROVAL_REQUIRED, which was not reached). Milestone still
+      NOT complete, NOT merged, NOT approved.
+  - state: BUILD
+    status: RUNNING
+    at: "2026-09-02"
+    note: >
+      Forensic analysis of the failed implementation stage, then targeted
+      hardening of ONLY the implementation stage (no gate weakened). Findings:
+      (1) the architecture and plan stages hallucinated an Express + Jest stack
+      (the fixture is plain node:http + node --test with no tests) because those
+      stages are not shown the workspace; (2) the free model could not produce
+      the double-escaped args_json string form of workspace.write (both writes
+      came back "args_json is not valid JSON"), so no code was applied.
+      Hardening: a deterministic ProofWorkspace.projectFacts() digest (module
+      system, scripts.test + discovery rule, entrypoint + exports, existing
+      tests) handed to the implementation stage as AUTHORITATIVE context with a
+      directive to ignore any earlier artifact that contradicts it; a first-class
+      fileChanges array ({path, operation, content} - complete files, no
+      args_json escaping) applied through the same Capability Gateway + audit;
+      inspect-first directives (state module system / test command / file+symbol
+      / test path before changing anything); a requireTestChange gate (a code
+      stage that writes no discoverable test BLOCKs with a precise reason); a
+      repair pass fed the exact failing command / exit code / stderr tail /
+      current file contents / module + discovery facts and told to fix only the
+      demonstrated failure; a seed-fixture .gitignore for .npm/ so npm test's own
+      cache files cannot mask "the model changed nothing"; and workspace
+      snapshot/restore around each real stage so a Groq->NVIDIA transition never
+      re-applies a partial write. +14 deterministic tests. 197 runtime + 85
+      organization tests green; typecheck clean; gitleaks clean. A planned
+      premium-escalation routing policy (metadata only, NOT enforced, landing it
+      in models/ is a RISK 5 change) documented in docs/real-agent-execution.md
+      section 7.
+  - state: BUILD
+    status: BLOCKED
+    at: "2026-09-02"
+    note: >
+      Second real Software Factory proof run (post-hardening), free-first chain.
+      Measurable improvement: Groq passed business_analysis, hit its per-day
+      token cap on spec_review -> RATE_LIMIT_EXHAUSTED -> transitioned to NVIDIA
+      with the checkpoint preserved; NVIDIA passed spec_review, architecture and
+      plan and then produced a CORRECT, minimal, ESM-valid GET /health change in
+      src/server.js that followed projectFacts exactly (contrast run 1, which
+      applied no code at all). It still FAILed the implementation stage: the
+      model omitted the accompanying test file from fileChanges (claimed it in
+      prose only) and its one bounded test-repair pass returned unparseable JSON,
+      so the requireTestChange + npm-test-0-passing gates FAILed the stage
+      fail-safe. NVIDIA Nemotron also emitted malformed first-attempt JSON on
+      spec_review and plan (recovered on the bounded retry). Per the resume
+      instruction the session STOPPED: FREE_IMPLEMENTATION_QUALITY_BUDGET is
+      treated as exhausted; the next step is a PREMIUM escalation for the
+      implementation stage only, which needs separate explicit Human Founder
+      authorization to onboard a paid provider. No paid provider wired. NOT
+      committed / pushed / PR'd (gated on HUMAN_APPROVAL_REQUIRED, not reached).
+      Milestone still NOT complete, NOT merged, NOT approved.
+  - state: BUILD
+    status: RUNNING
+    at: "2026-09-02"
+    note: >
+      Human Founder explicitly authorized ONE premium escalation for the
+      IMPLEMENTATION STAGE ONLY (OpenAI, OPENAI_API_KEY from Codespaces Secrets).
+      Built it reusing the existing OpenAICompatibleProvider: a
+      resolvePremiumImplProvider() gated behind AI_COMPANY_PREMIUM_IMPL_PROVIDER
+      =openai (the authorization itself; never auto-selected), default model
+      priority gpt-5.1 -> gpt-5 -> gpt-4.1 with the selected model recorded, and
+      chat/completions compat for newer OpenAI models (max_completion_tokens,
+      omit temperature/seed). software-factory.ts uses the premium runner for the
+      implementation stage ONLY - every other stage stays on the free-first chain
+      - bounded to one primary attempt + one targeted test-repair
+      (maxStructuredRetries: 0), records a premium_escalation audit event before
+      the first request, keeps every deterministic gate authoritative and the
+      independent reviewer intact, and on ANY failure STOPS with
+      PREMIUM_IMPLEMENTATION_FAILED (no free fallback, no premium retry, no
+      further spend). Added a ProviderQuotaExhaustedError classification so a
+      billing 429 (insufficient_quota / credit_balance_exhausted) is
+      non-retryable and never fed to the rate-limit scheduler. +8 deterministic
+      tests. 205 runtime + 85 organization tests green; typecheck clean; gitleaks
+      clean. Standing routing policy (LOW free / MEDIUM free-first then
+      PREMIUM_ELIGIBLE + Human Founder / HIGH premium behind a budget gate /
+      CRITICAL independent premium + Human Founder; never auto-spend premium)
+      recorded in docs/real-agent-execution.md section 7.
+  - state: BUILD
+    status: BLOCKED
+    at: "2026-09-02"
+    note: >
+      Third real Software Factory proof run, premium escalation authorized. The
+      free chain passed idea, product_analysis, business_analysis (Groq),
+      spec_review, architecture, plan (NVIDIA, after the Groq per-day token cap
+      triggered the checkpoint-preserving Groq -> NVIDIA fallback). The
+      implementation stage escalated to OpenAI (gpt-5.1, one request) and was
+      BLOCKED at the billing layer: HTTP 429 insufficient_quota /
+      credit_balance_exhausted - "You have no credits remaining". The supplied
+      OPENAI_API_KEY authenticates (GET /models -> 200, 118 models) but the
+      OpenAI organization credit balance is zero, confirmed in a pre-flight check
+      across every model and both the chat/completions and responses endpoints.
+      The runtime classified this as PROVIDER_QUOTA_EXHAUSTED (non-retryable,
+      never sent to the scheduler), stopped as PREMIUM_IMPLEMENTATION_FAILED /
+      premium_provider_unavailable with ZERO tokens billed, NO free fallback, NO
+      premium retry, and the credential never appeared in the result, audit or
+      logs. Per the Human Founder authorization the session STOPPED. NOT
+      committed / pushed / PR'd (gated on HUMAN_APPROVAL_REQUIRED, not reached).
+      The only remaining blocker is external: fund the OpenAI account, then
+      re-run. Milestone still NOT complete, NOT merged, NOT approved.
+  - state: BUILD
+    status: RUNNING
+    at: "2026-09-02"
+    note: >
+      Human Founder authenticated the Codex CLI via ChatGPT and authorized the
+      Codex CLI (not the paid API) as the premium implementation harness.
+      Forensic diagnosis of the earlier Codex hang: promisify(execFile) always
+      gives the child an open stdin pipe with no EOF; codex exec 0.152.1 reads a
+      piped stdin to append a <stdin> block, so it blocked forever in "Reading
+      additional input from stdin..." (reproduced - two 15-minute timeouts,
+      ~0 CPU, no edits, killed by SIGTERM which only reaped the direct child).
+      Fix (smallest change): the harness now uses child_process.spawn with
+      stdio=["ignore","pipe","pipe"] (stdin=/dev/null -> immediate EOF), its own
+      process group and SIGTERM->SIGKILL of the whole group on the wall-clock
+      deadline; adds --json / --skip-git-repo-check; classifies each run
+      (CODEX_SUCCESS / CODEX_TIMEOUT / CODEX_AUTH_REQUIRED / CODEX_APPROVAL_BLOCKED
+      / CODEX_PROCESS_ERROR / caller-side CODEX_NO_WORKSPACE_CHANGE), with AUTH /
+      APPROVAL mapping to PREMIUM_PROVIDER_UNAVAILABLE (stop, no repair). Kept
+      --sandbox workspace-write (the minimum for workspace edits - NOT a global
+      bypass). Also extracted the deterministic implementation gates into one
+      shared module (implementation-gates.ts) used by BOTH the model runner and
+      the Codex harness so they cannot drift. OPENAI_API_KEY is still stripped
+      from the Codex child; ~/.codex/auth.json is never read. Controlled live
+      smoke test + a live local GET /health implementation test against a copy
+      of the demo-service fixture both passed (codex exec ~13s and ~47s, exit 0,
+      only allowed files changed, every gate PASS, /health -> 200 {"status":
+      "ok"}). +6 deterministic regression tests (real-spawn stdin-closed normal
+      exit, hang -> timeout -> process-tree kill with descendant verification,
+      classifyCodexRun, run-time AUTH / APPROVAL / TIMEOUT / NO_WORKSPACE_CHANGE
+      classification). 223 runtime + 85 organization tests green; typecheck
+      clean; gitleaks clean.
+  - state: BUILD
+    status: BLOCKED
+    at: "2026-09-02"
+    note: >
+      Full real Software Factory proof (Codex CLI premium authorized). Groq did
+      business_analysis + spec_review (PASS), then hit its per-day token cap on
+      architecture -> checkpoint-preserving Groq->NVIDIA fallback -> architecture
+      PASS on NVIDIA. The plan stage then FAILed: NVIDIA Nemotron returned
+      MALFORMED structured JSON twice ("status ... got 'undefined'; summary is
+      missing"), so the bounded one-retry limit BLOCKed the stage fail-safe
+      (never guessed). This is the known intermittent NVIDIA Nemotron
+      JSON-reliability issue - a FREE-provider flake, NOT Codex (which was never
+      reached: premiumEscalation = None) and NOT a runtime defect. Per the task
+      constraints the free-provider logic was NOT modified. The fixed Codex
+      harness is proven working by the live smoke + local /health tests above;
+      the full end-to-end proof to HUMAN_APPROVAL_REQUIRED still needs a run
+      where the free chain reaches the implementation stage (best: after the Groq
+      per-day token quota resets so the whole free chain runs on the
+      JSON-reliable Groq gpt-oss-120b). NOT committed / pushed / PR'd (gated on
+      HUMAN_APPROVAL_REQUIRED, not reached). Milestone still NOT complete, NOT
+      merged, NOT approved.
+  - state: BUILD
+    status: BLOCKED
+    at: "2026-09-02"
+    note: >
+      Run 6. Pre-flight showed Groq reachable + authenticated and small
+      completions succeeding (per-minute token bucket ~7900/8000), so ONE proof
+      was run. It revealed Groq's SUSTAINED/daily free-tier budget is effectively
+      spent for this key from the day's accumulated runs: after ONE large proof
+      stage (business_analysis, PASS) the next stage (spec_review) got HTTP 429
+      with a 90-second retry-after three times -> RATE_LIMIT_EXHAUSTED ->
+      checkpoint-preserving Groq->NVIDIA fallback. NVIDIA Nemotron then returned
+      MALFORMED structured JSON on spec_review TWICE ("status ... got
+      'undefined'"), so the bounded one-retry limit BLOCKed the stage fail-safe -
+      same free-provider JSON-reliability flake as run 5, one stage earlier.
+      premiumEscalation = None (Codex never reached). Free-provider / fallback
+      logic NOT modified (per constraints; the BLOCK is the correct fail-safe).
+      No further proof run - one was authorized and run. The proof to
+      HUMAN_APPROVAL_REQUIRED needs a run where the whole free chain reaches the
+      implementation stage; on current evidence that requires the Groq daily
+      token budget to reset (so the JSON-reliable gpt-oss-120b carries the
+      analysis stages) OR the paid OpenAI premium path if the Human Founder funds
+      that account. NOT committed / pushed / PR'd.
+  - state: BUILD
+    status: RUNNING
+    at: "2026-09-02"
+    note: >
+      Run 7. With the Groq daily quota available, one full real proof ran with
+      the Codex CLI premium implementer authorized. business_analysis,
+      spec_review, architecture and plan PASSED on Groq gpt-oss-120b; the
+      implementation stage PASSED via the fixed Codex CLI harness (CODEX_SUCCESS,
+      exit 0, ~93s, `npm test` exit 0 / 1 passing, changed exactly src/server.js
+      + test/feature.test.js + README.md, every deterministic gate PASS); the
+      independent code_review PASSED on Groq. Then the qa stage's real model call
+      hit Groq HTTP 400 `tool_use_failed` ("Tool choice is none, but model
+      called a tool") - the tool-native gpt-oss model emitted a native function
+      call because the qa StagePlan advertised workspace.exec AND stageDirectives
+      told it to run tests via workspace.exec, while the OpenAI-compatible
+      provider (by design) sends no `tools` array. The GitHub Codespace was then
+      stopped before the failure was surfaced, leaving run run_254a2876 persisted
+      RUNNING at qa with implementation + code_review already PASS. Not a runtime
+      defect in the completed stages; a genuine qa-stage provider-compat defect.
+  - state: BUILD
+    status: RUNNING
+    at: "2026-09-02"
+    note: >
+      Recovered the exact interrupted state, then applied the MINIMUM provider-
+      compat fix (no gate / schema / validation weakened, no redesign): PLANS.qa
+      and PLANS.security carry `allowedRuntimeTools: []` (the workspace diff is
+      already in context; the qa gate is the runner's own `npm test`, the
+      security gate is deterministicSecurityChecks - neither uses model tool
+      calls), and stageDirectives only tells the model to run tests via
+      workspace.exec when that tool is actually offered. Added a `resume`
+      capability to the Software Factory proof driver (RunOptions.resume +
+      `ai-company proof resume [<run-id>]`) so the workflow engine's own
+      persisted run continues from its current step with no completed stage or
+      implementation re-run; ProofWorkspace now re-attaches to a workspace it
+      seeded in a previous run (instead of failing to create a second seed
+      commit); RequestBudget accepts a `used` seed so the shared ceiling keeps
+      counting across the interruption. +2 deterministic tests
+      (software-factory-resume.test.ts). 225 runtime + 85 organization tests
+      green; typecheck clean; gitleaks clean.
+  - state: HUMAN_APPROVAL_REQUIRED
+    status: APPROVAL_REQUIRED
+    at: "2026-09-02"
+    note: >
+      Run 8. Resumed run_254a2876 from the pre:qa checkpoint on the live free
+      chain. qa, security and release_review all PASSED on Groq gpt-oss-120b
+      (three real requests #6-#8, no NVIDIA fallback needed, no provider error);
+      implementation and code_review were NOT re-executed (reused from the
+      persisted run history and the committed workspace); staging and
+      staging_verify passed as deterministic auxiliary stages. The run STOPPED at
+      HUMAN_APPROVAL_REQUIRED with a pending approval
+      (apr_03ac3263-7dc5-49d9-b978-d8b6cd57bd26, requested_action
+      production_deployment, risk 5). Approval-packet machine evidence: `npm
+      test` exit 0 / 1 passing / 0 failing; deterministic security checks
+      no-secret-in-diff / no-new-runtime-dependency / no-dangerous-api-introduced
+      all PASS; estimated cost $0. Every quality gate authoritative and
+      unweakened; the independent reviewer (senior-code-reviewer) was never the
+      implementer (backend-engineer via Codex CLI). The one required real proof
+      run to HUMAN_APPROVAL_REQUIRED is COMPLETE. Final verification re-run
+      (225 runtime + 85 organization green; typecheck clean; gitleaks clean),
+      then committed and pushed feat/real-agent-execution-v1.1 with a PR into
+      main for CI. NOT merged - accepting Runtime V1.1 into main is a separate,
+      explicit Human Founder decision.
+  - state: HUMAN_APPROVAL_REQUIRED
+    status: APPROVAL_REQUIRED
+    at: "2026-09-02"
+    note: >
+      Human Founder APPROVED the pending proof approval artifact
+      apr_03ac3263-7dc5-49d9-b978-d8b6cd57bd26 (run run_254a2876; state APPROVED,
+      decided_by human-founder, decided_at 2026-09-02T17:42:45Z). The approval is
+      scoped strictly to the existing disposable Software Factory proof artifact
+      and explicitly does NOT authorize real production deployment, customer-data
+      access, financial actions, destructive database operations, or external
+      production release. The workflow run was NOT resumed/driven past the
+      human_approval step - it stays parked at APPROVAL_REQUIRED /
+      HUMAN_APPROVAL_REQUIRED, deliberately held before the PRODUCTION stage. No
+      deploy. PR #2 remains open and NOT merged; accepting Runtime V1.1 into main
+      is still a separate pending Human Founder decision. Runtime architecture
+      unchanged; no new proof started; nothing committed/pushed/merged/deployed
+      beyond this state-file update.

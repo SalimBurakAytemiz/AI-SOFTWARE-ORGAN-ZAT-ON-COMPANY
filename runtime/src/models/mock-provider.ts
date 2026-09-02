@@ -37,13 +37,16 @@ export class MockModelProvider implements ModelProvider {
     const started = Date.now();
     const seedMaterial = `${req.seed ?? 0}|${req.tier}|${req.system ?? ""}|${req.prompt}|${req.context ?? ""}`;
     const digest = createHash("sha256").update(seedMaterial).digest("hex");
-    const text = this.render(req, digest);
+    const text = isStructuredContract(req.prompt)
+      ? renderStructuredResult(req, digest)
+      : this.render(req, digest);
 
     const input_tokens = estimateTokens(`${req.system ?? ""} ${req.prompt} ${req.context ?? ""}`);
     const output_tokens = estimateTokens(text);
     this.inTokens += input_tokens;
     this.outTokens += output_tokens;
 
+    const maxOutputTokens = req.maxOutputTokens ?? 1500;
     return {
       provider: this.name,
       model: `mock-${req.tier.toLowerCase()}`,
@@ -52,6 +55,9 @@ export class MockModelProvider implements ModelProvider {
       usage: { input_tokens, output_tokens },
       estimated_cost_usd: 0, // the mock provider genuinely costs zero
       duration_ms: Math.max(1, Date.now() - started),
+      // The deterministic mock always emits a complete response; never truncated.
+      finish_reason: "stop",
+      max_output_tokens: maxOutputTokens,
     };
   }
 
@@ -72,6 +78,112 @@ export class MockModelProvider implements ModelProvider {
 function firstLine(s: string): string {
   return (s.split("\n")[0] ?? "").slice(0, 200);
 }
+
+/** True when the caller used the RealAgentRunner structured output contract. */
+function isStructuredContract(prompt: string): boolean {
+  return prompt.includes("required_output_contract") && prompt.includes('"requestedToolCalls"');
+}
+
+/**
+ * Deterministic, contract-valid AgentExecutionResult for the mock provider so the
+ * REAL agent pipeline (prompt assembly -> parse -> validate -> gateway -> tools)
+ * is fully exercised offline. This is the runtime's honest "mock developer": it is
+ * clearly a mock model, and mock runs are always labelled MOCK, never REAL.
+ */
+function renderStructuredResult(req: GenerateRequest, digest: string): string {
+  const tag = digest.slice(0, 10);
+  const stage = req.prompt.match(/Stage:\s*.+?\(([a-z_]+)\)/)?.[1] ?? "unknown";
+  const agentId = (req.system ?? "").match(/agent id:\s*([a-z-]+)/)?.[1] ?? "unknown-agent";
+
+  const base = {
+    status: "PASS" as const,
+    summary: `[mock ${tag}] ${agentId} completed the '${stage}' stage deterministically.`,
+    reasoningSummary: `Deterministic mock decision for '${stage}': follow the stage action, produce the required artifact, hand off. No hidden reasoning.`,
+    artifacts: [
+      {
+        path: `${stage}.md`,
+        kind: "report" as const,
+        content: `# ${stage} (mock)\n\nDeterministic mock output for stage '${stage}' by ${agentId}.\nThis proves routing, structure and hand-off - not that a mock model is a developer.\n`,
+      },
+    ],
+    recommendations: [`Proceed to the next stage after '${stage}'.`],
+    fileChanges: [] as unknown[],
+    requestedToolCalls: [] as unknown[],
+    handoff: { to: "next-stage", why: `'${stage}' complete` },
+    qualityEvidence: [
+      { check: `${stage}-produced-required-artifact`, result: "PASS" as const, detail: "artifact written" },
+    ],
+    risks: [],
+    errors: [],
+  };
+
+  if (stage === "implementation") {
+    // The first-class code-change channel (matches the hardened contract): each
+    // entry is a complete file, no double-escaped args_json. The runtime runs
+    // `npm test` itself after the stage, so no exec tool call is needed.
+    base.fileChanges = [
+      { path: "src/server.js", operation: "modify", content: MOCK_SERVER_JS },
+      { path: "test/health.test.js", operation: "create", content: MOCK_HEALTH_TEST_JS },
+    ];
+    base.summary = `[mock ${tag}] backend-engineer added GET /health + a test to the disposable workspace.`;
+  }
+
+  if (stage === "qa" || stage === "security" || stage === "code_review") {
+    base.requestedToolCalls = [
+      { tool: "workspace.list", args: {}, reason: `inspect the change for the '${stage}' gate` },
+    ];
+  }
+
+  return JSON.stringify(base, null, 2);
+}
+
+const MOCK_SERVER_JS = [
+  "// Disposable fixture service used by the Agent Runtime proof workflow.",
+  'import { createServer } from "node:http";',
+  "",
+  "export function handler(req, res) {",
+  '  if (req.method === "GET" && req.url === "/health") {',
+  '    res.writeHead(200, { "content-type": "application/json" });',
+  '    res.end(JSON.stringify({ status: "ok" }));',
+  "    return;",
+  "  }",
+  '  if (req.method === "GET" && req.url === "/") {',
+  '    res.writeHead(200, { "content-type": "application/json" });',
+  '    res.end(JSON.stringify({ service: "demo-service" }));',
+  "    return;",
+  "  }",
+  '  res.writeHead(404, { "content-type": "application/json" });',
+  '  res.end(JSON.stringify({ error: "not found" }));',
+  "}",
+  "",
+  "export function createDemoServer() {",
+  "  return createServer(handler);",
+  "}",
+  "",
+].join("\n");
+
+const MOCK_HEALTH_TEST_JS = `import { test } from "node:test";
+import assert from "node:assert/strict";
+import { handler } from "../src/server.js";
+
+function call(method, url) {
+  return new Promise((resolve) => {
+    const req = { method, url };
+    const chunks = [];
+    const res = {
+      writeHead(status, headers) { this.statusCode = status; this.headers = headers; },
+      end(body) { chunks.push(body ?? ""); resolve({ status: this.statusCode, body: chunks.join("") }); },
+    };
+    handler(req, res);
+  });
+}
+
+test("GET /health returns 200 and { status: 'ok' }", async () => {
+  const r = await call("GET", "/health");
+  assert.equal(r.status, 200);
+  assert.deepEqual(JSON.parse(r.body), { status: "ok" });
+});
+`;
 
 function estimateTokens(s: string): number {
   return Math.max(1, Math.ceil(s.trim().length / 4));

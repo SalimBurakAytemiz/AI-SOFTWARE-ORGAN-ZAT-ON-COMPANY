@@ -10,3 +10,16 @@ runtime/.data/
 *.sqlite-journal
 *.sqlite-wal
 *.sqlite-shm
+
+# Software Factory proof outputs - disposable, regenerated per run (build spec section 40)
+runtime/build/
+build/proof/
+runtime/proof*.json
+runtime/proof*.log
+runtime/proof*.stderr.log
+
+# Local environment files - NEVER commit real credentials
+.env
+.env.local
+runtime/.env
+!**/.env.example

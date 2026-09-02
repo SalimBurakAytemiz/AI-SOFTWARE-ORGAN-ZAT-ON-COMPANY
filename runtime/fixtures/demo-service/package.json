@@ -6,6 +6,6 @@
   "description": "Disposable fixture service for the Agent Runtime proof workflow. Not a product.",
   "scripts": {
     "start": "node src/server.js",
-    "test": "node --test test/"
+    "test": "node --test"
   }
 }

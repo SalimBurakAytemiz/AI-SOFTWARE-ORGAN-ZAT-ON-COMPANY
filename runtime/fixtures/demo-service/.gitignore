@@ -1,0 +1,5 @@
+# The proof workspace runs `npm test` with HOME set to the workspace, which
+# writes npm's own cache/log files here. They are not part of the change under
+# review, so keep them out of the workspace diff / hasChanges() signal.
+.npm/
+node_modules/
