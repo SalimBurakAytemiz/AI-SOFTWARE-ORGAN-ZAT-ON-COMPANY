@@ -1,6 +1,6 @@
 {
   "package_version": "0.1",
-  "generated_at": "2026-09-02T22:01:27.645Z",
+  "generated_at": "2026-09-02T22:45:25.399Z",
   "project_id": "proj_98741579-c47f-40e2-af4f-ff692613ea3c",
   "slug": "qa-portfolio",
   "project_name": "QA Engineer Portfolio Platform",
@@ -46,10 +46,10 @@
     "no_destructive_production_operations": true
   },
   "build_authorization": {
-    "granted": false,
-    "granted_by": null,
-    "granted_at": null,
-    "note": null
+    "granted": true,
+    "granted_by": "human-founder",
+    "granted_at": "2026-09-02T22:45:25.398Z",
+    "note": "Onaylandı"
   },
-  "checksum": "sha256:6383faabdb1c489119bdb5cc104fae3a4aea31eedf3ba38297a0b6d9df4e7579"
+  "checksum": "sha256:c9244a3ca586939dba9e53e019e4dca72051d4e5a62a6ca9defa9b71897e22af"
 }
