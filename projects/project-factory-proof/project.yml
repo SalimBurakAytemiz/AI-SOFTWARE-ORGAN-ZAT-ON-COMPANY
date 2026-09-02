@@ -1,0 +1,66 @@
+# Project Factory V0.1 - canonical project definition.
+# Validates against runtime/src/project-factory/project-model.ts (PROJECT_SCHEMA).
+schema_version: "0.1"
+project_id: proj_c3a35fe5-52e1-4f09-8d28-b9fdb15e255e
+project_name: Project Factory Proof
+slug: project-factory-proof
+description: A simple API service with a GET /health endpoint.
+business_goal: Deliver a working first version of Project Factory Proof for end users.
+project_type: api_service
+target_users:
+  - end users
+target_market: unspecified
+business_model: other
+platforms:
+  - api
+core_features:
+  - A simple API service with a GET /health endpoint
+constraints: []
+integrations: []
+security_level: standard
+risk_level: 2
+budget_policy:
+  free_first: true
+  max_real_provider_requests: 30
+  max_premium_invocations: 0
+  premium_authorization_required: true
+  provider_fallback_allowed: true
+requested_workflow: feature-development
+governance:
+  human_founder_approval_required: true
+  kill_switch: true
+  audit: true
+  capability_gates: true
+  secret_protection: true
+  no_automatic_production_deployment: true
+  no_financial_actions: true
+  no_destructive_production_operations: true
+status: READY_FOR_BUILD
+build_authorization:
+  granted: false
+  granted_by: null
+  granted_at: null
+  note: null
+created_by: human-founder
+created_at: 2026-09-02T18:37:49.968Z
+updated_at: 2026-09-02T18:37:50.033Z
+history:
+  - state: DRAFT
+    at: 2026-09-02T18:37:49.968Z
+    note: created via Project Factory; 9 inferred field(s)
+  - state: INTAKE
+    at: 2026-09-02T18:37:50.023Z
+    note: "generated: product/brief.md"
+  - state: DISCOVERY
+    at: 2026-09-02T18:37:50.025Z
+    note: "generated: product/requirements.md, product/business-rules.md"
+  - state: SPEC_READY
+    at: 2026-09-02T18:37:50.027Z
+    note: "generated: product/user-stories.md, product/acceptance-criteria.md"
+  - state: PLAN_READY
+    at: 2026-09-02T18:37:50.030Z
+    note: "generated: plans/build-plan.md"
+  - state: READY_FOR_BUILD
+    at: 2026-09-02T18:37:50.033Z
+    note: runtime handoff package generated
+      (sha256:1fe7af01aba0f7d4a6f0515f85b6c67b5348c855f5521c6a08e74e6d8f2cd5d8)
