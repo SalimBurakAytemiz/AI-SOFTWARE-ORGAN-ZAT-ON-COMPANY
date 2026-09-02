@@ -4,7 +4,7 @@ version: Project Factory V0.1
 scope: natural-language-project-intake-and-runtime-handoff
 state: HUMAN_APPROVAL_REQUIRED
 status: APPROVAL_REQUIRED
-updated: "2026-09-02T18:45:00Z"
+updated: "2026-09-02T19:30:00Z"
 owner: engineering-director
 summary: >
   Organization V1.0 (85 tests), Agent Runtime V1.0 and Runtime V1.1 - Real Agent
@@ -495,3 +495,22 @@ history:
       (deterministically): valid workspace + schema-valid checksum-verified
       handoff package; build NOT authorized; no Software Factory build run.
       NOT merged - awaits Human Founder review + PR merge.
+  - state: HUMAN_APPROVAL_REQUIRED
+    status: APPROVAL_REQUIRED
+    at: "2026-09-02"
+    note: >
+      Recovery after a GitHub Codespace interruption. The interruption occurred
+      after commit f5eaa4c was pushed and PR #3 (feat/project-factory-v0.1 ->
+      main) opened; no uncommitted work was lost (working tree clean, no stash,
+      local branch == origin). Full verification set re-run from the persisted
+      repository state: 237 runtime tests + typecheck (npm --prefix runtime run
+      check) green; 85 organization tests (python3 tests/run_all.py) green; branch
+      diff carries no gitleaks-style secret and no gitignored runtime/build or
+      runtime/.data; CLI acceptance check `ai-company project verify
+      project-factory-proof` reports handoff schema+checksum+governance OK with
+      build NOT authorized; `doctor` shows the project-factory row ok. PR #3 CI:
+      both checks (validate-organization -> validate + runtime) SUCCESS,
+      mergeStateStatus CLEAN, mergeable MERGEABLE. Nothing rebuilt, no valid work
+      reverted, Runtime V1.1 unchanged, Cleaning Commerce not started. The one
+      remaining step is the Human Founder's review and merge of PR #3; authorizing
+      a first real project build stays a separate later decision.
