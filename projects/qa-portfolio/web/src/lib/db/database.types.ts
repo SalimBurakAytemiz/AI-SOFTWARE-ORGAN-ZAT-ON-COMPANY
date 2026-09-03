@@ -1,52 +1,43 @@
 /**
- * Supabase şemasından üretilen TypeScript tipleri buraya gelecek.
+ * Supabase şema tiplerinin UYGULAMA GİRİŞ NOKTASI.
  *
- * Faz 2'de gerçek bir Supabase projesi açıldığında:
- *   npx supabase gen types typescript --project-id <id> > src/lib/db/database.types.ts
- * komutu bu dosyayı gerçek şemadan üretir (planning/07 T-0411). O noktada
- * aşağıdaki gevşek (permissive) iskelet TAM tiplerle değiştirilecek ve sorgu
- * katmanı derleme zamanında şemaya bağlanacak.
+ * İŞ KURALI: Uygulama kodu şema tiplerini DAİMA bu dosyadan alır
+ * (`@/lib/db/database.types`), asla doğrudan üretilen dosyadan. Böylece
+ * `supabase gen types` çıktısı yenilendiğinde (aşağıdaki komut) uygulamanın
+ * kullandığı kısa takma adlar (DbLocale, ContentStatus, ...) bozulmaz.
  *
- * Şu an amaç: Supabase istemcisi ve sorgu yardımcıları TİP HATASI vermeden
- * derlensin. Şema tanımı: planning/02-database-schema.md ve supabase/migrations/*.
+ * Üretilen dosya:  src/lib/db/database.generated.ts  (elle düzenlenmez)
+ * Yeniden üretmek:
+ *   npx supabase gen types typescript --db-url "$SUPABASE_DB_URL" \
+ *     > src/lib/db/database.generated.ts
+ * (`--linked` yerine `--db-url` kullanılır; `--linked` bir Supabase access
+ *  token'ı ister, çıktı aynıdır. Bkz. supabase/README.md.)
  */
+export type {
+  Json,
+  Database,
+  Tables,
+  TablesInsert,
+  TablesUpdate,
+  Enums,
+  CompositeTypes,
+} from "./database.generated";
+export { Constants } from "./database.generated";
+
+import type { Database } from "./database.generated";
+
+// --- Kısa takma adlar: gerçek DB enum'larından TÜRETİLİR (elle yazılmaz) ---
+// Bu adlar kod tabanında ~20 dosyada import edilir; şemadan türetildikleri için
+// migration'la her zaman senkron kalırlar.
 
 /** Desteklenen içerik dilleri (DB enum: locale). */
-export type DbLocale = "tr" | "en";
+export type DbLocale = Database["public"]["Enums"]["locale"];
 
 /** İçerik yaşam döngüsü durumu (DB enum: content_status). */
-export type ContentStatus = "draft" | "published" | "archived";
+export type ContentStatus = Database["public"]["Enums"]["content_status"];
 
 /** Proje sınıflandırması (DB enum: project_classification). */
-export type ProjectClassification = "professional" | "supported" | "personal" | "qa_lab";
+export type ProjectClassification = Database["public"]["Enums"]["project_classification"];
 
 /** Taksonomi terimi türü (DB enum: taxonomy_kind). */
-export type TaxonomyKind = "platform" | "tool" | "test_type" | "industry";
-
-/** Faz 1 için gevşek satır tipi; faz 2'de tablo başına gerçek tiplerle değişir. */
-type LooseRow = Record<string, unknown>;
-
-interface LooseTable {
-  Row: LooseRow;
-  Insert: LooseRow;
-  Update: LooseRow;
-  Relationships: [];
-}
-
-export interface Database {
-  public: {
-    Tables: {
-      // Faz 2'de her tablo tek tek ve gerçek kolon tipleriyle tanımlanacak.
-      [table: string]: LooseTable;
-    };
-    Views: { [view: string]: LooseTable };
-    Functions: { [fn: string]: { Args: Record<string, unknown>; Returns: unknown } };
-    Enums: {
-      locale: DbLocale;
-      content_status: ContentStatus;
-      project_classification: ProjectClassification;
-      taxonomy_kind: TaxonomyKind;
-    };
-    CompositeTypes: Record<string, never>;
-  };
-}
+export type TaxonomyKind = Database["public"]["Enums"]["taxonomy_kind"];

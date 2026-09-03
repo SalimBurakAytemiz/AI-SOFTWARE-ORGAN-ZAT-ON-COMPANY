@@ -231,6 +231,10 @@ Verdict scale: ✅ Approve · ⚠️ Approve with conditions · ⛔ Blocker.
   blast radius is total (RLS bypass via service role is not reachable by them,
   but full content control is). MFA is only "recommended" — for a
   single-credential admin it should be **required**.
+  → **Superseded by Founder decision 2026-09-03 (decision-log ADR-0021): MFA is
+  NOT required and NOT a blocker; optional future enhancement. Residual RISK-040
+  accepted, mitigated by strong password + allow-list + RLS + rate limiting +
+  audit log + short sessions.**
 - No mention of Supabase **RLS on `auth` schema / `storage` schema defaults**,
   or of disabling the Supabase auto-generated GraphQL/`pg_graphql` and the
   `anon` role's access to `pg_catalog`-adjacent RPCs.
@@ -242,7 +246,9 @@ Verdict scale: ✅ Approve · ⚠️ Approve with conditions · ⛔ Blocker.
   isn't an SSRF/injection path.
 
 **Required changes (some are blockers for launch, not for build start)**
-- **MFA/TOTP required** for the admin account, not optional. → [10 §10.2], OQ-004 default flips to "required".
+- ~~**MFA/TOTP required** for the admin account, not optional.~~ → **Reversed by
+  Founder decision 2026-09-03 (decision-log ADR-0021): MFA/TOTP is optional, a
+  future security enhancement, not a launch requirement. OQ-004 resolved "no".**
 - Specify `?next=` validation precisely. → T-1708.
 - Eliminate `style-src 'unsafe-inline'` or document a concrete compensating
   control. → T-1705.
@@ -253,9 +259,10 @@ Verdict scale: ✅ Approve · ⚠️ Approve with conditions · ⛔ Blocker.
 - Pre-launch: external ZAP baseline + the internal review (T-1710) are both
   required; 0 criticals is a hard gate.
 
-**Verdict:** ⚠️ Approve with conditions for build; ⛔ **Blocker** items (MFA,
-shared rate-limit store, Supabase project hardening, CSP) must be closed before
-production.
+**Verdict:** ⚠️ Approve with conditions for build; ⛔ **Blocker** items (shared
+rate-limit store, Supabase project hardening, CSP) must be closed before
+production. (MFA was listed here; removed per Founder decision 2026-09-03 —
+decision-log ADR-0021.)
 
 ---
 
@@ -393,7 +400,7 @@ production.
 | R9 | `project_slug_history` + redirect (or hard-lock slug post-publish) | Backend | new task, EPIC 08 |
 | R10 | Tighten `media` RLS — no blanket anon `SELECT`; published-referenced only | DB Architect, Security | T-0409 |
 | R11 | Constrain `project_highlights.kind`; `taxonomy_terms` delete = `RESTRICT` | DB Architect | T-0403, T-0405 |
-| R12 | **MFA/TOTP required** for admin (flip OQ-004 default) | Security | T-0502, [10 §10.2] |
+| R12 | ~~MFA/TOTP required for admin~~ → **optional / future enhancement** (Founder decision 2026-09-03, decision-log ADR-0021; OQ-004 = "no") | Security | — |
 | R13 | Eliminate `style-src 'unsafe-inline'` or document a compensating control | Frontend, Security | T-1705 |
 | R14 | Precise `?next=` open-redirect validation (same-origin `/admin/` path only) | Security | T-1708 |
 | R15 | Supabase project hardening (disable unused auto-APIs, review default roles/storage policies) | Security | new subtask, EPIC 17 |
@@ -413,10 +420,11 @@ production.
 changes above tracked in the backlog.**
 
 None of the findings invalidate the architecture, the data model, or the
-sequencing. The blockers identified (MFA, shared rate-limit store, Supabase
+sequencing. The blockers identified (shared rate-limit store, Supabase
 hardening, CSP, transactional publish, media RLS) are **implementation-level**
 and are gated before *production*, not before *build start*. The plan is
-technically coherent.
+technically coherent. (MFA was originally in this blocker list; removed per
+Founder decision 2026-09-03 — decision-log ADR-0021.)
 
 Recommended next step: the Human Founder reviews this package (especially
 [12](12-risks-open-questions.md) and [13](13-content-intake-checklist.md)), then

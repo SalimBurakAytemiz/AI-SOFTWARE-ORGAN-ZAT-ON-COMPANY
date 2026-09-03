@@ -246,9 +246,16 @@ Founder authorized `qa-portfolio`'s build on 2026-09-02
 pre-development planning package is in `projects/qa-portfolio/planning/`, reviewed
 from 10 perspectives. Implementation is proceeding **locally** on branch
 `feat/qa-portfolio-build` under the §13 carve-out (Next.js 15 + Supabase +
-Vercel, bilingual TR/EN public site + admin CMS) — no deployment, no real
-Supabase project, no real credentials, no real data, `[PLACEHOLDER]` /
-`DEMO` / `SANITIZED` for missing professional content, not merged to `main`. All
+Vercel, bilingual TR/EN public site + admin CMS) — no deployment, no
+*production* Supabase/cloud, no real customer/personal data, `[PLACEHOLDER]` /
+`DEMO` / `SANITIZED` for missing professional content, not merged to `main`.
+On 2026-09-03 the Human Founder explicitly stood up a **DEVELOPMENT / STAGING**
+Supabase project and authorized applying the schema migrations to it; the two
+migrations (`0001_schema.sql`, `0002_functions_rls.sql`) were applied via
+`supabase db push` (33 tables, RLS on all 33, 66 policies, 4 app functions;
+migration history recorded). Credentials live only in gitignored
+`web/.env.local`. The app still serves fixtures (`NEXT_PUBLIC_CONTENT_SOURCE`
+gate stays `fixtures`). All
 new source carries Turkish comments per `docs/coding-standards.md`. Progress:
 **Phase 1** (foundation, design tokens, i18n routing, DB migrations + full RLS,
 Supabase client modules, public page shells), **Phase 2** (content repository
@@ -269,10 +276,12 @@ e2e (chromium + mobile: critical flows + SEO validation + localization + axe +
 visual regression) + typecheck + lint + `next build` all green. Lighthouse: perf
 100 (×5) / 87 (case study, from a Codespaces-only phantom CLS — real CLS 0.000
 verified), a11y 100, best-practices 96, SEO 100 (×5) / 91 (Codespaces-only
-phantom meta-description — verified present via curl). Supabase-gated work (real
-query layer, auth flows, CMS editors, media, publication RPCs, RLS test matrix)
-is scaffolded behind typed interfaces and awaits a Supabase project +
-credentials.
+phantom meta-description — verified present via curl). The DEVELOPMENT / STAGING
+Supabase database schema is now applied (see above); Supabase-gated *application*
+work (real query layer replacing the fixture repository, auth flows, CMS editors,
+media, publication RPCs, RLS test matrix) is still scaffolded behind typed
+interfaces and is the next phase. Generated DB types live in
+`src/lib/db/database.generated.ts` (wrapped by `database.types.ts`).
 
 Neither approval authorizes deploying anything, onboarding a *paid* model provider,
 a production cloud, real customer data, financial transactions, or starting Cleaning
@@ -354,12 +363,14 @@ entering BUILD needs `ai-company project authorize-build` by the Human Founder.
 project's application code MAY be written **locally** under
 `projects/<slug>/` — source, migrations, tests, local dev only. Currently
 authorized: **`qa-portfolio`** (authorized 2026-09-02, see
-`projects/qa-portfolio/decisions/decision-log.md`). Even for an authorized
-project, the following stay prohibited without a further explicit Human Founder
-decision: any production deployment, provisioning a production cloud / a real
-Supabase or hosting project, using real credentials or real customer/personal
-data, onboarding a paid provider, financial actions, destructive production
-operations, and merging to `main`. Missing professional content uses visible
+`projects/qa-portfolio/decisions/decision-log.md`). A **development / staging** Supabase project for an authorized build — with the
+schema migrations applied to it — is permitted once the Human Founder explicitly
+decides so per build (done for `qa-portfolio` on 2026-09-03); its credentials
+stay only in gitignored `web/.env.local`. Even for an authorized project, the
+following stay prohibited without a further explicit Human Founder decision: any
+production deployment, provisioning a **production** cloud / Supabase / hosting
+project, using real customer/personal data, onboarding a paid provider,
+financial actions, destructive production operations, and merging to `main`. Missing professional content uses visible
 `[PLACEHOLDER]` values and is never invented. Where progress needs a credential
 or a human action, stop that thread, state in Turkish exactly what is required,
 and continue the independent work.

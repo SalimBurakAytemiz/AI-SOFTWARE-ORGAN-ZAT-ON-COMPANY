@@ -773,7 +773,7 @@ X-Content-Type-Options: nosniff · X-Frame-Options: DENY · Referrer-Policy: str
     <ul>
       <li><strong>OQ-001</strong> Default locale — TR or EN? <span class="muted">Default: <code>en</code>, TR fully available.</span></li>
       <li><strong>OQ-003</strong> Missing-translation behaviour — show the other language with a tag, or hide? <span class="muted">Default: show + tag.</span></li>
-      <li><strong>OQ-004</strong> Enable MFA/TOTP for the admin? <span class="muted">Default (and review recommendation): required.</span></li>
+      <li><strong>OQ-004</strong> Enable MFA/TOTP for the admin? <span class="muted">RESOLVED 2026-09-03: NO — optional / future enhancement, not required, not a launch blocker (decision-log ADR-0021).</span></li>
       <li><strong>OQ-005</strong> Who owns KVKK/GDPR data-protection responsibility? <span class="muted">Default: Founder as data controller, documented.</span></li>
       <li><strong>OQ-007</strong> Supabase free + keep-alive, or Pro? <span class="muted">Default: free + keep-alive cron.</span></li>
       <li><strong>OQ-008</strong> Contact-message retention period? <span class="muted">Default: 180 days, stated in the privacy notice.</span></li>
@@ -833,7 +833,7 @@ X-Content-Type-Options: nosniff · X-Frame-Options: DENY · Referrer-Policy: str
         <tr><td>Senior Frontend Engineer</td><td><span class="tag t-warn">conditions</span></td><td>pick the Markdown editor component; eliminate <code>style-src 'unsafe-inline'</code></td></tr>
         <tr><td>Senior Backend Engineer</td><td><span class="tag t-warn">conditions</span></td><td>transactional publish RPC; one <code>public_projects</code> view; <code>project_slug_history</code> + redirect</td></tr>
         <tr><td>Database Architect</td><td><span class="tag t-warn">conditions</span></td><td>tighten <code>media</code> RLS (no blanket anon SELECT); constrain <code>project_highlights.kind</code></td></tr>
-        <tr><td>Security Engineer</td><td><span class="tag t-fail">blockers</span> for prod</td><td>MFA required; shared rate-limit store; Supabase project hardening; CSP without <code>unsafe-inline</code></td></tr>
+        <tr><td>Security Engineer</td><td><span class="tag t-fail">blockers</span> for prod</td><td>shared rate-limit store; Supabase project hardening; CSP without <code>unsafe-inline</code> <span class="muted">(MFA removed as a blocker — Founder decision 2026-09-03, decision-log ADR-0021)</span></td></tr>
         <tr><td>DevOps Engineer</td><td><span class="tag t-warn">conditions</span></td><td>Supabase CLI config-as-code + migration tooling; Founder plan decisions before Sprint 6</td></tr>
         <tr><td>QA Lead</td><td><span class="tag t-warn">conditions</span></td><td>E2E data isolation per run; CI integration DB = plain Postgres; "revalidate the right tags" test</td></tr>
         <tr><td>Technical SEO Specialist</td><td><span class="tag t-warn">conditions</span></td><td>canonical filtered list pages; reconsider localised route segments for TR</td></tr>
@@ -843,7 +843,7 @@ X-Content-Type-Options: nosniff · X-Frame-Options: DENY · Referrer-Policy: str
     <div class="callout">
       <p><strong>Overall: ⚠️ approve the plan to proceed to <code>authorize-build</code>, with 24
       tracked required changes (R1–R24).</strong> None of the findings invalidate the architecture,
-      the data model, or the sequencing. The blockers identified (MFA, shared rate-limit store,
+      the data model, or the sequencing. The blockers identified (shared rate-limit store,
       Supabase hardening, CSP, transactional publish, media RLS) are implementation-level and are
       gated before <em>production</em>, not before <em>build start</em>. The plan is technically
       coherent.</p>

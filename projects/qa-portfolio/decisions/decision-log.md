@@ -192,6 +192,51 @@ Yerel Lighthouse skorları: perf 100 (×5) / 87 (case study, fantom CLS yüzünd
 
 24 required changes (R1–R24) are listed in `planning/14-planning-review.md` and
 are to be folded into the backlog before/early in the build. Notable pre-
-production blockers: mandatory admin MFA, a shared rate-limit store,
-transactional publish, tightened `media` RLS, Supabase project hardening, and
-CSP without `unsafe-inline`.
+production blockers: a shared rate-limit store, transactional publish, tightened
+`media` RLS, Supabase project hardening, and CSP without `unsafe-inline`.
+(Admin MFA was on this list as a blocker; superseded — see ADR-0021.)
+
+### ADR-0020 — DEVELOPMENT / STAGING Supabase project stood up; migrations applied
+
+- **Context:** The build reached the point where the fixture-only phase is done
+  and the schema needs a real database. `CLAUDE.md` §13 reserves "provisioning a
+  real Supabase project" to an explicit Human Founder decision.
+- **Decision (Human Founder, 2026-09-03):** Stand up a **DEVELOPMENT / STAGING**
+  Supabase project (not production — a separate project will be created for
+  production later) and apply the two migrations
+  (`0001_schema.sql`, `0002_functions_rls.sql`) to it via `supabase db push`
+  (migration history tracked in `supabase_migrations.schema_migrations`).
+- **Result:** 33 tables, RLS enabled on all 33, 66 policies, 4 application
+  functions (`is_admin` is `SECURITY DEFINER` with a pinned `search_path`).
+  The first admin allow-list row was inserted: the Founder's Auth user, role
+  `owner`, `display_name` "Site Sahibi" — idempotent upsert over the privileged
+  connection, no RLS change. `is_admin()` verified `true` for that UID and
+  `false` for a stranger UID.
+- **Consequences:** Credentials (`NEXT_PUBLIC_SUPABASE_URL`,
+  `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_DB_URL`) live only in
+  gitignored `web/.env.local`. The app still serves fixtures — a new
+  `NEXT_PUBLIC_CONTENT_SOURCE` gate (default `fixtures`) must be flipped to
+  `supabase` for the real query layer to take over, which is Phase 4 (T-0411).
+  Generated DB types are split into `src/lib/db/database.generated.ts` (the
+  `supabase gen types` output) wrapped by `database.types.ts` (adds the enum
+  aliases the app imports). No production deployment, no `main` merge.
+
+### ADR-0021 — Admin MFA/TOTP is NOT required; optional future enhancement
+
+- **Context:** The 10-perspective planning review (R12, `planning/14` §Security)
+  flipped OQ-004's default to "MFA/TOTP **required** for the admin account" and
+  listed mandatory admin MFA as a pre-production blocker.
+- **Decision (Human Founder, 2026-09-03):** MFA / TOTP / 2FA will **not** be
+  used at this stage and is **not** a requirement or a launch blocker. It may be
+  added later as an **optional** security enhancement. Admin login must not be
+  blocked or gated on an MFA/AAL requirement.
+- **Rationale:** Single-operator site owned and operated by the Founder; the
+  Founder accepts the residual risk of `RISK-040` (credential compromise) for
+  now, mitigated by a strong password + email confirmation + the `admin_users`
+  allow-list + RLS + the `is_admin()` authorization model + login rate limiting
+  + the append-only audit log + short sessions.
+- **Consequences:** OQ-004 is resolved "no". R12 / RISK-040's MFA mitigation is
+  downgraded from "required" to "optional / future". No code enforces MFA today
+  (verified — no AAL/MFA check in `web/src/`), so nothing to remove; the
+  planning docs are annotated to match. Revisit if a second operator is added
+  or the threat model changes.

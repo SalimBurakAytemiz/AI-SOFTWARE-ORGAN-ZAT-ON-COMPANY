@@ -92,7 +92,7 @@ Scoring: **Likelihood** (L/M/H) × **Impact** (L/M/H). Mitigations map to
 
 | ID | Risk | L | I | Mitigation |
 |---|---|---|---|---|
-| RISK-040 | **Admin credential compromise** (single operator, single password) | M | H | Enable Supabase MFA/TOTP (OQ-004, recommended); login rate limiting; audit log; short sessions |
+| RISK-040 | **Admin credential compromise** (single operator, single password) | M | H | Strong password + email confirmation + `admin_users` allow-list + RLS + `is_admin()` authz; login rate limiting; audit log; short sessions. MFA/TOTP is **optional / future** (Founder decision 2026-09-03, decision-log ADR-0021 — residual risk accepted) |
 | RISK-041 | **Contact-form spam / abuse floods the inbox or the email quota** | H | M | Honeypot + timing + app rate limit + DB trigger + optional Turnstile (T-1402/T-1404) |
 | RISK-042 | **Dependency vulnerability shipped** | M | M | Trivy/Semgrep/`npm audit` CI gates, Renovate, minimal deps (T-1707) |
 | RISK-043 | **CSP too strict → site breaks; too loose → no protection** | M | M | Report-only rollout first, monitor, then enforce (T-1705) |
@@ -158,7 +158,7 @@ Scoring: **Likelihood** (L/M/H) × **Impact** (L/M/H). Mitigations map to
 | OQ-001 | Default locale: **TR or EN**? | Founder | Sprint 2 | `en` (international reach), TR fully available |
 | OQ-002 | Merge `/about` + `/experience` into one page? | Founder / UX | after Sprint 3 review | keep separate |
 | OQ-003 | Fallback behaviour when a project lacks a translation: **show the other language with a tag**, or **hide it from that locale**? | Founder | Sprint 5 | show + "EN"/"TR" tag |
-| OQ-004 | Enable MFA/TOTP for the admin account? (recommended) | Founder | Sprint 1 | enable it |
+| OQ-004 | Enable MFA/TOTP for the admin account? | Founder | — | **RESOLVED 2026-09-03: NO.** Optional/future enhancement, not a requirement or launch blocker (decision-log ADR-0021) |
 | OQ-005 | Who owns data-protection responsibility (KVKK/GDPR) for contact submissions? | Founder | before contact form ships | Founder as data controller; documented |
 | OQ-006 | Localised slugs (`/tr/projeler/...` vs `/tr/projects/...`) — worth the routing cost? | SEO / Founder | Sprint 5 | keep English, locale-neutral slugs + segment names; revisit |
 | OQ-007 | Supabase: stay on free tier (with keep-alive) or budget for Pro? | Founder | before launch | free + keep-alive cron |

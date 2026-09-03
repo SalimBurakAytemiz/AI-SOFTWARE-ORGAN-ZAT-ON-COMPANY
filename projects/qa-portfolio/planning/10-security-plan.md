@@ -31,8 +31,9 @@ repo's security posture (`policies/security.yml`, `policies/secrets.yml`,
   row) per a runbook (T-0507). Adding an admin is treated like the runtime's
   "access-control escalation" critical action — Founder-only, audited.
 - Password policy: Supabase minimum + a length check; encourage a password
-  manager. Optional: enable Supabase MFA/TOTP for the owner (recommended,
-  flagged OQ-004).
+  manager. MFA/TOTP is **optional / future** and deliberately not enabled —
+  Founder decision 2026-09-03 (decision-log ADR-0021, OQ-004 resolved "no").
+  Admin login must not be gated on an MFA/AAL requirement.
 - Email confirmation required; password-reset via time-boxed token.
 - Session: short access token + refresh token in `HttpOnly` cookies via
   `@supabase/ssr`; refresh on the server; `POST /auth/signout` revokes.

@@ -4,7 +4,8 @@
 project_id = "qa-portfolio"
 
 [db]
-major_version = 15
+# Staging Supabase projesi Postgres 17 çalıştırıyor (2026-09-03 doğrulandı).
+major_version = 17
 
 [auth]
 # İŞ KURALI (planning/10 §10.2): kayıt (sign-up) KAPALI. Hesaplar yalnızca

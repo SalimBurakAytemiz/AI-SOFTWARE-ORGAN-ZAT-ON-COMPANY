@@ -2,40 +2,61 @@
 
 Bu klasör veritabanı şemasını (migrations) ve Supabase yapılandırmasını içerir.
 
-## Durum (Faz 1)
+## Durum
 
-Şema ve RLS politikaları **yazıldı** ama henüz **hiçbir Supabase projesine
-uygulanmadı**. Uygulama şu an placeholder içerikle (`src/content/fixtures.ts`)
-çalışır ve Supabase'e bağlanmaz.
+Şema ve RLS politikaları **yazıldı** ve **DEVELOPMENT / STAGING** Supabase
+projesine **uygulandı** (2026-09-03, `supabase db push --db-url`, migration
+geçmişi `supabase_migrations.schema_migrations` içinde: `0001`, `0002`).
+33 tablo, 33'ünde RLS etkin, 66 policy, 4 uygulama fonksiyonu.
 
-## İnsan işlemi gerekli — sonraki adım
+Uygulama **hâlâ** placeholder içerikle (`src/content/fixtures.ts`) çalışır:
+`NEXT_PUBLIC_CONTENT_SOURCE` `fixtures` olduğu sürece Supabase'e sorgu atılmaz.
+Gerçek sorgu katmanı (Faz 4, T-0411) yazılınca bayrak `supabase` yapılacak.
 
-Faz 2'nin başlaması için **Human Founder'ın** yapması gerekenler:
+Bu proje **production değildir**. Prod için ayrı bir Supabase projesi açılacak;
+prod'a migration uygulamak **ayrı, Human Founder onaylı** bir adımdır
+(`CLAUDE.md` §2).
 
-1. **Bir Supabase projesi oluştur** (staging). Ücretsiz katman yeterli; 7 günlük
-   hareketsizlik duraklatmasına karşı bir keep-alive cron planlanacak
-   (`planning/12` RISK-004, OQ-007).
-2. Proje panosundan şu değerleri al ve `web/.env.local` dosyasına gir
-   (`.env.example`'ı kopyala):
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - `SUPABASE_SERVICE_ROLE_KEY` (GİZLİ — yalnızca sunucu)
-3. **Sign-up'ı kapat** (Authentication → Providers → Email → "Enable Sign Up" off).
-4. Migration'ları uygula (Supabase CLI ile):
-   ```
-   npx supabase link --project-ref <ref>
-   npx supabase db push
-   ```
-5. **`media` adında bir Storage bucket** oluştur (public read). `storage.objects`
+## Human Founder işlemleri — durum
+
+Bunlar bilinçli olarak otomatikleştirilmedi (erişim yükseltme / güvenlik).
+
+**Tamamlandı (2026-09-03):**
+
+- ✅ **DEVELOPMENT / STAGING Supabase projesi açıldı** ve migration'lar uygulandı.
+- ✅ **Public sign-up KAPATILDI** (Authentication → Providers → Email → "Enable
+  Sign Up" off). Panelden manuel yapıldı. (`config.toml`'daki
+  `enable_signup = false` yalnızca yerel CLI içindir; asıl kontrol paneldedir.)
+- ✅ **Admin Auth kullanıcısı oluşturuldu** (Founder tarafından, e-posta + parola,
+  e-posta doğrulanmış) ve **`admin_users` allow-list kaydı yapıldı**:
+  `role = owner`, `display_name = 'Site Sahibi'`. `is_admin()` bu kullanıcı için
+  `true` döndüğü doğrulandı.
+
+**Bekleyen manuel adımlar:**
+
+1. **`media` adında bir Storage bucket** oluştur (public read). `storage.objects`
    politikaları: okuma herkese açık; INSERT/UPDATE/DELETE yalnızca `is_admin()`.
-6. **Admin hesabını sağla** (yalnızca Human Founder):
-   - Authentication → Users → yeni kullanıcı ekle (e-posta + parola).
-   - SQL Editor'de:
-     ```sql
-     insert into admin_users (user_id, role, display_name)
-     values ('<yeni kullanıcının auth uid'si>', 'owner', 'Site Sahibi');
-     ```
-7. (Önerilir) Admin hesabı için MFA/TOTP'yi etkinleştir (`planning/14` review R12).
+2. Keep-alive: 7 günlük hareketsizlik duraklatmasına karşı bir cron planlanacak
+   (`planning/12` RISK-004, OQ-007).
+
+**MFA/TOTP:** Founder kararıyla **kullanılmıyor** — zorunlu değil, launch blocker
+değil (decision-log ADR-0021, OQ-004 = "hayır"). İleride opsiyonel güvenlik
+geliştirmesi olarak eklenebilir. Admin erişimi şu an: e-posta + güçlü parola +
+`admin_users` allow-list + RLS + `is_admin()` yetki modeli + login hız sınırı +
+append-only audit + kısa oturum.
+
+## TypeScript tiplerini yeniden üretmek
+
+Şema değişince (`db push` sonrası):
+
+```
+npx supabase gen types typescript --db-url "$SUPABASE_DB_URL" > src/lib/db/database.generated.ts
+```
+
+`--linked` yerine `--db-url` kullanılır (`--linked` bir access token ister).
+Uygulama kodu tipleri `src/lib/db/database.types.ts`'ten alır (üretilen dosyayı
+sarar + kısa takma adları ekler); üretilen `database.generated.ts` elle
+düzenlenmez.
 
 ## Migration dosyaları
 

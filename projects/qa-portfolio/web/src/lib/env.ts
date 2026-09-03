@@ -14,7 +14,20 @@ import { z } from "zod";
 const clientSchema = z.object({
   NEXT_PUBLIC_SITE_URL: z.string().url().default("http://localhost:3000"),
   NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional().or(z.literal("")),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().optional().or(z.literal("")),
+  // Supabase'in güncel API anahtar modeli: istemciye gömülebilen anahtarın adı
+  // "publishable key" (eski "anon key"in yerini alır). Gücü tamamen RLS ile
+  // sınırlıdır, bu yüzden NEXT_PUBLIC_ önekiyle tarayıcıya gönderilmesi güvenlidir
+  // (planning/10 §10.11).
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().optional().or(z.literal("")),
+  // İÇERİK KAYNAĞI BAYRAĞI (kademeli geçiş kapısı).
+  //
+  // İŞ KURALI: "Supabase kimlik bilgisi mevcut" ile "public site içeriğini
+  // Supabase'den servis et" AYRI kararlardır. Kimlik bilgileri .env.local'e
+  // girildiğinde auth/middleware Supabase'i görür, AMA içerik repository'si
+  // yalnızca bu bayrak açıkça "supabase" olduğunda gerçek sorgu katmanına
+  // geçer. Faz 4 sorgu katmanı + migration + seed hazır olana kadar bayrak
+  // "fixtures" kalır ve site placeholder içerikle çalışır (planning/07 T-0411).
+  NEXT_PUBLIC_CONTENT_SOURCE: z.enum(["fixtures", "supabase"]).default("fixtures"),
 });
 
 const serverSchema = clientSchema.extend({
@@ -43,6 +56,18 @@ function parseEnv() {
 
 export const env = parseEnv();
 
-/** Supabase için gerekli iki public değişken de dolu mu? */
+/** Supabase için gerekli iki public değişken de dolu mu? (kimlik bilgisi kontrolü) */
 export const isSupabaseConfigured =
-  Boolean(env.NEXT_PUBLIC_SUPABASE_URL) && Boolean(env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+  Boolean(env.NEXT_PUBLIC_SUPABASE_URL) && Boolean(env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY);
+
+/**
+ * Public site içeriği hangi kaynaktan servis edilecek?
+ *
+ * "supabase" YALNIZCA hem bayrak açıkça "supabase" HEM DE kimlik bilgileri
+ * mevcutsa döner; aksi halde "fixtures". Böylece yanlışlıkla açılan bir bayrak
+ * (kimlik bilgisi yokken) siteyi bozamaz - güvenli varsayılan fixtures'tır.
+ */
+export const contentSource: "fixtures" | "supabase" =
+  env.NEXT_PUBLIC_CONTENT_SOURCE === "supabase" && isSupabaseConfigured
+    ? "supabase"
+    : "fixtures";

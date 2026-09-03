@@ -10,13 +10,16 @@ import { env } from "@/lib/env";
  * taşınır. YİNE de anonim/authenticated rolüyle çalışır ve RLS'e tabidir -
  * yani oturum açmış olmak tek başına yetki vermez (planning/10 §10.3).
  * Admin yetkisi ayrıca is_admin() ile doğrulanır (bkz. lib/auth/is-admin.ts).
+ *
+ * Publishable anahtar kullanılır (Supabase'in eski "anon key"i); yetki artışı
+ * RLS'e ve is_admin()'e bağlıdır, anahtara değil.
  */
 export async function createClient() {
   const cookieStore = await cookies();
 
   return createServerClient<Database>(
     env.NEXT_PUBLIC_SUPABASE_URL as string,
-    env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string,
+    env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY as string,
     {
       cookies: {
         getAll() {

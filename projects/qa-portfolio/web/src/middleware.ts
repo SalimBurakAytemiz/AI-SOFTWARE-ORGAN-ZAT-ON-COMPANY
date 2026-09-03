@@ -22,9 +22,11 @@ import { routing } from "@/i18n/routing";
 
 const intlMiddleware = createIntlMiddleware(routing);
 
+// Not: middleware Edge runtime'da çalışır ve @/lib/env (zod) ağını çekmemek için
+// process.env doğrudan okunur. Anahtar adı src/lib/env.ts ile aynı kalmalı.
 const SUPABASE_CONFIGURED =
   Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL) &&
-  Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+  Boolean(process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY);
 
 export default function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
