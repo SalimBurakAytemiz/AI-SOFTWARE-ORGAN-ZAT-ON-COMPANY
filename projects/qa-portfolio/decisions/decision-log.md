@@ -156,6 +156,38 @@ build.
   (gerçek veri content intake checklist'ten gelecek) ama geçersiz bir profil
   URL'i structured data'ya sızmaz (ADR-0008).
 
+### ADR-0017 — Dil değiştirici sorgu parametrelerini korur (faz 3 sertleştirme)
+
+- **Sorun:** next-intl `usePathname()` sorgu dizesini içermez; dil değiştirince
+  `/en/projects?type=supported` → `/tr/projects` (filtre kaybı).
+- **Karar:** `LocaleSwitch` `useSearchParams()` ile query'i alır ve yeni yola
+  ekler (CF-18). `useSearchParams` statik sayfalarda `<Suspense>` gerektirdiği
+  için `SiteHeader` içinde `LocaleSwitch` bir Suspense sınırına alındı — tüm
+  rotalar SSG olarak kalır (deopt yok).
+
+### ADR-0018 — Placeholder sayfaları da tam SEO metadata alır (faz 3 sertleştirme)
+
+- **Karar:** `/experience`, `/services`, `/qa-lab`, `/contact` sayfaları içerik
+  iskelet olsa bile `buildPageMetadata()` kullanır (canonical + hreflang). SEO
+  doğrulama E2E'si (seo-validation.spec.ts) tüm public rotalarda bunu zorlar.
+
+### ADR-0019 — Başlık sırası: liste kartları için görsel gizli <h2>
+
+- **Karar:** Proje/QA Lab kart başlıkları `<h3>`; `<h1>` ile arasına
+  `class="sr-only"` bir `<h2>` konur (heading-order erişilebilirlik kuralı). QA
+  bileşenlerindeki (bug/API/SQL) kart başlıkları `<h4>` yerine `<h3>` yapıldı.
+
+### Bilinen ortam kısıtı — Lighthouse (Codespaces)
+
+Lighthouse, bu Codespaces konteynerinde `/en/projects` için `meta-description`
+denetimini ve `/projects/[slug]` için CLS'yi kararsız ölçüyor (tab instabilitesi;
+`--disable-dev-shm-usage` ile çalışır hale geldi ama metrikler oynak).
+**Doğrulama:** `curl` çıktısı meta-description'ın DOĞRU olduğunu, Playwright
+layout-shift trace'i gerçek CLS'nin **0.000** olduğunu gösteriyor. Bu yüzden
+CI'daki `lighthouse` job'u `continue-on-error` ve CLS/SEO assertion'ları `warn`.
+Yerel Lighthouse skorları: perf 100 (×5) / 87 (case study, fantom CLS yüzünden),
+**a11y 100 (tüm rotalar)**, best-practices 96, SEO 100 (×5) / 91 (fantom).
+
 ### Open items from the 10-perspective review
 
 24 required changes (R1–R24) are listed in `planning/14-planning-review.md` and

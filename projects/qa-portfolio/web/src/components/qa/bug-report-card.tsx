@@ -45,7 +45,7 @@ export function BugReportCard({
         )}
       </header>
 
-      <h4 className="mt-2 text-sm font-semibold text-[var(--text)]">{bug.title}</h4>
+      <h3 className="mt-2 text-sm font-semibold text-[var(--text)]">{bug.title}</h3>
       {bug.summaryMd && <SafeMarkdown className="mt-1 text-sm">{bug.summaryMd}</SafeMarkdown>}
 
       <dl className="mt-3 space-y-2">

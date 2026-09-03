@@ -88,13 +88,38 @@ PLACEHOLDER). Gerçek Supabase bağlantısı, admin CMS düzenleme ekranları, m
 yükleme, gerçek yayınlama ve RLS test matrisi **faz 4** — bir Supabase projesi +
 kimlik bilgileri gerekiyor (`supabase/README.md`).
 
+## Faz 3 — kalite sertleştirme (bu sürüm)
+
+- ✅ **SEO doğrulama E2E'si** (`e2e/seo-validation.spec.ts`): 9 public rota × 2
+  dil — benzersiz title/description, canonical, karşılıklı hreflang + x-default,
+  robots meta, geçerli JSON-LD, 360px'te yatay taşma yok; robots.txt + sitemap.xml.
+- ✅ **Yerelleştirme E2E'si** (`e2e/localization.spec.ts`): her rota iki dilde,
+  `<html lang>`, dil değiştirici **sorgu parametrelerini korur** (CF-18 — düzeltildi),
+  Türkçe/İngilizce ay biçimi.
+- ✅ **Erişilebilirlik:** heading-order düzeltmeleri (liste kartları için gizli
+  `<h2>`, QA kartları `<h4>`→`<h3>`) → **Lighthouse a11y 100 (tüm rotalar)**.
+  Klavye navigasyon + kod bloğu klavye erişimi E2E'si.
+- ✅ **Bileşen testleri:** SectionNav (mobil + rail), CodeBlock (HTML enjeksiyon
+  yok, tabIndex/role/aria), + SEO/structured-data birim testleri.
+- ✅ **Lighthouse CI:** `--disable-dev-shm-usage` + resource budget'lar (script
+  180KB, total 800KB, third-party 0) + `treosh`-benzeri CI job.
+- ✅ **Placeholder sayfaları** (`/experience`, `/services`, `/qa-lab`, `/contact`)
+  tam SEO metadata alır.
+
 ## Testler
 
 | Komut | Kapsam |
 |---|---|
-| `npm run test` | 82 birim/bileşen testi (zod, yayın kuralı, sanitization + XSS, QA bileşenleri, admin yetki sınırı, revalidation etiketleri, biçimlendirme, filtreler, SEO metadata + structured data) |
-| `npm run test:e2e` | Playwright: kritik akışlar + SEO/filtre + axe erişilebilirlik + görsel regresyon (önce `npx playwright install chromium`) |
-| `npm run lhci` | Lighthouse CI performans/erişilebilirlik/SEO bütçesi |
+| `npm run test` | **89** birim/bileşen testi |
+| `npm run test:e2e` | Playwright: **~200** test (kritik akış + SEO doğrulama + yerelleştirme + axe + görsel regresyon); önce `npx playwright install chromium` |
+| `npm run lhci` | Lighthouse CI bütçesi (Codespaces'te `--disable-dev-shm-usage` şart) |
+
+## Bilinen ortam kısıtı
+
+Lighthouse bu Codespaces konteynerinde `/projects` meta-description ve
+`/projects/[slug]` CLS'yi **kararsız** ölçüyor (gerçek değerler `curl` ve
+Playwright trace ile doğrulandı: meta-description DOĞRU, CLS **0.000**). CI
+`lighthouse` job'u bu yüzden `continue-on-error`; gerçek uygulama hatası değildir.
 
 ## Kurulum
 

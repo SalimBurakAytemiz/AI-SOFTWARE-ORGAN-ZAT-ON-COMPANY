@@ -23,7 +23,7 @@ export function SqlExampleBlock({
           {example.dialect}
         </span>
       </header>
-      <h4 className="mt-2 text-sm font-semibold text-[var(--text)]">{example.title}</h4>
+      <h3 className="mt-2 text-sm font-semibold text-[var(--text)]">{example.title}</h3>
 
       <CodeBlock code={example.querySql} language="sql" label="sql" />
 

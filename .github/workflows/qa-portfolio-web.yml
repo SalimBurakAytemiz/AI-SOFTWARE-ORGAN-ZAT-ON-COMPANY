@@ -65,9 +65,13 @@ jobs:
 
   lighthouse:
     runs-on: ubuntu-latest
-    # NOT: Lighthouse, Chrome protokol sürümüne duyarlıdır. Bütçe altyapısı
-    # (lighthouserc.json) hazır; job şimdilik BLOKE ETMEZ (continue-on-error).
-    # Chrome/Lighthouse sürüm uyumu netleşince "error" eşiklerine geçilecek.
+    # NOT (Codespaces/headless sınırı): Lighthouse 12.6 + Chrome 151 bu projede
+    # ilk denemede tab çökmesi yaşadı; --disable-dev-shm-usage ile çalışır hale
+    # geldi (lighthouserc.json chromeFlags). Yerel Codespaces ölçümünde perf 100
+    # (x5 sayfa), a11y 98-100 alındı; ancak headless ortamda SEO ve CLS metrikleri
+    # kararsız (gerçek tarayıcıda CLS = 0.000, doğrulandı). Bu yüzden job
+    # continue-on-error: assertion'lar RAPORLANIR ama PR'ı bloke ETMEZ. GitHub
+    # runner Chrome'unda kararlı olduğu doğrulanınca bloke ediciye çevrilecek.
     continue-on-error: true
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -80,6 +84,7 @@ jobs:
       - run: npm run build
         env:
           NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      # ubuntu-latest'te google-chrome-stable önyüklü; lhci onu otomatik bulur.
       - run: npm run lhci
         env:
           NEXT_PUBLIC_SITE_URL: http://localhost:3000

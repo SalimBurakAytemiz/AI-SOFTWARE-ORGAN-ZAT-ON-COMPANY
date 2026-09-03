@@ -5,6 +5,7 @@ import { Container } from "@/components/ui/container";
 import { ProjectCard } from "@/components/projects/project-card";
 import { isLocale } from "@/i18n/routing";
 import { getContentRepository } from "@/lib/repositories";
+import { buildPageMetadata } from "@/lib/seo/metadata";
 
 /**
  * QA Lab listesi (planning/04 §4.4).
@@ -18,9 +19,15 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
+  if (!isLocale(locale)) return {};
   const nav = await getTranslations({ locale, namespace: "nav" });
   const p = await getTranslations({ locale, namespace: "pages" });
-  return { title: nav("qaLab"), description: p("qaLabDesc") };
+  return buildPageMetadata({
+    locale,
+    path: "/qa-lab",
+    title: nav("qaLab"),
+    description: p("qaLabDesc"),
+  });
 }
 
 export default async function QaLabPage({ params }: { params: Promise<{ locale: string }> }) {
@@ -40,6 +47,8 @@ export default async function QaLabPage({ params }: { params: Promise<{ locale: 
         <h1 className="text-4xl font-semibold tracking-tight text-[var(--text)]">{nav("qaLab")}</h1>
         <p className="mt-3 max-w-2xl text-[var(--text-muted)]">{p("qaLabDesc")}</p>
 
+        {/* Kart başlıkları <h3> - başlık sırası atlanmasın diye gizli <h2>. */}
+        <h2 className="sr-only">{nav("qaLab")}</h2>
         {entries.length === 0 ? (
           <p className="mt-10 text-[var(--text-muted)]">{t("empty")}</p>
         ) : (

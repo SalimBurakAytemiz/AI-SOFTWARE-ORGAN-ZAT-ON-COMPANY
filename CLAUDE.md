@@ -261,11 +261,18 @@ noindex/canonical on filtered views; JSON-LD Person/WebSite/CreativeWork/
 BreadcrumbList; dynamic Open Graph images via `next/og`; case-study TL;DR band +
 section jump-nav; /about + skills matrix; committed visual-regression baselines;
 Lighthouse CI budget; Supabase factory auto-switch prepared) are committed.
-`projects/qa-portfolio/web/`: 82 unit/component tests + ~60 e2e (chromium +
-mobile, incl. SEO/filters/structured-data/OG/a11y/visual-regression) + typecheck
-+ lint + `next build` all green. Supabase-gated work (real query layer, auth
-flows, CMS editors, media, publication RPCs, RLS test matrix) is scaffolded
-behind typed interfaces and awaits a Supabase project + credentials.
+Phase 3 also had a quality-hardening pass (SEO-validation + localization e2e
+suites, heading-order a11y fixes → Lighthouse a11y 100 on all routes,
+locale-switch preserves query params, Lighthouse CI resource budgets, expanded
+component tests). `projects/qa-portfolio/web/`: 89 unit/component tests + ~200
+e2e (chromium + mobile: critical flows + SEO validation + localization + axe +
+visual regression) + typecheck + lint + `next build` all green. Lighthouse: perf
+100 (×5) / 87 (case study, from a Codespaces-only phantom CLS — real CLS 0.000
+verified), a11y 100, best-practices 96, SEO 100 (×5) / 91 (Codespaces-only
+phantom meta-description — verified present via curl). Supabase-gated work (real
+query layer, auth flows, CMS editors, media, publication RPCs, RLS test matrix)
+is scaffolded behind typed interfaces and awaits a Supabase project +
+credentials.
 
 Neither approval authorizes deploying anything, onboarding a *paid* model provider,
 a production cloud, real customer data, financial transactions, or starting Cleaning

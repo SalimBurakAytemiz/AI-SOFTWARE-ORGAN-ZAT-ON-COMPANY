@@ -25,7 +25,7 @@ export function ApiExampleBlock({ example, notesLabel }: { example: ApiExample; 
           <StatusPill tone={statusTone}>→ {example.responseStatus}</StatusPill>
         )}
       </header>
-      <h4 className="mt-2 text-sm font-semibold text-[var(--text)]">{example.title}</h4>
+      <h3 className="mt-2 text-sm font-semibold text-[var(--text)]">{example.title}</h3>
 
       {example.requestBody && (
         <CodeBlock code={example.requestBody} language="json" label="request" />

@@ -88,6 +88,9 @@ export default async function ProjectsPage({
           {t("resultCount", { count: projects.length })}
         </p>
 
+        {/* Kart başlıkları <h3> - araya görsel olarak gizli bir <h2> koyulur ki
+            başlık sırası atlanmasın (erişilebilirlik: heading-order). */}
+        <h2 className="sr-only">{t("title")}</h2>
         {projects.length === 0 ? (
           <p className="mt-8 text-[var(--text-muted)]">{t("empty")}</p>
         ) : (

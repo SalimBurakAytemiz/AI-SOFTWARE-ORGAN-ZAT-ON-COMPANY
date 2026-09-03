@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Container } from "@/components/ui/container";
@@ -46,7 +47,14 @@ export function SiteHeader() {
 
         <div className="flex items-center gap-2">
           <ThemeToggle />
-          <LocaleSwitch />
+          {/* LocaleSwitch useSearchParams kullanır -> statik sayfalarda Suspense şart. */}
+          <Suspense
+            fallback={
+              <span className="h-[26px] w-[52px] rounded-[var(--radius-sm)] border border-[var(--border-strong)]" />
+            }
+          >
+            <LocaleSwitch />
+          </Suspense>
           <Link
             href="/contact"
             className={buttonClasses("primary", "sm", "hidden no-underline sm:inline-flex")}

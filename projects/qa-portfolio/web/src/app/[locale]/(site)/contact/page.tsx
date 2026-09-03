@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Container } from "@/components/ui/container";
 import { ContactForm } from "@/components/contact/contact-form";
 import { isLocale } from "@/i18n/routing";
+import { buildPageMetadata } from "@/lib/seo/metadata";
 
 /**
  * İletişim sayfası (planning/04 §4.7).
@@ -18,8 +19,14 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
+  if (!isLocale(locale)) return {};
   const t = await getTranslations({ locale, namespace: "contact" });
-  return { title: t("title"), description: t("intro") };
+  return buildPageMetadata({
+    locale,
+    path: "/contact",
+    title: t("title"),
+    description: t("intro"),
+  });
 }
 
 export default async function ContactPage({
