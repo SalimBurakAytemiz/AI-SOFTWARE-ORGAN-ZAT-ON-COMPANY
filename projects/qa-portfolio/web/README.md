@@ -56,17 +56,45 @@ Supabase projesi ve gerçek kimlik bilgileri **Human Founder onayına** tabidir
 - ✅ **Playwright E2E iskeleti:** kritik akışlar + **axe erişilebilirlik**
   (5 rota, 0 serious/critical) + görsel regresyon iskeleti.
 
-**Veri kaynağı:** faz 2'de tüm içerik `src/content/` (DEMO/SANITIZED +
+## Faz 3 kapsamı (bu sürüm) — Supabase gerektirmeyen işler
+
+- ✅ **SEO altyapısı:** `buildPageMetadata()` (canonical + hreflang/x-default +
+  Open Graph), her public rotada `generateMetadata`.
+- ✅ **Filtrelenebilir proje listesi:** URL parametreleriyle senkron
+  (`?type=&platform=&tool=&testType=`), sunucu render, istemci state yok.
+  Filtreli görünüm `noindex` + canonical filtresiz `/projects`'e işaret eder
+  (review R20).
+- ✅ **Structured data (JSON-LD):** `Person` + `WebSite` (ana sayfa, /about),
+  `CreativeWork` + `BreadcrumbList` (vaka çalışması). PLACEHOLDER `sameAs`
+  değerleri filtrelenir (ADR-0008).
+- ✅ **Open Graph görsel üreteci:** `next/og` ile dinamik (site geneli +
+  vaka çalışması başına).
+- ✅ **Vaka çalışması UX:** TL;DR özet bandı (rol/yığın/sonuç), mobil "sayfada
+  gezin" açılır menüsü + geniş ekran sabit çapa listesi (aktif bölüm
+  IntersectionObserver ile).
+- ✅ **/about + yetkinlik matrisi:** seviye çubuğu + legend; seviye verisi
+  yokken `TODO` gösterilir (uydurma yok).
+- ✅ **Görsel regresyon:** taban görüntüler commit'li (linux/chromium + mobile),
+  CI'da karşılaştırılır.
+- ✅ **Lighthouse CI:** `lighthouserc.json` bütçesi + CI job (şimdilik
+  `continue-on-error` — Chrome sürüm uyumu netleşince bloke edici olacak).
+- ✅ Genel `loading.tsx`, klavye navigasyon E2E'si, genişletilmiş axe rota listesi.
+- ✅ **Supabase entegrasyon hazırlığı:** `getContentRepository()` fabrikası
+  Supabase yapılandırılınca otomatik `SupabaseContentRepository`'ye geçer
+  (metotlar iskelet; gerçek sorgu şablonları dosyada belgeli).
+
+**Veri kaynağı:** faz 3'te tüm içerik `src/content/` (DEMO/SANITIZED +
 PLACEHOLDER). Gerçek Supabase bağlantısı, admin CMS düzenleme ekranları, medya
-yükleme, gerçek yayınlama ve RLS test matrisi **faz 3** — bir Supabase projesi +
+yükleme, gerçek yayınlama ve RLS test matrisi **faz 4** — bir Supabase projesi +
 kimlik bilgileri gerekiyor (`supabase/README.md`).
 
 ## Testler
 
 | Komut | Kapsam |
 |---|---|
-| `npm run test` | 63 birim/bileşen testi (zod, yayın kuralı, sanitization + XSS, QA bileşenleri, admin yetki sınırı, revalidation etiketleri, biçimlendirme) |
-| `npm run test:e2e` | Playwright: kritik akışlar + axe (önce `npx playwright install chromium`) |
+| `npm run test` | 82 birim/bileşen testi (zod, yayın kuralı, sanitization + XSS, QA bileşenleri, admin yetki sınırı, revalidation etiketleri, biçimlendirme, filtreler, SEO metadata + structured data) |
+| `npm run test:e2e` | Playwright: kritik akışlar + SEO/filtre + axe erişilebilirlik + görsel regresyon (önce `npx playwright install chromium`) |
+| `npm run lhci` | Lighthouse CI performans/erişilebilirlik/SEO bütçesi |
 
 ## Kurulum
 

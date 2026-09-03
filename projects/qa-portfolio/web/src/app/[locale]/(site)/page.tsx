@@ -1,12 +1,34 @@
+import type { Metadata } from "next";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Container } from "@/components/ui/container";
 import { buttonClasses } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { ProjectCard } from "@/components/projects/project-card";
+import { JsonLd } from "@/components/seo/json-ld";
 import { isLocale } from "@/i18n/routing";
+import type { DbLocale } from "@/lib/db/database.types";
 import { getContentRepository } from "@/lib/repositories";
-import { fixtureProfile, fixtureSkills } from "@/content/fixtures";
+import { fixtureProfile, fixtureSkills, fixtureSocialLinks } from "@/content/fixtures";
+import { buildPageMetadata } from "@/lib/seo/metadata";
+import { personJsonLd, webSiteJsonLd } from "@/lib/seo/structured-data";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  if (!isLocale(locale)) return {};
+  const t = await getTranslations({ locale, namespace: "home" });
+  const site = await getTranslations({ locale, namespace: "site" });
+  return buildPageMetadata({
+    locale,
+    path: "",
+    title: site("title"),
+    description: t("heroSubtitle"),
+  });
+}
 
 /**
  * Ana sayfa (planning/04 §4.1). Hiyerarşi: Hero -> Öne çıkan iş -> Yetkinlik -> Eylem.
@@ -26,11 +48,24 @@ export default async function HomePage({
   const t = await getTranslations("home");
   const tRoot = await getTranslations();
   const repo = getContentRepository();
-  const projects = await repo.listProjects(locale, { featuredOnly: true });
-  const profile = fixtureProfile.translations[locale];
+  const projects = await repo.listProjects(locale as DbLocale, { featuredOnly: true });
+  const profile = fixtureProfile.translations[locale as DbLocale];
 
   return (
     <>
+      <JsonLd
+        data={[
+          personJsonLd(
+            {
+              name: fixtureProfile.fullName,
+              jobTitle: profile.headline,
+              sameAs: fixtureSocialLinks.map((s) => s.url),
+            },
+            locale,
+          ),
+          webSiteJsonLd(locale),
+        ]}
+      />
       {/* Placeholder içerik uyarısı - gerçek bilgi girilene kadar görünür. */}
       <div className="border-b border-[var(--warn)] bg-[color-mix(in_srgb,var(--warn)_10%,transparent)]">
         <Container className="py-2">
@@ -87,7 +122,9 @@ export default async function HomePage({
                 <dt className="font-mono text-sm text-[var(--text-muted)]">
                   {group.category[locale]}:
                 </dt>
-                <dd className="text-sm text-[var(--text)]">{group.items.join(" · ")}</dd>
+                <dd className="text-sm text-[var(--text)]">
+                  {group.items.map((s) => s.label).join(" · ")}
+                </dd>
               </div>
             ))}
           </dl>

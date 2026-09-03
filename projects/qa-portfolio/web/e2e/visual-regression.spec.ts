@@ -1,15 +1,19 @@
 import { test, expect } from "@playwright/test";
 
 /**
- * GÖRSEL REGRESYON İSKELETİ (planning/07 T-0209, T-1805).
+ * GÖRSEL REGRESYON (planning/07 T-0209, T-1805).
  *
- * Bileşen galerisi ve anahtar sayfaların ekran görüntüsü alınır ve taban
- * (baseline) ile karşılaştırılır. Taban ilk çalıştırmada üretilir:
- *   npx playwright test visual-regression --update-snapshots
+ * Bileşen galerisi ve anahtar sayfaların ekran görüntüsü, commit'li taban
+ * (baseline) görüntülerle karşılaştırılır. Taban görüntüler
+ * `e2e/visual-regression.spec.ts-snapshots/` altında (linux/chromium + mobile).
  * Fark = bloke edici inceleme öğesi (otomatik kabul edilmez).
  *
- * Faz 2'de taban görüntüler HENÜZ commit edilmedi (tarayıcı ortamına bağlı);
- * CI'da tarayıcı kurulduktan sonra üretilip commit edilecek.
+ * Tabanı güncellemek (bilinçli görsel değişiklik sonrası):
+ *   npx playwright test visual-regression --update-snapshots
+ *
+ * NOT: taban görüntüler işletim sistemi/tarayıcı sürümüne bağlıdır. CI ubuntu +
+ * pinlenmiş Playwright chromium kullanır; yerel linux ortamıyla uyumludur.
+ * maxDiffPixelRatio: 0.02 küçük font-render farklarını tolere eder.
  */
 test.describe("görsel regresyon", () => {
   test("bileşen galerisi — açık/koyu", async ({ page }) => {

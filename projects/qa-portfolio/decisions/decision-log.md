@@ -134,6 +134,28 @@ build.
   gerçek HTTP 404 döner (soft-404 önlenir, RISK-060). Faz 3'te ISR için
   `dynamicParams = true` + yayında `generateStaticParams` yeniden üretimi.
 
+### ADR-0014 — Filtre durumu yalnızca URL'de; filtreli sayfa noindex (faz 3)
+
+- **Karar:** Proje filtreleri (`?type=&platform=&tool=&testType=`) yalnızca URL
+  parametrelerinde tutulur (istemci state yok) - paylaşılabilir, SSR, geri/ileri
+  çalışır. Filtresiz `/projects` dizine eklenir; herhangi bir filtre aktifse
+  sayfa `noindex` + canonical filtresiz `/projects`'e işaret eder (yinelenen/ince
+  içerik önlenir - planning/14 review R20).
+
+### ADR-0015 — Open Graph görselleri dosya kuralıyla; metadata'da ayarlanmaz (faz 3)
+
+- **Karar:** `buildPageMetadata()` `og:image` AYARLAMAZ. Next.js
+  `opengraph-image.tsx` dosya kuralı otomatik ekler: `app/[locale]/` seviyesinde
+  site geneli, `projects/[slug]/` seviyesinde vaka çalışması başına. `next/og`
+  ile dinamik üretim, harici font/görsel indirmeden (CSP dostu).
+
+### ADR-0016 — JSON-LD `sameAs` yalnızca gerçek URL'ler (faz 3)
+
+- **Karar:** `personJsonLd` `sameAs` dizisinden `http(s)` ile başlamayan
+  (PLACEHOLDER) değerler filtrelenir. Kişi adı/ünvanı hâlâ PLACEHOLDER olabilir
+  (gerçek veri content intake checklist'ten gelecek) ama geçersiz bir profil
+  URL'i structured data'ya sızmaz (ADR-0008).
+
 ### Open items from the 10-perspective review
 
 24 required changes (R1–R24) are listed in `planning/14-planning-review.md` and

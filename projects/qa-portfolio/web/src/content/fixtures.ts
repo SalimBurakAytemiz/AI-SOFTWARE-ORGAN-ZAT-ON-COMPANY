@@ -34,17 +34,53 @@ export const fixtureProfile: FixtureProfile = {
   },
 };
 
-export const fixtureSkills: { category: Record<DbLocale, string>; items: string[] }[] = [
+/**
+ * Yetkinlik matrisi verisi.
+ *
+ * Araç ADLARI uydurma değildir (yaygın QA araçları). Ancak `proficiency`
+ * (1-5) ve `years` alanları GERÇEK profesyonel değerlendirme gerektirir ve şu an
+ * doldurulmamıştır (null). Bunlar content intake checklist C bölümünden gelecek
+ * (ADR-0008: uydurma yok). null iken UI seviye çubuğu göstermez.
+ */
+export interface FixtureSkill {
+  label: string;
+  proficiency: number | null; // TODO: gerçek değer (1-5)
+  years: number | null; // TODO: gerçek değer
+}
+export interface FixtureSkillCategory {
+  category: Record<DbLocale, string>;
+  items: FixtureSkill[];
+}
+
+const skill = (label: string): FixtureSkill => ({ label, proficiency: null, years: null });
+
+export const fixtureSkills: FixtureSkillCategory[] = [
   {
     category: { tr: "Test Otomasyonu", en: "Test Automation" },
-    items: ["Playwright", "Cypress", "Selenium"],
+    items: [skill("Playwright"), skill("Cypress"), skill("Selenium")],
   },
   {
     category: { tr: "API ve Veritabanı", en: "API & Database" },
-    items: ["Postman", "REST Assured", "SQL"],
+    items: [skill("Postman"), skill("REST Assured"), skill("SQL")],
   },
-  { category: { tr: "Performans", en: "Performance" }, items: ["k6", "JMeter"] },
-  { category: { tr: "CI/CD", en: "CI/CD" }, items: ["GitHub Actions"] },
+  {
+    category: { tr: "Performans", en: "Performance" },
+    items: [skill("k6"), skill("JMeter")],
+  },
+  {
+    category: { tr: "CI/CD ve Araçlar", en: "CI/CD & Tooling" },
+    items: [skill("GitHub Actions"), skill("Docker")],
+  },
+];
+
+/**
+ * Sosyal bağlantılar - JSON-LD Person `sameAs` için. PLACEHOLDER; gerçek
+ * profiller content intake checklist B bölümünden. `http` ile başlamayan
+ * değerler structured-data.ts tarafından filtrelenir.
+ */
+export const fixtureSocialLinks: { platform: string; url: string }[] = [
+  { platform: "GitHub", url: "[PLACEHOLDER: https://github.com/kullanici]" },
+  { platform: "LinkedIn", url: "[PLACEHOLDER: https://linkedin.com/in/kullanici]" },
 ];
 
 const EMPTY_SECTIONS: ProjectCaseStudy["sections"] = {

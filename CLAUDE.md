@@ -251,16 +251,21 @@ Supabase project, no real credentials, no real data, `[PLACEHOLDER]` /
 `DEMO` / `SANITIZED` for missing professional content, not merged to `main`. All
 new source carries Turkish comments per `docs/coding-standards.md`. Progress:
 **Phase 1** (foundation, design tokens, i18n routing, DB migrations + full RLS,
-Supabase client modules, public page shells) and **Phase 2** (content
-repository abstraction, case-study template, QA components, Markdown
-sanitization + XSS corpus, admin mutation infra `withAdminAction` + DataTable +
-mock publication behaviours, component gallery, i18n formatting, empty/loading/
-error states, mobile nav, Playwright e2e + axe accessibility skeleton) are
-committed. `projects/qa-portfolio/web/`: 63 unit/component tests + 27 e2e
-(chromium + mobile) + typecheck + lint + `next build` (42 pages) all green.
-Supabase-gated work (real query layer, auth flows, CMS editors, media,
-publication RPCs, RLS test matrix) is scaffolded behind typed interfaces and
-awaits a Supabase project + credentials.
+Supabase client modules, public page shells), **Phase 2** (content repository
+abstraction, case-study template, QA components, Markdown sanitization + XSS
+corpus, admin mutation infra `withAdminAction` + DataTable + mock publication
+behaviours, component gallery, i18n formatting, empty/loading/error states,
+mobile nav, Playwright e2e + axe) and **Phase 3** (SEO infra — canonical +
+hreflang + `buildPageMetadata`; URL-synced filterable projects list with
+noindex/canonical on filtered views; JSON-LD Person/WebSite/CreativeWork/
+BreadcrumbList; dynamic Open Graph images via `next/og`; case-study TL;DR band +
+section jump-nav; /about + skills matrix; committed visual-regression baselines;
+Lighthouse CI budget; Supabase factory auto-switch prepared) are committed.
+`projects/qa-portfolio/web/`: 82 unit/component tests + ~60 e2e (chromium +
+mobile, incl. SEO/filters/structured-data/OG/a11y/visual-regression) + typecheck
++ lint + `next build` all green. Supabase-gated work (real query layer, auth
+flows, CMS editors, media, publication RPCs, RLS test matrix) is scaffolded
+behind typed interfaces and awaits a Supabase project + credentials.
 
 Neither approval authorizes deploying anything, onboarding a *paid* model provider,
 a production cloud, real customer data, financial transactions, or starting Cleaning

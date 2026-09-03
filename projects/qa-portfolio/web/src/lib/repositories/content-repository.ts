@@ -21,6 +21,14 @@ export interface ProjectListFilters {
   featuredOnly?: boolean;
 }
 
+/** Filtre çubuğunda gösterilecek kullanılabilir değerler (facet'ler). */
+export interface ProjectFilterFacets {
+  classifications: string[];
+  platforms: string[];
+  tools: string[];
+  testTypes: string[];
+}
+
 export interface ContentRepository {
   /** Yayınlanmış projeleri (aktif dile çözülmüş) filtreleyerek listeler. */
   listProjects(locale: DbLocale, filters?: ProjectListFilters): Promise<ProjectSummary[]>;
@@ -33,6 +41,9 @@ export interface ContentRepository {
 
   /** QA Lab girişleri (classification='qa_lab'). */
   listQaLab(locale: DbLocale): Promise<ProjectSummary[]>;
+
+  /** Filtre çubuğu için kullanılabilir facet değerleri (yalnızca yayınlanmışlardan). */
+  listFilterFacets(locale: DbLocale): Promise<ProjectFilterFacets>;
 }
 
 /** Repository katmanının fırlattığı sınıflandırılmış hata. */

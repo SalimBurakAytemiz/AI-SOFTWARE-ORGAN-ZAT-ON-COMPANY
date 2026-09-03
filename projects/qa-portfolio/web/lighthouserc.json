@@ -1,0 +1,36 @@
+{
+  "//": "Lighthouse CI performans / erişilebilirlik / SEO bütçesi (planning/15 T-1507, planning/19).",
+  "//budget": "Mobil profil. Core Web Vitals (LCP/CLS/TBT) ve kategori skorları eşik altındaysa CI başarısız olur.",
+  "ci": {
+    "collect": {
+      "startServerCommand": "npm run start",
+      "startServerReadyPattern": "Ready in",
+      "url": [
+        "http://localhost:3000/en",
+        "http://localhost:3000/en/projects",
+        "http://localhost:3000/en/projects/demo-checkout-regression-suite",
+        "http://localhost:3000/en/about",
+        "http://localhost:3000/en/contact",
+        "http://localhost:3000/tr"
+      ],
+      "numberOfRuns": 1,
+      "settings": {
+        "preset": "desktop"
+      }
+    },
+    "assert": {
+      "assertions": {
+        "categories:performance": ["warn", { "minScore": 0.9 }],
+        "categories:accessibility": ["error", { "minScore": 0.95 }],
+        "categories:best-practices": ["warn", { "minScore": 0.9 }],
+        "categories:seo": ["error", { "minScore": 0.95 }],
+        "largest-contentful-paint": ["warn", { "maxNumericValue": 2500 }],
+        "cumulative-layout-shift": ["error", { "maxNumericValue": 0.1 }],
+        "total-blocking-time": ["warn", { "maxNumericValue": 300 }]
+      }
+    },
+    "upload": {
+      "target": "temporary-public-storage"
+    }
+  }
+}
