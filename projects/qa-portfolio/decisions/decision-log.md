@@ -95,6 +95,45 @@ build.
   is the single structured form the Founder fills with real content, entered
   later through the admin. Launch is gated on content, not engineering.
 
+### ADR-0009 — İçerik veri katmanı: repository soyutlaması (faz 2)
+
+- **Bağlam:** Supabase henüz bağlı değil ama public sayfalar geliştirilecek.
+- **Karar:** `ContentRepository` arayüzü + `FixtureContentRepository` (faz 2) +
+  `SupabaseContentRepository` iskeleti (faz 3). Sayfalar `getContentRepository()`
+  fabrikasını çağırır ve somut kaynağı bilmez. "Published + visible" kuralı
+  `lib/content/publication.ts` + SQL `project_is_public()` ile TEK yerde.
+- **Sonuç:** Supabase bağlandığında yalnızca fabrika + `SupabaseContentRepository`
+  değişir; sayfa kodu değişmez (planning/14 review R8).
+
+### ADR-0010 — Markdown: sakla + render'da sanitize et (`react-markdown` + `rehype-sanitize`)
+
+- **Karar:** İçerik metinleri Markdown olarak saklanır, HTML olarak değil.
+  Render `react-markdown` + `remark-gfm` + `rehype-sanitize` (kesin izin
+  listesi) ile yapılır; çıktı React elemanıdır (`dangerouslySetInnerHTML` yok).
+  12 saldırı yükünden oluşan XSS test korpusu CI'da çalışır.
+- **Sonuç:** Saklanan XSS engellenir (planning/10 §10.7).
+
+### ADR-0011 — DEMO/SANITIZED içerik gerçek veriden ayrıştırılır
+
+- **Karar:** Şablonu ve bileşenleri gerçekçi hacimde test etmek için kurgusal
+  vaka çalışmaları (`demo-projects.ts`) eklendi; hepsi `demo: true` ile işaretli
+  ve sitede görünür bir "DEMO / SANITIZED" bandıyla sunulur. Gerçek profesyonel
+  bilgi UYDURULMAZ (ADR-0008 pekiştirilir).
+
+### ADR-0012 — Admin mutasyon sırası: Auth → Authz → Validation → Write → Audit → Revalidate
+
+- **Karar:** Tüm admin yazma işlemleri `withAdminAction()` sarmalayıcısından
+  geçer. Herhangi bir adım başarısız olursa yazma yapılmaz. Audit append-only.
+  Faz 2'de yazma tarafı in-memory mock (yayın davranışları mock seviyesinde
+  test edilir); faz 3'te Supabase + transactional RPC (planning/07 T-0702,
+  planning/14 review R7).
+
+### ADR-0013 — Vaka çalışması rotası faz 2'de `dynamicParams = false`
+
+- **Karar:** Fixture verisiyle çalışıldığı sürece bilinmeyen slug doğrudan
+  gerçek HTTP 404 döner (soft-404 önlenir, RISK-060). Faz 3'te ISR için
+  `dynamicParams = true` + yayında `generateStaticParams` yeniden üretimi.
+
 ### Open items from the 10-perspective review
 
 24 required changes (R1–R24) are listed in `planning/14-planning-review.md` and

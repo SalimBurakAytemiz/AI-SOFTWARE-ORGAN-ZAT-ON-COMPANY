@@ -38,13 +38,74 @@
     "empty": "Bu filtrelerle eşleşen proje yok.",
     "confidential": "Gizli",
     "ndaBadge": "NDA",
+    "demoBadge": "DEMO",
     "readCaseStudy": "Vaka çalışmasını oku",
+    "resultCount": "{count, plural, =0 {sonuç yok} one {# sonuç} other {# sonuç}}",
+    "loading": "Projeler yükleniyor…",
+    "loadError": "Projeler yüklenemedi. Lütfen sayfayı yenileyin.",
     "classification": {
+      "all": "Tümü",
       "professional": "Profesyonel",
       "supported": "Destek Verilen",
       "personal": "Kişisel",
       "qa_lab": "QA Lab"
     }
+  },
+  "caseStudy": {
+    "backToProjects": "Projeler",
+    "demoBanner": "DEMO / SANITIZED — Bu vaka çalışması kurgusaldır; gerçek bir müşteriyi veya projeyi temsil etmez.",
+    "ndaBanner": "Bazı ayrıntılar gizlilik anlaşması (NDA) nedeniyle çıkarılmıştır.",
+    "company": "Şirket",
+    "role": "Rol",
+    "industry": "Sektör",
+    "period": "Dönem",
+    "ongoing": "Devam ediyor",
+    "platforms": "Platformlar",
+    "tools": "Araçlar",
+    "testTypes": "Test türleri",
+    "links": "Bağlantılar",
+    "github": "GitHub",
+    "liveSite": "Canlı site",
+    "sections": {
+      "overviewMd": "Genel bakış",
+      "testingScopeMd": "Test kapsamı",
+      "testStrategyMd": "Test stratejisi",
+      "testCoverageMd": "Kapsam",
+      "challengesMd": "Zorluklar",
+      "impactMd": "Etki",
+      "lessonsMd": "Çıkarılan dersler"
+    },
+    "coverage": "Kapsam",
+    "scenarios": "Test senaryoları",
+    "bugs": "Bug örnekleri",
+    "apiTesting": "API testleri",
+    "dbValidation": "Veritabanı doğrulama",
+    "notEnoughEvidence": "Bu vaka çalışması için henüz yeterli teknik içerik girilmedi.",
+    "prev": "Önceki",
+    "next": "Sonraki",
+    "scenario": {
+      "preconditions": "Ön koşullar",
+      "steps": "Adımlar",
+      "expected": "Beklenen",
+      "notes": "Notlar",
+      "automated": "Otomatik"
+    },
+    "bug": {
+      "steps": "Adımlar",
+      "expected": "Beklenen",
+      "actual": "Gerçekleşen",
+      "rootCause": "Kök neden",
+      "resolution": "Çözüm",
+      "environment": "Ortam"
+    },
+    "api": { "notes": "Ne gösteriyor" },
+    "sql": { "sampleResult": "Örnek sonuç", "explanation": "Açıklama" }
+  },
+  "states": {
+    "loading": "Yükleniyor…",
+    "errorTitle": "Bir şeyler ters gitti",
+    "errorBody": "İçerik yüklenirken bir hata oluştu.",
+    "retry": "Tekrar dene"
   },
   "contact": {
     "title": "İletişim",
@@ -57,6 +118,8 @@
     "send": "Mesaj gönder",
     "success": "Teşekkürler — mesajınız iletildi.",
     "error": "Bir şeyler ters gitti. Lütfen tekrar deneyin.",
+    "checkForm": "Lütfen formu kontrol edin: ad, e-posta ve mesaj alanları geçerli olmalı ve gizlilik bildirimi onaylanmalıdır.",
+    "notConfigured": "İletişim formu henüz etkin değil (e-posta sağlayıcısı yapılandırılmadı). Lütfen doğrudan e-posta ile ulaşın.",
     "otherWays": "Bana ulaşmanın diğer yolları",
     "responseTime": "Yanıt süresi: yaklaşık 2 iş günü"
   },

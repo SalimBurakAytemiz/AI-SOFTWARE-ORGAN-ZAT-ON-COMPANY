@@ -12,6 +12,11 @@ const config = [
   },
   {
     rules: {
+      // "_" ile başlayan parametreler bilerek kullanılmıyor sayılır (iskelet metotlar).
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" },
+      ],
       // GÜVENLİK KURALI: Supabase service-role istemcisi (RLS'i bypass eder)
       // yalnızca src/lib/supabase/admin.ts içinde ve sunucu kodunda kullanılabilir.
       // Bu kural, service-role modülünün istemci (client) bileşenlerine veya

@@ -1,31 +1,19 @@
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
-import type { ProjectClassification } from "@/lib/db/database.types";
+import type { ProjectSummary } from "@/lib/domain/project";
 
 /**
  * Proje kartı (planning/04 §4.2, planning/06 §6.6).
  *
- * İŞ KURALI (planning/02 §2.4): NDA'lı bir projede şirket adı "Gizli" olarak
- * gösterilir; companyHidden=true veya company=null ise gerçek ad sızdırılmaz.
+ * İŞ KURALI (planning/02 §2.4): NDA'lı bir projede şirket adı "Gizli" gösterilir.
+ * DEMO içerik açıkça "DEMO" rozetiyle işaretlenir (ADR-0008) - gerçek veri gibi
+ * gösterilmez.
  */
-export interface ProjectCardData {
-  slug: string;
-  title: string;
-  summary: string;
-  roleTitle: string;
-  classification: ProjectClassification;
-  company: string | null;
-  companyHidden: boolean;
-  nda: boolean;
-  taxonomy: string[];
-}
-
-export function ProjectCard({ project }: { project: ProjectCardData }) {
+export function ProjectCard({ project }: { project: ProjectSummary }) {
   const t = useTranslations("projects");
   const cls = useTranslations("projects.classification");
 
-  // NDA / gizli şirket kuralı
   const companyLabel =
     project.companyHidden || project.company === null ? t("confidential") : project.company;
 
@@ -34,16 +22,17 @@ export function ProjectCard({ project }: { project: ProjectCardData }) {
       href={`/projects/${project.slug}`}
       className="group flex flex-col rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] p-4 no-underline transition-colors hover:border-[var(--border-strong)] hover:bg-[var(--surface-raised)]"
     >
-      <div className="mb-3 flex items-center gap-2">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
         <Badge tone={project.classification === "supported" ? "accent" : "neutral"}>
           {cls(project.classification)}
         </Badge>
         {project.nda && <Badge tone="warn">{t("ndaBadge")}</Badge>}
+        {project.demo && <Badge tone="info">{t("demoBadge")}</Badge>}
       </div>
 
       <h3 className="text-base font-semibold text-[var(--text)]">{project.title}</h3>
       <p className="mt-0.5 text-sm text-[var(--text-muted)]">
-        {project.roleTitle} · {companyLabel}
+        {[project.roleTitle, companyLabel].filter(Boolean).join(" · ")}
       </p>
       <p className="mt-2 line-clamp-3 text-sm text-[var(--text)]">{project.summary}</p>
 

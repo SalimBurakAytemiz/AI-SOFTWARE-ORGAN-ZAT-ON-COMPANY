@@ -4,6 +4,7 @@ import { Container } from "@/components/ui/container";
 import { buttonClasses } from "@/components/ui/button";
 import { LocaleSwitch } from "./locale-switch";
 import { ThemeToggle } from "./theme-toggle";
+import { MobileNav } from "./mobile-nav";
 
 /**
  * Site başlığı (planning/04 §4.0). Ana gezinme + dil değiştirici + tema +
@@ -46,9 +47,13 @@ export function SiteHeader() {
         <div className="flex items-center gap-2">
           <ThemeToggle />
           <LocaleSwitch />
-          <Link href="/contact" className={buttonClasses("primary", "sm", "no-underline")}>
+          <Link
+            href="/contact"
+            className={buttonClasses("primary", "sm", "hidden no-underline sm:inline-flex")}
+          >
             {t("hireMe")}
           </Link>
+          <MobileNav />
         </div>
       </Container>
     </header>

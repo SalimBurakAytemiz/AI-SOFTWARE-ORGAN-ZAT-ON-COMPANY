@@ -1,27 +1,17 @@
-import type { DbLocale, ProjectClassification } from "@/lib/db/database.types";
+import type { DbLocale } from "@/lib/db/database.types";
+import type { ProjectCaseStudy } from "@/lib/domain/project";
 
 /**
  * PLACEHOLDER İÇERİK - GERÇEK PROFESYONEL BİLGİ DEĞİLDİR.
  *
- * Faz 1'de uygulama, gerçek bir Supabase projesi olmadan çalışabilsin diye
- * public sayfalar bu sahte verilerden okur. Gerçek içerik faz 2'de admin panel
- * üzerinden girilecek; doldurulacak alanların tam listesi:
- *   projects/qa-portfolio/planning/13-content-intake-checklist.md
+ * Faz 2'de uygulama, gerçek bir Supabase projesi olmadan çalışabilsin diye
+ * public sayfalar bu sahte verilerden okur (repository katmanı üzerinden).
+ * Gerçekçi, kurgusal örnekler için ayrıca demo-projects.ts vardır (DEMO/SANITIZED).
  *
  * KURAL (planning/12 RISK-052, ADR-0008): ekip profesyonel bilgi UYDURMAZ.
- * Buradaki her değer açıkça "[PLACEHOLDER]" işaretlidir.
+ * Buradaki her değer açıkça "[PLACEHOLDER]" işaretlidir. Doldurulacak alanların
+ * tam listesi: projects/qa-portfolio/planning/13-content-intake-checklist.md
  */
-
-export interface FixtureProject {
-  slug: string;
-  classification: ProjectClassification;
-  featured: boolean;
-  nda: boolean;
-  company: string | null;
-  companyHidden: boolean;
-  taxonomy: string[];
-  translations: Record<DbLocale, { title: string; summary: string; roleTitle: string }>;
-}
 
 export interface FixtureProfile {
   fullName: string;
@@ -57,78 +47,105 @@ export const fixtureSkills: { category: Record<DbLocale, string>; items: string[
   { category: { tr: "CI/CD", en: "CI/CD" }, items: ["GitHub Actions"] },
 ];
 
-export const fixtureProjects: FixtureProject[] = [
-  {
-    slug: "placeholder-professional-project",
-    classification: "professional",
-    featured: true,
-    nda: false,
-    company: "[PLACEHOLDER: Şirket]",
-    companyHidden: false,
-    taxonomy: ["Web", "API", "Playwright", "CI/CD"],
-    translations: {
-      tr: {
-        title: "[PLACEHOLDER: Profesyonel proje başlığı]",
-        summary: "[PLACEHOLDER: Kısa Türkçe özet ve ölçülebilir sonuç.]",
-        roleTitle: "[PLACEHOLDER: QA Mühendisi]",
-      },
-      en: {
-        title: "[PLACEHOLDER: Professional project title]",
-        summary: "[PLACEHOLDER: Short English summary with a measurable outcome.]",
-        roleTitle: "[PLACEHOLDER: QA Engineer]",
-      },
-    },
-  },
-  {
-    slug: "placeholder-supported-project",
-    classification: "supported",
-    featured: true,
-    nda: true,
-    company: null,
-    companyHidden: true,
-    taxonomy: ["API", "Performance", "k6"],
-    translations: {
-      tr: {
-        title: "[PLACEHOLDER: Destek verilen proje]",
-        summary: "[PLACEHOLDER: NDA nedeniyle bazı ayrıntılar gizli.]",
-        roleTitle: "[PLACEHOLDER: QA Danışmanı]",
-      },
-      en: {
-        title: "[PLACEHOLDER: Supported project]",
-        summary: "[PLACEHOLDER: Some details withheld due to NDA.]",
-        roleTitle: "[PLACEHOLDER: QA Consultant]",
-      },
-    },
-  },
+const EMPTY_SECTIONS: ProjectCaseStudy["sections"] = {
+  overviewMd:
+    "> **PLACEHOLDER** — Bu vaka çalışmasının içeriği henüz girilmedi. Gerçek metin site sahibi tarafından admin panelden eklenecek (planning/13).",
+  testingScopeMd: null,
+  testStrategyMd: null,
+  testCoverageMd: null,
+  challengesMd: null,
+  impactMd: null,
+  lessonsMd: null,
+};
+
+interface PlaceholderDef {
+  slug: string;
+  classification: ProjectCaseStudy["classification"];
+  featured: boolean;
+  supported: boolean;
+  nda: boolean;
+  companyHidden: boolean;
+  displayOrder: number;
+  taxonomy: string[];
+  tr: { title: string; summary: string; roleTitle: string };
+  en: { title: string; summary: string; roleTitle: string };
+}
+
+const PLACEHOLDER_DEFS: PlaceholderDef[] = [
   {
     slug: "placeholder-personal-project",
     classification: "personal",
     featured: false,
+    supported: false,
     nda: false,
-    company: null,
     companyHidden: false,
-    taxonomy: ["Web", "Automation"],
-    translations: {
-      tr: {
-        title: "[PLACEHOLDER: Kişisel proje]",
-        summary: "[PLACEHOLDER: Kişisel bir deneme veya açık kaynak katkısı.]",
-        roleTitle: "[PLACEHOLDER: Geliştirici / Test]",
-      },
-      en: {
-        title: "[PLACEHOLDER: Personal project]",
-        summary: "[PLACEHOLDER: A personal experiment or open-source contribution.]",
-        roleTitle: "[PLACEHOLDER: Developer / QA]",
-      },
+    displayOrder: 10,
+    taxonomy: ["Web", "Otomasyon"],
+    tr: {
+      title: "[PLACEHOLDER: Kişisel proje]",
+      summary: "[PLACEHOLDER: Kişisel bir deneme veya açık kaynak katkısı.]",
+      roleTitle: "[PLACEHOLDER: Geliştirici / Test]",
+    },
+    en: {
+      title: "[PLACEHOLDER: Personal project]",
+      summary: "[PLACEHOLDER: A personal experiment or open-source contribution.]",
+      roleTitle: "[PLACEHOLDER: Developer / QA]",
+    },
+  },
+  {
+    slug: "placeholder-qa-lab-entry",
+    classification: "qa_lab",
+    featured: false,
+    supported: false,
+    nda: false,
+    companyHidden: false,
+    displayOrder: 20,
+    taxonomy: ["API", "Deneysel"],
+    tr: {
+      title: "[PLACEHOLDER: QA Lab denemesi]",
+      summary: "[PLACEHOLDER: Küçük bir demo, teardown veya araç denemesi.]",
+      roleTitle: "[PLACEHOLDER: —]",
+    },
+    en: {
+      title: "[PLACEHOLDER: QA Lab experiment]",
+      summary: "[PLACEHOLDER: A small demo, teardown or tool experiment.]",
+      roleTitle: "[PLACEHOLDER: —]",
     },
   },
 ];
 
-/** Faz 1'de tüm placeholder projeler "yayınlanmış" kabul edilir (gösterim amaçlı). */
-export function getFixtureProjects(locale: DbLocale) {
-  return fixtureProjects.map((p) => ({
-    ...p,
-    title: p.translations[locale].title,
-    summary: p.translations[locale].summary,
-    roleTitle: p.translations[locale].roleTitle,
-  }));
+function toPlaceholderCaseStudy(def: PlaceholderDef, locale: DbLocale): ProjectCaseStudy {
+  const c = def[locale];
+  return {
+    slug: def.slug,
+    classification: def.classification,
+    featured: def.featured,
+    supported: def.supported,
+    nda: def.nda,
+    company: null,
+    companyHidden: def.companyHidden,
+    displayOrder: def.displayOrder,
+    title: c.title,
+    summary: c.summary,
+    roleTitle: c.roleTitle,
+    taxonomy: def.taxonomy,
+    demo: false,
+    period: { start: null, end: null, ongoing: false },
+    links: { github: null, external: null },
+    industry: null,
+    platforms: [],
+    tools: [],
+    testTypes: [],
+    sections: EMPTY_SECTIONS,
+    coverage: [],
+    scenarios: [],
+    bugs: [],
+    apiExamples: [],
+    sqlExamples: [],
+    seo: { title: null, description: null },
+  };
+}
+
+export function getPlaceholderCaseStudies(locale: DbLocale): ProjectCaseStudy[] {
+  return PLACEHOLDER_DEFS.map((d) => toPlaceholderCaseStudy(d, locale));
 }

@@ -5,15 +5,14 @@ import { buttonClasses } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { ProjectCard } from "@/components/projects/project-card";
 import { isLocale } from "@/i18n/routing";
-import { getFixtureProjects, fixtureProfile, fixtureSkills } from "@/content/fixtures";
+import { getContentRepository } from "@/lib/repositories";
+import { fixtureProfile, fixtureSkills } from "@/content/fixtures";
 
 /**
- * Ana sayfa (planning/04 §4.1). Hiyerarşi: Hero (kim + kanıt) -> Öne çıkan iş
- * -> Yetkinlik -> Eylem.
+ * Ana sayfa (planning/04 §4.1). Hiyerarşi: Hero -> Öne çıkan iş -> Yetkinlik -> Eylem.
  *
- * FAZ 1 VERİ KAYNAĞI: src/content/fixtures.ts (placeholder). Faz 2'de bu veriler
- * Supabase'ten, RLS ile yalnızca "yayınlanmış ve görünür" satırlar olarak
- * gelecek (planning/01 §1.4, lib/content/publication.ts).
+ * Öne çıkan projeler repository'den (repo.listProjects featuredOnly) gelir.
+ * Profil/yetkinlik henüz fixtures.ts placeholder; faz 3'te DB'den.
  */
 export default async function HomePage({
   params,
@@ -26,7 +25,8 @@ export default async function HomePage({
 
   const t = await getTranslations("home");
   const tRoot = await getTranslations();
-  const projects = getFixtureProjects(locale).filter((p) => p.featured);
+  const repo = getContentRepository();
+  const projects = await repo.listProjects(locale, { featuredOnly: true });
   const profile = fixtureProfile.translations[locale];
 
   return (
@@ -71,20 +71,7 @@ export default async function HomePage({
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {projects.map((p) => (
-              <ProjectCard
-                key={p.slug}
-                project={{
-                  slug: p.slug,
-                  title: p.title,
-                  summary: p.summary,
-                  roleTitle: p.roleTitle,
-                  classification: p.classification,
-                  company: p.company,
-                  companyHidden: p.companyHidden,
-                  nda: p.nda,
-                  taxonomy: p.taxonomy,
-                }}
-              />
+              <ProjectCard key={p.slug} project={p} />
             ))}
           </div>
         </Container>

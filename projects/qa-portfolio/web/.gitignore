@@ -12,6 +12,13 @@ next-env.d.ts
 # Test / kapsam
 /coverage
 
+# Playwright E2E çıktıları (taban görüntüler HARİÇ - onlar commit edilir)
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+.last-run.json
+
 # Ortam değişkenleri - GERÇEK DEĞERLER ASLA COMMIT EDİLMEZ
 .env
 .env*.local

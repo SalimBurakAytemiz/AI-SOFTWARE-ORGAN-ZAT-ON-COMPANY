@@ -15,31 +15,31 @@
  */
 
 :root {
-  /* Nötrler - açık tema (hafif yeşil-mavi bias, "teknik enstrüman" hissi) */
+  /* Nötrler - açık tema (hafif yeşil-mavi bias, "teknik enstrüman" hissi).
+     Tüm metin token'ları WCAG 2.1 AA (>= 4.5:1) hedefiyle koyulaştırıldı. */
   --bg: #f4f7f5;
-  --bg-subtle: #eef2f0;
+  --bg-subtle: #eaefec;
   --surface: #ffffff;
-  --surface-raised: #f6f9f7;
-  --border: #d9e1dd;
-  --border-strong: #c1cdc7;
-  --text: #141a18;
-  --text-muted: #556360;
-  --text-faint: #8a9793;
+  --surface-raised: #f2f6f3;
+  --border: #d5ded9;
+  --border-strong: #b7c3bd;
+  --text: #131817;
+  --text-muted: #47534f; /* ~8:1 on --bg */
+  --text-faint: #59645f; /* ~5.6:1 on --bg (küçük mono etiketler için) */
 
-  /* Aksan - "test geçti" yeşili. Açık temada beyaz üzerinde okunaklı olması
-     için koyulaştırılmış tonu kullanılır. */
-  --accent: #0e7a4f;
-  --accent-hover: #0b6743;
+  /* Aksan - "test geçti" yeşili. Açık temada beyaz üzerinde AA için koyulaştırılmış. */
+  --accent: #0a6a43; /* ~5.2:1 on --bg */
+  --accent-hover: #08542f;
   --accent-contrast: #f2fbf6;
-  --accent-muted: #e2f2ea;
-  --focus: #0e7a4f;
+  --accent-muted: #dcefe5;
+  --focus: #0a6a43;
 
-  /* Anlamsal durum renkleri (QA sözlüğü: pass / fail / flaky / info) */
-  --pass: #0e7a4f;
-  --fail: #b23a31;
-  --warn: #8a6212;
-  --info: #1f5fa8;
-  --neutral-status: #6a7572;
+  /* Anlamsal durum renkleri (QA sözlüğü: pass / fail / flaky / info) - AA koyu tonlar */
+  --pass: #0a6a43;
+  --fail: #a1352c; /* ~5.3:1 on --bg */
+  --warn: #6a4a00; /* ~6.8:1 on --bg; 10% tint üzerinde >= 4.5 */
+  --info: #17548f; /* ~5.6:1 on --bg */
+  --neutral-status: #58635e;
 
   /* Yarıçap ve gölge */
   --radius-sm: 6px;

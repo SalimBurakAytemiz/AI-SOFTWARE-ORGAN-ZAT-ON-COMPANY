@@ -78,12 +78,17 @@ body {
   border-radius: 3px;
 }
 
-a {
-  color: var(--accent);
-  text-decoration: none;
-}
-a:hover {
-  text-decoration: underline;
+/* @layer base: Tailwind util sınıfları (ör. "underline") bu temel kuralı
+   ezebilsin diye katmana alınır. Aksi halde katmansız "a { text-decoration:none }"
+   her util'i ezerdi (erişilebilirlik: link-in-text-block). */
+@layer base {
+  a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  a:hover {
+    text-decoration: underline;
+  }
 }
 
 /* Görseller taşmasın */

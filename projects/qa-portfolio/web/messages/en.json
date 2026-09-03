@@ -38,13 +38,74 @@
     "empty": "No projects match these filters.",
     "confidential": "Confidential",
     "ndaBadge": "NDA",
+    "demoBadge": "DEMO",
     "readCaseStudy": "Read case study",
+    "resultCount": "{count, plural, =0 {no results} one {# result} other {# results}}",
+    "loading": "Loading projects…",
+    "loadError": "Could not load projects. Please refresh the page.",
     "classification": {
+      "all": "All",
       "professional": "Professional",
       "supported": "Supported",
       "personal": "Personal",
       "qa_lab": "QA Lab"
     }
+  },
+  "caseStudy": {
+    "backToProjects": "Projects",
+    "demoBanner": "DEMO / SANITIZED — this case study is fictional; it does not represent a real client or project.",
+    "ndaBanner": "Some details have been removed due to a non-disclosure agreement (NDA).",
+    "company": "Company",
+    "role": "Role",
+    "industry": "Industry",
+    "period": "Period",
+    "ongoing": "Ongoing",
+    "platforms": "Platforms",
+    "tools": "Tools",
+    "testTypes": "Test types",
+    "links": "Links",
+    "github": "GitHub",
+    "liveSite": "Live site",
+    "sections": {
+      "overviewMd": "Overview",
+      "testingScopeMd": "Testing scope",
+      "testStrategyMd": "Test strategy",
+      "testCoverageMd": "Coverage",
+      "challengesMd": "Challenges",
+      "impactMd": "Impact",
+      "lessonsMd": "Lessons learned"
+    },
+    "coverage": "Coverage",
+    "scenarios": "Test scenarios",
+    "bugs": "Bug examples",
+    "apiTesting": "API testing",
+    "dbValidation": "Database validation",
+    "notEnoughEvidence": "Not enough technical content has been entered for this case study yet.",
+    "prev": "Previous",
+    "next": "Next",
+    "scenario": {
+      "preconditions": "Preconditions",
+      "steps": "Steps",
+      "expected": "Expected",
+      "notes": "Notes",
+      "automated": "Automated"
+    },
+    "bug": {
+      "steps": "Steps",
+      "expected": "Expected",
+      "actual": "Actual",
+      "rootCause": "Root cause",
+      "resolution": "Resolution",
+      "environment": "Environment"
+    },
+    "api": { "notes": "What it demonstrates" },
+    "sql": { "sampleResult": "Sample result", "explanation": "Explanation" }
+  },
+  "states": {
+    "loading": "Loading…",
+    "errorTitle": "Something went wrong",
+    "errorBody": "An error occurred while loading content.",
+    "retry": "Try again"
   },
   "contact": {
     "title": "Contact",
@@ -57,6 +118,8 @@
     "send": "Send message",
     "success": "Thanks — your message has been sent.",
     "error": "Something went wrong. Please try again.",
+    "checkForm": "Please check the form: name, email and message must be valid and the privacy notice must be accepted.",
+    "notConfigured": "The contact form is not active yet (no email provider configured). Please reach out by email directly.",
     "otherWays": "Other ways to reach me",
     "responseTime": "Response time: about 2 business days"
   },

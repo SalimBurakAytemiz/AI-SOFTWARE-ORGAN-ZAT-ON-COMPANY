@@ -40,7 +40,9 @@ export function ContactForm({ locale }: { locale: DbLocale }) {
     });
 
     if (!parsed.success) {
-      setFieldError(parsed.error.issues[0]?.message ?? t("error"));
+      // Zod mesajları şemada sabit; kullanıcıya YEREL, genel bir mesaj gösterilir.
+      // Alan bazlı ipuçları ayrıca native HTML doğrulamasıyla verilir.
+      setFieldError(t("checkForm"));
       return;
     }
 
@@ -55,7 +57,15 @@ export function ContactForm({ locale }: { locale: DbLocale }) {
           elapsedMs: Date.now() - startedAt.current,
         }),
       });
-      setStatus(res.ok ? "success" : "error");
+      if (res.ok) {
+        setStatus("success");
+      } else if (res.status === 503) {
+        // Faz 2: e-posta sağlayıcısı yok - net, yerel bilgi (oracle sızıntısı yok).
+        setFieldError(t("notConfigured"));
+        setStatus("idle");
+      } else {
+        setStatus("error");
+      }
     } catch {
       setStatus("error");
     }
