@@ -69,8 +69,8 @@ function readTranslation(fd: FormData): unknown {
   };
 }
 
-function toFormState<T>(res: ActionResult<T>): FormState {
-  if (res.ok) return { ok: true, error: null, notice: "Kaydedildi." };
+function toFormState<T>(res: ActionResult<T>, successNotice = "Kaydedildi."): FormState {
+  if (res.ok) return { ok: true, error: null, notice: successNotice };
   return { ok: false, error: res.message, fieldErrors: res.fieldErrors };
 }
 
@@ -139,7 +139,7 @@ export async function updateProjectMetaAction(_prev: FormState, fd: FormData): P
       return { id, summary: `proje meta güncellendi: ${input.slug}`, data: { id } };
     },
   });
-  return toFormState(res);
+  return toFormState(res, "Meta bilgileri kaydedildi.");
 }
 
 // --- Save translation (draft veya publish) ---
@@ -148,11 +148,13 @@ export async function saveTranslationAction(_prev: FormState, fd: FormData): Pro
   const projectId = String(fd.get("projectId") ?? "");
   const wantPublish = String(fd.get("intent") ?? "") === "publish";
 
+  const langLabel = String(fd.get("locale") ?? "") === "tr" ? "Türkçe" : "İngilizce";
+
   const parsed = projectTranslationSchema.safeParse(readTranslation(fd));
   if (!parsed.success) {
     return {
       ok: false,
-      error: "Girdi doğrulaması başarısız.",
+      error: `${langLabel} içerik kaydedilemedi - girdi doğrulaması başarısız.`,
       fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]>,
     };
   }
@@ -167,7 +169,7 @@ export async function saveTranslationAction(_prev: FormState, fd: FormData): Pro
     if (!check.ok) {
       return {
         ok: false,
-        error: `Bu dil yayınlanamaz - eksik alan(lar): ${check.missing.join(", ")}`,
+        error: `${langLabel} içerik yayınlanamaz - eksik zorunlu alan(lar): ${check.missing.join(", ")}`,
       };
     }
   }
@@ -186,7 +188,10 @@ export async function saveTranslationAction(_prev: FormState, fd: FormData): Pro
       };
     },
   });
-  return toFormState(res);
+  return toFormState(
+    res,
+    wantPublish ? `${langLabel} içerik yayınlandı.` : `${langLabel} içerik taslak olarak kaydedildi.`,
+  );
 }
 
 // --- Yayın durumu geçişleri (RPC, selfAudited) ---

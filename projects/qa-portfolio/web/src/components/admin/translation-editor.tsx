@@ -37,7 +37,6 @@ export function TranslationEditor({
           durum: {v?.translationStatus ?? "yok"}
         </span>
       </div>
-      <FormMessage error={state.error} notice={state.ok ? state.notice : undefined} />
 
       <Field label="Başlık" name="title" errors={state.fieldErrors?.title}>
         <TextInput id={`title-${locale}`} name="title" defaultValue={v?.title ?? ""} required />
@@ -76,6 +75,9 @@ export function TranslationEditor({
 
       {/* translationStatus form değeri intent ile belirlenir; alan gizli tutulur. */}
       <input type="hidden" name="translationStatus" value={v?.translationStatus ?? "draft"} />
+
+      {/* Geri bildirim butonların YANINDA - kullanıcı sonucu tahmin etmesin. */}
+      <FormMessage error={state.error} notice={state.ok ? state.notice : undefined} />
 
       <div className="flex gap-2">
         <SubmitButton pending={pending} name="intent" value="draft" variant="secondary">

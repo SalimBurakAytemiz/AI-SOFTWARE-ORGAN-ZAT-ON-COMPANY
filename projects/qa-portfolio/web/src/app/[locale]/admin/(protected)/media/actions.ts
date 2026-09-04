@@ -17,7 +17,7 @@ import { AdminMediaRepository } from "@/lib/repositories/admin-media-repository"
 export async function uploadMediaAction(_prev: FormState, fd: FormData): Promise<FormState> {
   const file = fd.get("file");
   if (!(file instanceof File) || file.size === 0) {
-    return { ok: false, error: "Bir dosya seçin." };
+    return { ok: false, error: "Bir dosya seçin (yükleme yapılmadı)." };
   }
   const bytes = new Uint8Array(await file.arrayBuffer());
   const altTr = String(fd.get("altTr") ?? "");
@@ -37,8 +37,8 @@ export async function uploadMediaAction(_prev: FormState, fd: FormData): Promise
     },
   );
 
-  if (res.ok) return { ok: true, error: null, notice: "Yüklendi." };
-  return { ok: false, error: res.message };
+  if (res.ok) return { ok: true, error: null, notice: "Görsel yüklendi." };
+  return { ok: false, error: `Yükleme başarısız: ${res.message}` };
 }
 
 export async function deleteMediaAction(_prev: FormState, fd: FormData): Promise<FormState> {
@@ -56,6 +56,6 @@ export async function deleteMediaAction(_prev: FormState, fd: FormData): Promise
       },
     },
   );
-  if (res.ok) return { ok: true, error: null, notice: "Silindi." };
-  return { ok: false, error: res.message };
+  if (res.ok) return { ok: true, error: null, notice: "Görsel silindi." };
+  return { ok: false, error: `Silme başarısız: ${res.message}` };
 }

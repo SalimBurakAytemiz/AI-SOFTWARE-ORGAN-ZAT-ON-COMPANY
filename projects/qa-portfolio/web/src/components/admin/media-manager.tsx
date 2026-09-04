@@ -26,8 +26,6 @@ export function MediaManager({ items }: { items: MediaItem[] }) {
           İzinli: PNG, JPEG, WebP, AVIF · en fazla 5 MB. Tür sunucuda içerik
           imzasından doğrulanır.
         </p>
-        <FormMessage error={upState.error} notice={upState.ok ? upState.notice : undefined} />
-
         <Field label="Dosya" name="file">
           <input
             id="file"
@@ -44,6 +42,7 @@ export function MediaManager({ items }: { items: MediaItem[] }) {
         <Field label="Alt metin (EN)" name="altEn">
           <TextInput id="altEn" name="altEn" />
         </Field>
+        <FormMessage error={upState.error} notice={upState.ok ? upState.notice : undefined} />
         <SubmitButton pending={uploading}>Yükle</SubmitButton>
       </form>
 

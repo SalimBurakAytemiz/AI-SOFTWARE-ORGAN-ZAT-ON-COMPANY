@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+
 /**
  * ADMIN FORM ALANLARI - küçük, paylaşılan girdi bileşenleri.
  * Tasarım: sade; CMS Türkçe arayüzü (planning/05).
@@ -63,22 +65,42 @@ export function Checkbox({ label, name, defaultChecked }: { label: string; name:
   );
 }
 
+/**
+ * Form geri bildirimi (başarı / hata).
+ *
+ * İŞ KURALI (UX): Kullanıcı bir kaydetme işleminin sonucunu TAHMİN ETMEK
+ * ZORUNDA KALMAMALI. Uzun formlarda buton ile mesaj arasındaki mesafe sorun
+ * olduğu için, mesaj göründüğünde kendini görünür alana KAYDIRIR
+ * (scrollIntoView) ve `aria-live` ile ekran okuyuculara duyurur. Mesaj ayrıca
+ * form içinde butonların YANINA yerleştirilir.
+ */
 export function FormMessage({ error, notice }: { error?: string | null; notice?: string }) {
-  if (error) {
-    return (
-      <p role="alert" className="my-2 rounded-[var(--radius-md)] border border-[var(--fail)] bg-[color-mix(in_srgb,var(--fail)_10%,transparent)] px-3 py-2 text-sm">
-        {error}
-      </p>
-    );
-  }
-  if (notice) {
-    return (
-      <p className="my-2 rounded-[var(--radius-md)] border border-[var(--accent)] bg-[color-mix(in_srgb,var(--accent)_10%,transparent)] px-3 py-2 text-sm">
-        {notice}
-      </p>
-    );
-  }
-  return null;
+  const ref = useRef<HTMLParagraphElement>(null);
+  const content = error || notice || null;
+
+  useEffect(() => {
+    // scrollIntoView test ortamında (jsdom) tanımlı olmayabilir.
+    if (content && typeof ref.current?.scrollIntoView === "function") {
+      ref.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [content]);
+
+  if (!content) return null;
+
+  const cls = error
+    ? "border-[var(--fail)] bg-[color-mix(in_srgb,var(--fail)_12%,transparent)]"
+    : "border-[var(--accent)] bg-[color-mix(in_srgb,var(--accent)_12%,transparent)]";
+
+  return (
+    <p
+      ref={ref}
+      role={error ? "alert" : "status"}
+      aria-live={error ? "assertive" : "polite"}
+      className={`my-2 rounded-[var(--radius-md)] border px-3 py-2 text-sm font-medium ${cls}`}
+    >
+      {content}
+    </p>
+  );
 }
 
 export function SubmitButton({

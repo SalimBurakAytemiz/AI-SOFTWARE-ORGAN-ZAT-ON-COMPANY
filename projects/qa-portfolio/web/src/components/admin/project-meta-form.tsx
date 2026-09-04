@@ -20,7 +20,6 @@ export function ProjectMetaForm({ detail }: { detail: AdminProjectDetail }) {
       <input type="hidden" name="id" value={m.id} />
       {/* status yalnızca RPC ile değişir; formda mevcut değeri koru. */}
       <input type="hidden" name="status" value={m.status} />
-      <FormMessage error={state.error} notice={state.ok ? state.notice : undefined} />
 
       <p className="mb-3 text-xs text-[var(--text-faint)]">
         Durum: <span className="font-mono">{m.status}</span> · görünür:{" "}
@@ -67,6 +66,7 @@ export function ProjectMetaForm({ detail }: { detail: AdminProjectDetail }) {
         <Checkbox label="Devam ediyor" name="isOngoing" defaultChecked={m.isOngoing} />
       </div>
 
+      <FormMessage error={state.error} notice={state.ok ? state.notice : undefined} />
       <SubmitButton pending={pending}>Meta bilgileri kaydet</SubmitButton>
     </form>
   );
