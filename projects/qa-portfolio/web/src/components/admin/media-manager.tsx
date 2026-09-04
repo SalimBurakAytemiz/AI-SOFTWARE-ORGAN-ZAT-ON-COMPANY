@@ -7,18 +7,16 @@ import {
   deleteMediaAction,
 } from "@/app/[locale]/admin/(protected)/media/actions";
 import type { MediaItem } from "@/lib/repositories/admin-media-repository";
-import type { FormState } from "@/app/[locale]/admin/(protected)/projects/actions";
+import { type FormState, idleFormState } from "@/lib/admin/form-state";
 import { Field, TextInput, FormMessage, SubmitButton } from "./form-fields";
-
-const idle: FormState = { ok: false, error: null };
 
 /**
  * MEDYA YÖNETİCİSİ: yükleme formu + mevcut medya listesi (public URL + sil).
  * Yalnızca admin görür; yükleme/silme sunucu tarafında `is_admin()` ile korunur.
  */
 export function MediaManager({ items }: { items: MediaItem[] }) {
-  const [upState, uploadAction, uploading] = useActionState<FormState, FormData>(uploadMediaAction, idle);
-  const [delState, deleteAction, deleting] = useActionState<FormState, FormData>(deleteMediaAction, idle);
+  const [upState, uploadAction, uploading] = useActionState<FormState, FormData>(uploadMediaAction, idleFormState);
+  const [delState, deleteAction, deleting] = useActionState<FormState, FormData>(deleteMediaAction, idleFormState);
 
   return (
     <div className="space-y-6">

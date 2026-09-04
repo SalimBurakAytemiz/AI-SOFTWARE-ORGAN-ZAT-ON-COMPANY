@@ -6,6 +6,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { isAdmin } from "@/lib/auth/is-admin";
 import { checkLoginRate, resetLoginRate } from "@/lib/auth/rate-limit";
+import type { LoginState } from "@/lib/admin/form-state";
 import { isLocale } from "@/i18n/routing";
 
 /**
@@ -29,10 +30,6 @@ const schema = z.object({
   locale: z.string(),
   next: z.string().optional(),
 });
-
-export interface LoginState {
-  error: string | null;
-}
 
 const GENERIC_ERROR = "Giriş bilgileri hatalı veya bu hesabın yönetici yetkisi yok.";
 

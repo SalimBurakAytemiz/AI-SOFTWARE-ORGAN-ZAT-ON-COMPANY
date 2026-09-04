@@ -1,17 +1,16 @@
 "use client";
 
 import { useActionState } from "react";
-import { createProjectAction, type FormState } from "@/app/[locale]/admin/(protected)/projects/actions";
+import { createProjectAction } from "@/app/[locale]/admin/(protected)/projects/actions";
+import { type FormState, idleFormState } from "@/lib/admin/form-state";
 import { Field, TextInput, Select, FormMessage, SubmitButton } from "./form-fields";
-
-const idle: FormState = { ok: false, error: null };
 
 /**
  * Yeni proje formu. Proje HER ZAMAN taslak başlar (planning/02 §2.8). Kaydedince
  * düzenleme sayfasına yönlenir; içerik oradan girilir.
  */
 export function NewProjectForm({ locale }: { locale: string }) {
-  const [state, formAction, pending] = useActionState<FormState, FormData>(createProjectAction, idle);
+  const [state, formAction, pending] = useActionState<FormState, FormData>(createProjectAction, idleFormState);
 
   return (
     <form action={formAction} className="max-w-lg">

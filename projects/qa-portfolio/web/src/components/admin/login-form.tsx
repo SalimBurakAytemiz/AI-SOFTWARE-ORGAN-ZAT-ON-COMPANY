@@ -1,7 +1,8 @@
 "use client";
 
 import { useActionState } from "react";
-import { signInAction, type LoginState } from "@/app/[locale]/admin/login/actions";
+import { signInAction } from "@/app/[locale]/admin/login/actions";
+import { type LoginState, idleLoginState } from "@/lib/admin/form-state";
 
 /**
  * ADMIN GİRİŞ FORMU (istemci bileşeni).
@@ -11,9 +12,10 @@ import { signInAction, type LoginState } from "@/app/[locale]/admin/login/action
  * alanları ve bekleme/hata durumunu gösterir.
  */
 export function LoginForm({ locale, next }: { locale: string; next?: string }) {
-  const [state, formAction, pending] = useActionState<LoginState, FormData>(signInAction, {
-    error: null,
-  });
+  const [state, formAction, pending] = useActionState<LoginState, FormData>(
+    signInAction,
+    idleLoginState,
+  );
 
   return (
     <form action={formAction} className="mt-6 space-y-4">

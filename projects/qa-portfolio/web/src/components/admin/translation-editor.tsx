@@ -1,11 +1,10 @@
 "use client";
 
 import { useActionState } from "react";
-import { saveTranslationAction, type FormState } from "@/app/[locale]/admin/(protected)/projects/actions";
+import { saveTranslationAction } from "@/app/[locale]/admin/(protected)/projects/actions";
+import { type FormState, idleFormState } from "@/lib/admin/form-state";
 import type { ProjectTranslation } from "@/lib/validation/project";
 import { Field, TextInput, TextArea, FormMessage, SubmitButton } from "./form-fields";
-
-const idle: FormState = { ok: false, error: null };
 
 /**
  * TR / EN proje içerik editörü (project_translations tablosu).
@@ -23,7 +22,7 @@ export function TranslationEditor({
   locale: "tr" | "en";
   value: ProjectTranslation | null;
 }) {
-  const [state, formAction, pending] = useActionState<FormState, FormData>(saveTranslationAction, idle);
+  const [state, formAction, pending] = useActionState<FormState, FormData>(saveTranslationAction, idleFormState);
   const v = value;
   const langLabel = locale === "tr" ? "Türkçe" : "İngilizce";
 

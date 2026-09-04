@@ -2,9 +2,8 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
-import { transitionProjectAction, type FormState } from "@/app/[locale]/admin/(protected)/projects/actions";
-
-const idle: FormState = { ok: false, error: null };
+import { transitionProjectAction } from "@/app/[locale]/admin/(protected)/projects/actions";
+import { type FormState, idleFormState } from "@/lib/admin/form-state";
 
 /**
  * Proje listesi satır aksiyonları: düzenle + duruma göre yayın geçişleri.
@@ -27,7 +26,7 @@ export function ProjectRowActions({
 }) {
   const [state, formAction, pending] = useActionState<FormState, FormData>(
     transitionProjectAction,
-    idle,
+    idleFormState,
   );
 
   const btn =

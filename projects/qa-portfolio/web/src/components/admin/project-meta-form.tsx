@@ -1,11 +1,10 @@
 "use client";
 
 import { useActionState } from "react";
-import { updateProjectMetaAction, type FormState } from "@/app/[locale]/admin/(protected)/projects/actions";
+import { updateProjectMetaAction } from "@/app/[locale]/admin/(protected)/projects/actions";
+import { type FormState, idleFormState } from "@/lib/admin/form-state";
 import type { AdminProjectDetail } from "@/lib/repositories/admin-content-repository";
 import { Field, TextInput, Select, Checkbox, FormMessage, SubmitButton } from "./form-fields";
-
-const idle: FormState = { ok: false, error: null };
 
 /**
  * Proje META formu (projects tablosu - dilden bağımsız alanlar).
@@ -13,7 +12,7 @@ const idle: FormState = { ok: false, error: null };
  * burada `status` salt-okunur gösterilir.
  */
 export function ProjectMetaForm({ detail }: { detail: AdminProjectDetail }) {
-  const [state, formAction, pending] = useActionState<FormState, FormData>(updateProjectMetaAction, idle);
+  const [state, formAction, pending] = useActionState<FormState, FormData>(updateProjectMetaAction, idleFormState);
   const m = detail.meta;
 
   return (

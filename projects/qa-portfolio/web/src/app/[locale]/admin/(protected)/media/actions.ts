@@ -2,16 +2,17 @@
 
 import { z } from "zod";
 import { withAdminAction } from "@/lib/admin/action";
+import type { FormState } from "@/lib/admin/form-state";
 import { AdminMediaRepository } from "@/lib/repositories/admin-media-repository";
-import type { FormState } from "@/app/[locale]/admin/(protected)/projects/actions";
 
 /**
  * MEDYA SERVER ACTION'LARI (FAZ 4, planning/10 §10.6).
  * Yükleme/silme `withAdminAction`ten geçer (authz + audit + revalidation).
  * Dosya doğrulaması (magic bytes, boyut) `AdminMediaRepository.upload` içinde.
+ *
+ * NOT: Bu dosyada "use server" olduğu için YALNIZCA async fonksiyon export
+ * edilir; tip/sabit `@/lib/admin/form-state`ten gelir.
  */
-
-const idleState: FormState = { ok: false, error: null };
 
 export async function uploadMediaAction(_prev: FormState, fd: FormData): Promise<FormState> {
   const file = fd.get("file");
@@ -58,5 +59,3 @@ export async function deleteMediaAction(_prev: FormState, fd: FormData): Promise
   if (res.ok) return { ok: true, error: null, notice: "Silindi." };
   return { ok: false, error: res.message };
 }
-
-export { idleState };

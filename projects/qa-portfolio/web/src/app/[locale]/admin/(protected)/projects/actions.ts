@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { withAdminAction, type ActionResult } from "@/lib/admin/action";
+import type { FormState } from "@/lib/admin/form-state";
 import { AdminContentRepository, type ProjectTransition } from "@/lib/repositories/admin-content-repository";
 import { currentAdmin } from "@/lib/auth/is-admin";
 import {
@@ -67,16 +68,6 @@ function readTranslation(fd: FormData): unknown {
     translationStatus: String(fd.get("translationStatus") ?? "draft"),
   };
 }
-
-export interface FormState {
-  ok: boolean;
-  error: string | null;
-  fieldErrors?: Record<string, string[]>;
-  /** Bilgi mesajı (ör. "kaydedildi"). */
-  notice?: string;
-}
-
-const idle: FormState = { ok: false, error: null };
 
 function toFormState<T>(res: ActionResult<T>): FormState {
   if (res.ok) return { ok: true, error: null, notice: "Kaydedildi." };
@@ -271,5 +262,3 @@ export async function reorderProjectsAction(orderedIds: string[]): Promise<FormS
   );
   return toFormState(res);
 }
-
-export { idle as idleFormState };
