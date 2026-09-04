@@ -1,12 +1,21 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
+import { devServerActionAllowedOrigins } from "./src/lib/dev/server-action-origins";
 
 // next-intl eklentisi: istek başına aktif dili (tr / en) çözer ve mesaj
 // kataloglarını yükler. Yol: src/i18n/request.ts
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
+// Server Actions CSRF bypass origin'leri - YALNIZCA development (ör. Codespaces
+// port yönlendirmesi). Production build'de boş. Bkz. server-action-origins.ts.
+const serverActionAllowedOrigins = devServerActionAllowedOrigins();
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+
+  ...(serverActionAllowedOrigins.length > 0
+    ? { experimental: { serverActions: { allowedOrigins: serverActionAllowedOrigins } } }
+    : {}),
 
   // Güvenlik yanıt başlıkları. CSP faz 2'de nonce tabanlı olarak sıkılaştırılacak
   // (planning/10-security-plan.md §10.14). Buradaki set, temel korumayı sağlar:
