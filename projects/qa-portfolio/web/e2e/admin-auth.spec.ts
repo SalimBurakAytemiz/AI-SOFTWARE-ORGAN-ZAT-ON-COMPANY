@@ -40,3 +40,15 @@ test("admin yolları robots.txt'te engellenir", async ({ request }) => {
   expect(res.status()).toBe(200);
   expect(await res.text()).toMatch(/Disallow:\s*\/\w+\/admin|Disallow:\s*\/admin/);
 });
+
+test("tüm korumalı admin sayfaları oturumsuz login'e yönlenir", async ({ page }) => {
+  for (const path of [
+    "/en/admin/projects",
+    "/en/admin/projects/new",
+    "/en/admin/media",
+    "/en/admin/dashboard",
+  ]) {
+    await page.goto(path);
+    await expect(page).toHaveURL(/\/en\/admin\/login/);
+  }
+});

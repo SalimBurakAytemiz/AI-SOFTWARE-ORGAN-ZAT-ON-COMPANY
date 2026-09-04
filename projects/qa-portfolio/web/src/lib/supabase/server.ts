@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/db/database.types";
 import { env } from "@/lib/env";
 
@@ -14,9 +15,13 @@ import { env } from "@/lib/env";
  * Publishable anahtar kullanılır (Supabase'in eski "anon key"i); yetki artışı
  * RLS'e ve is_admin()'e bağlıdır, anahtara değil.
  */
-export async function createClient() {
+export async function createClient(): Promise<SupabaseClient<Database>> {
   const cookieStore = await cookies();
 
+  // @supabase/ssr'nin bu sürümündeki dönüş tipi şema bilgisini yazma
+  // işlemlerinde tam taşımıyor (insert/update -> `never`). Çalışma zamanında
+  // aynı istemci olduğundan supabase-js'in SupabaseClient<Database> tipine
+  // daraltıyoruz - tüm çağıranlar (is-admin, audit, admin repository) doğru tip alır.
   return createServerClient<Database>(
     env.NEXT_PUBLIC_SUPABASE_URL as string,
     env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY as string,
@@ -44,5 +49,5 @@ export async function createClient() {
         },
       },
     },
-  );
+  ) as unknown as SupabaseClient<Database>;
 }

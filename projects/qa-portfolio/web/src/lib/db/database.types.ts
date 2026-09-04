@@ -6,12 +6,18 @@
  * `supabase gen types` çıktısı yenilendiğinde (aşağıdaki komut) uygulamanın
  * kullandığı kısa takma adlar (DbLocale, ContentStatus, ...) bozulmaz.
  *
- * Üretilen dosya:  src/lib/db/database.generated.ts  (elle düzenlenmez)
+ * Üretilen dosya:  src/lib/db/database.generated.ts  (kural olarak elle düzenlenmez)
  * Yeniden üretmek:
  *   npx supabase gen types typescript --db-url "$SUPABASE_DB_URL" \
  *     > src/lib/db/database.generated.ts
  * (`--linked` yerine `--db-url` kullanılır; `--linked` bir Supabase access
  *  token'ı ister, çıktı aynıdır. Bkz. supabase/README.md.)
+ *
+ * NOT (0004_admin_rpcs.sql): `admin_project_transition` / `admin_audit`
+ * fonksiyonlarının tipleri, güncel `supabase` CLI'nin bu projedeki
+ * @supabase/supabase-js sürümüyle uyuşmayan bir `SupabaseClient` imzası
+ * ürettiği için, üretilen dosyaya ELLE eklendi (aynı şekli koruyarak). CLI
+ * ile supabase-js sürümleri hizalandığında tam yeniden üretimle değiştirilecek.
  */
 export type {
   Json,

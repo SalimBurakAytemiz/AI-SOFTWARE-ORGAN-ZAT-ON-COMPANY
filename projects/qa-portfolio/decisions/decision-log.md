@@ -304,3 +304,56 @@ production blockers: a shared rate-limit store, transactional publish, tightened
   service-role key. `NEXT_PUBLIC_CONTENT_SOURCE` stays `fixtures`. Next: admin
   CRUD + transactional publish RPC + TR/EN editors + media upload + audit wiring,
   then the flag flip.
+
+### ADR-0024 — Phase 4 write path: admin CMS, transactional publish RPC, media
+
+- **Context:** ADR-0023 delivered the read path + auth. Phase 4's write side
+  (Founder instruction, 2026-09-04): project CRUD, status transitions, TR/EN
+  editors, media upload, audit, dashboard, revalidation.
+- **Decisions:**
+  1. **Transactional publish via RPC** (`0004_admin_rpcs.sql`). The mock store's
+     transition state machine (`draft→published→archived`, `hide/show`,
+     archived-can't-publish) moved into `admin_project_transition(p_id,
+     p_transition, p_actor_name)` — `SECURITY DEFINER`, `is_admin()` guard first,
+     the status change and the `content_audit` row in ONE statement/txn. Field
+     edits (slug, dates, flags, translations) stay plain RLS-gated table writes.
+  2. **`content_audit.actor_user_id` default `auth.uid()`** so the app never has
+     to pass it; `actor_name` (display name) still comes from the app. Append-only
+     unchanged.
+  3. **`AdminContentRepository` / `AdminMediaRepository`** use the authenticated
+     cookie client (`@/lib/supabase/server`, cast to `SupabaseClient<Database>`
+     because `@supabase/ssr@0.5.2`'s return type loses the schema on writes).
+     Every write goes through RLS `is_admin()`. No service-role key.
+  4. **Media upload**: server-authoritative validation — magic-byte sniff
+     (PNG/JPEG/WebP/AVIF only, SVG rejected), 5 MB cap, declared-type must match
+     sniffed type; server generates the path `{uuid}/{uuid}.{ext}` (client
+     filename never used); `media` row + optional `media_translations` alt text;
+     public URL from the public bucket; delete removes the storage object then
+     the row. Storage RLS (`0003`) gates insert/update/delete on `is_admin()`.
+  5. **Revalidation**: the Supabase content source is wrapped in
+     `CachedContentRepository` (`unstable_cache` + `projects`/`qa-lab`/`home`/
+     `sitemap` tags, 1 h fallback). `revalidateContent` after every admin write
+     invalidates those tags + the relevant paths — publish shows on the public
+     site with no redeploy.
+  6. **Generated types**: `admin_project_transition` / `admin_audit` were
+     hand-added to `database.generated.ts` (the current `supabase` CLI emits a
+     `SupabaseClient` signature incompatible with the pinned `@supabase/supabase-js`);
+     documented in `database.types.ts`, to be replaced by a full regen once the
+     versions align.
+  7. **`NEXT_PUBLIC_CONTENT_SOURCE` NOT flipped.** The data layer is verified on
+     real staging, but the admin CMS UI has not been exercised with a real admin
+     session (the password is a Founder secret) and the flip also invalidates the
+     fixture-based e2e / visual-regression baselines and adds a build-time DB
+     dependency (keep-alive cron, RISK-004, still open). The flip waits on a
+     Founder admin smoke test + keep-alive.
+- **Verification (STAGING, all green):** `write-path-matrix.mjs` 20/20 (create/
+  meta-update/translation-publish/publish/unpublish/hide/show/archive/restore,
+  atomic audit, stranger-denied, invalid-transition rejected, media RLS),
+  `rls-test-matrix.mjs` 22/22, `content-parity-check.mjs` 14/14,
+  `verify-storage-policies.mjs` 4/4 — 60 staging checks. 122 web unit/component
+  tests (new: media validate 9, admin repo 5), typecheck, lint, `next build`,
+  public + admin-auth e2e green. All staging write tests roll back — no
+  persistent data beyond the DEMO seed.
+- **Consequences:** No production work; no `main` merge; no paid provider; no
+  service-role key. `pg`/`@types/pg` remain devDependencies (staging scripts
+  only). `NEXT_PUBLIC_CONTENT_SOURCE` stays `fixtures`.

@@ -3,6 +3,7 @@ import { contentSource } from "@/lib/env";
 import type { ContentRepository } from "./content-repository";
 import { FixtureContentRepository } from "./fixture-content-repository";
 import { SupabaseContentRepository } from "./supabase-content-repository";
+import { CachedContentRepository } from "./cached-content-repository";
 
 export type {
   ContentRepository,
@@ -31,7 +32,7 @@ export function getContentRepository(): ContentRepository {
   if (cached) return cached;
   cached =
     contentSource === "supabase"
-      ? new SupabaseContentRepository()
+      ? new CachedContentRepository(new SupabaseContentRepository())
       : new FixtureContentRepository();
   return cached;
 }

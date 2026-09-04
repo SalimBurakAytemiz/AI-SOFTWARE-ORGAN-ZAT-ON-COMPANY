@@ -279,27 +279,36 @@ real CLS 0.000 verified), a11y 100, best-practices 96, SEO 100 (×5) / 91
 (Codespaces-only phantom meta-description — verified present via curl).
 
 **Phase 4 — real Supabase data layer (in progress).** The `media` Storage bucket
-is secured (`0003_storage_policies.sql`, applied to STAGING: public read;
-admin-only write/update/delete via `is_admin()`; RLS proven). The **read** path
-is real: `SupabaseContentRepository` implements every `ContentRepository` method
-with typed PostgREST queries via a cookie-less anon client (`supabase/public.ts`),
-mappers to the domain model, per-locale publish resolution. The factory + dual
-`NEXT_PUBLIC_CONTENT_SOURCE` flag + fixture fallback are kept; the flag stays
-`fixtures` until the write path lands. **Admin auth** is real: email+password
-Supabase Auth sign-in (`admin/login/actions.ts`), generic errors (no user
-enumeration), per-IP rate limit, allow-list authorization (`is_admin()` — a valid
-non-admin session is signed out), middleware session refresh + first-layer gate,
-logout. STAGING is seeded with DEMO/SANITIZED content (`supabase/seed/demo-seed.mjs`).
-Verified on STAGING: `supabase/scripts/rls-test-matrix.mjs` (22 checks: published
-visible, draft/hidden not leaked, featured/supported, admin-vs-anon, append-only
-audit, RLS on all tables) + `content-parity-check.mjs` (14 checks) + `verify-storage-policies.mjs`.
-**Still scaffolded (next):** admin CRUD (create/update/publish/unpublish/archive/
-restore + draft/featured/supported/display-order rules), the transactional publish
-RPC, TR/EN translation editors, media upload UI + server-side MIME/magic-byte
-validation, `content_audit` wired to real writes, then the
-`NEXT_PUBLIC_CONTENT_SOURCE="supabase"` flip. Generated DB types live in
-`src/lib/db/database.generated.ts` (wrapped by `database.types.ts`).
-`pg` is a devDependency for the staging RLS/seed scripts only (never imported by app code).
+is secured (`0003_storage_policies.sql`). **Read** path is real
+(`SupabaseContentRepository`, typed PostgREST via a cookie-less anon client
+`supabase/public.ts`, domain mappers, per-locale publish resolution), wrapped in
+`CachedContentRepository` (tag-based revalidation). **Admin auth** is real
+(email+password Supabase Auth, generic errors, per-IP rate limit, allow-list
+authz — a valid non-admin session is signed out, middleware session refresh,
+logout). **Admin CMS write path is built**: `0004_admin_rpcs.sql`
+(`admin_project_transition` — status change + `content_audit` row in one
+`SECURITY DEFINER` txn, `is_admin()` guard; `content_audit.actor_user_id`
+default `auth.uid()`); `AdminContentRepository` (project CRUD, meta, TR/EN
+translation upsert, transitions, flags, reorder, dashboard counts) +
+`AdminMediaRepository` (magic-byte validation, server-generated
+`{uuid}/{uuid}.{ext}` path, `media` row + alt text, public URL, delete); admin
+UI (projects list with row transitions, new/edit forms, TR/EN editors, media
+manager, real dashboard). `content_audit` writes are wired
+(`SupabaseAuditRepository`). Every write is RLS `is_admin()`-gated; no
+service-role key. **`NEXT_PUBLIC_CONTENT_SOURCE` stays `fixtures`** — the data
+layer is verified on STAGING but the CMS UI has not been run with a real admin
+session (Founder-secret password) and the flip invalidates fixture-based e2e /
+visual baselines + adds a build-time DB dependency (keep-alive cron, RISK-004).
+Verified on STAGING (60 checks, all green): `write-path-matrix.mjs` (20 — full
+CRUD + every transition + atomic audit + authz + invalid-transition), `rls-test-matrix.mjs`
+(22), `content-parity-check.mjs` (14), `verify-storage-policies.mjs` (4); all
+write tests roll back (no persistent data beyond the DEMO seed). **Next:** Founder
+admin smoke test + keep-alive cron → the flag flip; other admin editors
+(Experience/Skills/Services/Education/Certifications), QA-artefact sub-editors,
+project media/taxonomy binding, `supabase gen types` version alignment.
+Generated DB types: `src/lib/db/database.generated.ts` (0004 functions hand-added,
+see `database.types.ts`). `pg` / `@types/pg` are devDependencies for the staging
+scripts only (never imported by app code).
 
 Neither approval authorizes deploying anything, onboarding a *paid* model provider,
 a production cloud, real customer data, financial transactions, or starting Cleaning

@@ -39,3 +39,30 @@ export async function isAdmin(): Promise<boolean> {
   }
   return data !== null;
 }
+
+export interface CurrentAdmin {
+  userId: string;
+  displayName: string;
+  role: "owner" | "editor";
+}
+
+/**
+ * Mevcut admin oturumunun kimliğini (audit `actor` alanları için) döndürür;
+ * admin değilse null. `admin_users` RLS'i yalnızca admin'e okuma verir, bu yüzden
+ * kendi satırını okuyabilen zaten admindir.
+ */
+export async function currentAdmin(): Promise<CurrentAdmin | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data, error } = await supabase
+    .from("admin_users")
+    .select("user_id, display_name, role")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (error || !data) return null;
+  return { userId: data.user_id, displayName: data.display_name, role: data.role };
+}

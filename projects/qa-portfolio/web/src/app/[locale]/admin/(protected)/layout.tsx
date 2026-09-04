@@ -43,6 +43,9 @@ export default async function ProtectedAdminLayout({
           <a href={`/${locale}/admin/projects`} className="text-[var(--text-muted)] hover:text-[var(--text)]">
             Projeler
           </a>
+          <a href={`/${locale}/admin/media`} className="text-[var(--text-muted)] hover:text-[var(--text)]">
+            Medya
+          </a>
         </nav>
         {!mockAdmin && (
           <form action={signOutAction}>

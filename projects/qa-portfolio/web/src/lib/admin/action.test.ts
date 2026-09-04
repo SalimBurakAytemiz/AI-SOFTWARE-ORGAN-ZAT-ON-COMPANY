@@ -11,8 +11,22 @@ vi.mock("server-only", () => ({}));
 vi.mock("next/cache", () => ({ revalidateTag: vi.fn(), revalidatePath: vi.fn() }));
 
 const isAdminMock = vi.fn<() => Promise<boolean>>();
-vi.mock("@/lib/auth/is-admin", () => ({ isAdmin: () => isAdminMock() }));
+vi.mock("@/lib/auth/is-admin", () => ({
+  isAdmin: () => isAdminMock(),
+  currentAdmin: async () => ({ userId: "u1", displayName: "Site Sahibi", role: "owner" }),
+}));
 vi.mock("@/lib/env", () => ({ isSupabaseConfigured: true }));
+
+// Audit deposu: testte in-memory sahte (gerçek Supabase istemcisi kullanılmaz).
+const auditEntries: { action: string; entityType: string; summary: string }[] = [];
+vi.mock("./audit", () => ({
+  getAuditRepository: () => ({
+    record: async (e: { action: string; entityType: string; summary: string }) => {
+      auditEntries.push(e);
+    },
+    list: async (n = 50) => [...auditEntries].reverse().slice(0, n),
+  }),
+}));
 
 import { withAdminAction } from "./action";
 import { getAuditRepository } from "./audit";
@@ -37,6 +51,7 @@ function makeOpts(writeImpl?: () => Promise<{ id: string; summary: string; data:
 describe("withAdminAction", () => {
   beforeEach(() => {
     isAdminMock.mockReset();
+    auditEntries.length = 0;
     delete process.env.AI_COMPANY_MOCK_ADMIN;
   });
 

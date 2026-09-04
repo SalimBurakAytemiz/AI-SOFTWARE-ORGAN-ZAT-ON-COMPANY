@@ -2,6 +2,7 @@
 
 import { DataTable, type Column } from "./data-table";
 import { StatusPill } from "@/components/qa/status-pill";
+import { ProjectRowActions } from "./project-row-actions";
 
 /**
  * Admin proje listesi tablosu (planning/05 §5.3).
@@ -31,7 +32,14 @@ function statusLabel(row: AdminProjectRow): { symbol: string; text: string; tone
   return { symbol: "●", text: "yayında", tone: "pass" };
 }
 
-export function AdminProjectsTable({ rows }: { rows: AdminProjectRow[] }) {
+export function AdminProjectsTable({
+  rows,
+  editHrefBase,
+}: {
+  rows: AdminProjectRow[];
+  /** "/tr/admin/projects" gibi; satır düzenleme linki `${base}/${id}`. */
+  editHrefBase?: string;
+}) {
   const columns: Column<AdminProjectRow>[] = [
     {
       key: "title",
@@ -94,6 +102,22 @@ export function AdminProjectsTable({ rows }: { rows: AdminProjectRow[] }) {
       cell: (r) => (r.featured ? "★" : ""),
     },
   ];
+
+  if (editHrefBase) {
+    columns.push({
+      key: "actions",
+      header: "İşlemler",
+      cell: (r) => (
+        <ProjectRowActions
+          id={r.id}
+          slug={r.slug}
+          status={r.status}
+          visible={r.visible}
+          editHref={`${editHrefBase}/${r.id}`}
+        />
+      ),
+    });
+  }
 
   return (
     <DataTable

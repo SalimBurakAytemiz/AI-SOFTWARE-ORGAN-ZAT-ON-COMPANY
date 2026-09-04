@@ -25,8 +25,8 @@ export type ContentEntity =
 
 /** Bir varlık türü değiştiğinde geçersiz kılınacak etiketler. */
 export const TAG_MAP: Record<ContentEntity, string[]> = {
-  project: ["projects", "sitemap"],
-  qa_lab: ["qa-lab", "sitemap"],
+  project: ["projects", "qa-lab", "sitemap", "home"],
+  qa_lab: ["projects", "qa-lab", "sitemap", "home"],
   experience: ["experience"],
   skills: ["skills"],
   services: ["services", "sitemap"],
@@ -45,6 +45,11 @@ export function revalidateContent(entity: ContentEntity, id?: string): void {
   if (entity === "project" && id) {
     revalidateTag(`project:${id}`);
   }
-  // Liste sayfaları her iki dilde de tazelenir.
-  if (entity === "project") revalidatePath("/[locale]/projects", "page");
+  // Liste + detay + QA Lab + ana sayfa her iki dilde de tazelenir.
+  if (entity === "project" || entity === "qa_lab") {
+    revalidatePath("/[locale]/projects", "page");
+    revalidatePath("/[locale]/projects/[slug]", "page");
+    revalidatePath("/[locale]/qa-lab", "page");
+    revalidatePath("/[locale]", "page");
+  }
 }

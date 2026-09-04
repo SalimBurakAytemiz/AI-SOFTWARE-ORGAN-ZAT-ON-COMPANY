@@ -1,6 +1,6 @@
 import "server-only";
 import { z } from "zod";
-import { isAdmin } from "@/lib/auth/is-admin";
+import { isAdmin, currentAdmin } from "@/lib/auth/is-admin";
 import { isSupabaseConfigured } from "@/lib/env";
 import { getAuditRepository } from "./audit";
 import { revalidateContent, type ContentEntity } from "./revalidate";
@@ -44,6 +44,11 @@ export interface AdminActionOptions<TInput, TOutput> {
   schema: z.ZodType<TInput>;
   /** Asıl yazma işlemi (repository çağrısı). id + summary döndürür. */
   write: (input: TInput, ctx: AdminActionContext) => Promise<{ id: string; summary: string; data: TOutput }>;
+  /**
+   * Yazma işlemi audit kaydını KENDİSİ atomik olarak yazıyorsa (ör.
+   * `admin_project_transition` RPC'si) sarmalayıcı ikinci bir audit yazmaz.
+   */
+  selfAudited?: boolean;
 }
 
 export async function withAdminAction<TInput, TOutput>(
@@ -81,7 +86,10 @@ export async function withAdminAction<TInput, TOutput>(
     };
   }
 
-  const ctx: AdminActionContext = { actorName: mockAdmin ? "mock-admin" : "owner" };
+  const actor = mockAdmin ? null : await currentAdmin().catch(() => null);
+  const ctx: AdminActionContext = {
+    actorName: mockAdmin ? "mock-admin" : (actor?.displayName ?? "admin"),
+  };
 
   // --- 4. Database write ---
   let result: { id: string; summary: string; data: TOutput };
@@ -96,13 +104,16 @@ export async function withAdminAction<TInput, TOutput>(
   }
 
   // --- 5. Audit (append-only) ---
-  await getAuditRepository().record({
-    actorName: ctx.actorName,
-    entityType: opts.entity,
-    entityId: result.id,
-    action: opts.action,
-    summary: result.summary,
-  });
+  // RPC kendisi atomik yazdıysa ikinci kez yazma.
+  if (!opts.selfAudited) {
+    await getAuditRepository().record({
+      actorName: ctx.actorName,
+      entityType: opts.entity,
+      entityId: result.id,
+      action: opts.action,
+      summary: result.summary,
+    });
+  }
 
   // --- 6. Revalidation ---
   revalidateContent(opts.entity, result.id);

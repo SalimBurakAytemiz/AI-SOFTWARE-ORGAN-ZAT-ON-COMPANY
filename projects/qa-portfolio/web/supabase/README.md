@@ -35,8 +35,12 @@ yapılmayacak.
 node supabase/seed/demo-seed.mjs            # DEMO/SANITIZED içeriği yükler (idempotent)
 node supabase/scripts/rls-test-matrix.mjs   # RLS görünürlük matrisi (22 kontrol)
 node supabase/scripts/content-parity-check.mjs  # okuma yolu / select doğrulama (14 kontrol)
+node supabase/scripts/write-path-matrix.mjs # admin CRUD + yayın geçişleri + audit (20 kontrol, hepsi rollback)
 node supabase/scripts/verify-storage-policies.mjs  # media bucket RLS (anon; admin için ADMIN_EMAIL/PASSWORD)
 ```
+
+`write-path-matrix.mjs` tüm işlemleri tek transaction'da yapıp SONUNDA rollback
+eder - staging'e kalıcı yazma bırakmaz.
 
 Bu proje **production değildir**. Prod için ayrı bir Supabase projesi açılacak;
 prod'a migration uygulamak **ayrı, Human Founder onaylı** bir adımdır
@@ -97,6 +101,7 @@ düzenlenmez.
 | `migrations/0001_schema.sql` | Uzantılar, enum'lar, tüm tablolar, indeksler, yabancı anahtarlar |
 | `migrations/0002_functions_rls.sql` | `is_admin()`, `project_is_public()`, iletişim hız sınırı tetikleyicisi, her tabloda RLS + okuma/yazma politikaları |
 | `migrations/0003_storage_policies.sql` | `media` Storage bucket'ı için `storage.objects` RLS politikaları (public read + admin-only write/update/delete) |
+| `migrations/0004_admin_rpcs.sql` | `admin_project_transition` (yayın durumu geçişi + audit atomik, `is_admin()` guard) · `admin_audit` · `content_audit.actor_user_id` varsayılanı `auth.uid()` |
 
 ## Prod uygulaması
 

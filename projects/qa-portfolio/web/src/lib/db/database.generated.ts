@@ -1329,6 +1329,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_audit: {
+        Args: {
+          p_actor_name: string
+          p_entity_type: string
+          p_entity_id: string
+          p_action: string
+          p_summary: string
+        }
+        Returns: undefined
+      }
+      admin_project_transition: {
+        Args: { p_id: string; p_transition: string; p_actor_name?: string }
+        Returns: {
+          id: string
+          status: Database["public"]["Enums"]["content_status"]
+          visible: boolean
+        }[]
+      }
       is_admin: { Args: never; Returns: boolean }
       project_is_public: { Args: { p_id: string }; Returns: boolean }
       show_limit: { Args: never; Returns: number }
