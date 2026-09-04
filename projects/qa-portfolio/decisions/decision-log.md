@@ -240,3 +240,29 @@ production blockers: a shared rate-limit store, transactional publish, tightened
   (verified — no AAL/MFA check in `web/src/`), so nothing to remove; the
   planning docs are annotated to match. Revisit if a second operator is added
   or the threat model changes.
+
+### ADR-0022 — `media` Storage bucket security (`storage.objects` RLS)
+
+- **Context:** `planning/10` §10.6 requires bucket `media`: public read;
+  `INSERT/UPDATE/DELETE` only for `is_admin()`. `0002_functions_rls.sql` left the
+  `storage.objects` policies to a follow-up. The Founder created the bucket in the
+  dashboard (named `Media`, capital M) and confirmed MFA stays out of scope.
+- **Decision (Human Founder, 2026-09-04):** Complete bucket security by adding
+  `storage.objects` RLS policies (not by touching storage schema table
+  structure, not with the service-role key). Fix the bucket-name casing to
+  lowercase `media` in the dashboard (empty bucket → delete + recreate).
+- **Result:** `0003_storage_policies.sql` written and applied to the
+  DEVELOPMENT / STAGING project in one transaction (migration history `0003`):
+  `media_public_read` (`anon`,`authenticated` SELECT on `bucket_id='media'`),
+  `media_admin_insert` / `media_admin_update` / `media_admin_delete`
+  (`authenticated`, gated on `bucket_id='media' AND public.is_admin()`).
+  "admin/owner" = any `admin_users` allow-list row via the single-source-of-truth
+  `is_admin()` (ADR-0006); storage's own `owner` column is not used. RLS on
+  `storage.objects` stays enabled; no other storage policy exists (no
+  duplicates). DB-level verification: `is_admin()` → `false` for anon and a
+  stranger UID, `true` for the owner UID; anon upload to the bucket returns
+  HTTP 403 "row-level security policy". Bucket recreation as `media` (public,
+  5 MB, image MIME allowlist) and the end-to-end admin upload/update/delete
+  check remain a Founder step.
+- **Consequences:** No production work; no `main` merge. The service-role key is
+  still absent from `.env.local` and is never shipped to the browser.

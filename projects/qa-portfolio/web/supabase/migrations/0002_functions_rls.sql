@@ -207,4 +207,6 @@ create policy audit_read on content_audit for select to authenticated
 --   - okuma: herkese açık
 --   - yazma/güncelleme/silme: yalnızca admin
 -- =============================================================================
--- (storage.objects politikaları Supabase projesinde uygulanır - supabase/README.md)
+-- storage.objects RLS politikaları ayrı dosyada: 0003_storage_policies.sql
+-- (bucket'ın kendisi - public bayrağı, boyut limiti, MIME allowlist - panelden
+-- oluşturulur; bkz. supabase/README.md).

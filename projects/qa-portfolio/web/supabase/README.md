@@ -9,6 +9,13 @@ projesine **uygulandı** (2026-09-03, `supabase db push --db-url`, migration
 geçmişi `supabase_migrations.schema_migrations` içinde: `0001`, `0002`).
 33 tablo, 33'ünde RLS etkin, 66 policy, 4 uygulama fonksiyonu.
 
+**`0003_storage_policies.sql`** (2026-09-04) — `media` Storage bucket'ı için
+`storage.objects` RLS politikaları da STAGING'e uygulandı (tek transaction,
+migration geçmişine `0003` olarak yazıldı): `media_public_read` (anon+auth
+SELECT), `media_admin_insert` / `media_admin_update` / `media_admin_delete`
+(yalnızca `public.is_admin()`). storage şema tablolarının yapısı
+değiştirilmedi; yalnızca politika eklendi.
+
 Uygulama **hâlâ** placeholder içerikle (`src/content/fixtures.ts`) çalışır:
 `NEXT_PUBLIC_CONTENT_SOURCE` `fixtures` olduğu sürece Supabase'e sorgu atılmaz.
 Gerçek sorgu katmanı (Faz 4, T-0411) yazılınca bayrak `supabase` yapılacak.
@@ -34,8 +41,15 @@ Bunlar bilinçli olarak otomatikleştirilmedi (erişim yükseltme / güvenlik).
 
 **Bekleyen manuel adımlar:**
 
-1. **`media` adında bir Storage bucket** oluştur (public read). `storage.objects`
-   politikaları: okuma herkese açık; INSERT/UPDATE/DELETE yalnızca `is_admin()`.
+1. **Storage bucket adı düzeltmesi.** Panelde bucket **`Media`** (büyük M) olarak
+   oluşturulmuş; proje her yerde küçük harf **`media`** bekliyor (`media` tablosu
+   `bucket` varsayılanı, `planning/10` §10.6, `0003_storage_policies.sql`). Bucket
+   boş olduğu için kayıpsız düzeltilir:
+   Storage → `Media` → **Delete bucket** → **New bucket**, ad tam `media`,
+   **Public bucket** açık, **File size limit** `5 MB`, **Allowed MIME types**
+   `image/png, image/jpeg, image/webp, image/avif`.
+   RLS politikaları (`0003`) zaten `bucket_id = 'media'` için uygulandı; bucket
+   `media` olur olmaz devreye girer.
 2. Keep-alive: 7 günlük hareketsizlik duraklatmasına karşı bir cron planlanacak
    (`planning/12` RISK-004, OQ-007).
 
@@ -64,6 +78,7 @@ düzenlenmez.
 |---|---|
 | `migrations/0001_schema.sql` | Uzantılar, enum'lar, tüm tablolar, indeksler, yabancı anahtarlar |
 | `migrations/0002_functions_rls.sql` | `is_admin()`, `project_is_public()`, iletişim hız sınırı tetikleyicisi, her tabloda RLS + okuma/yazma politikaları |
+| `migrations/0003_storage_policies.sql` | `media` Storage bucket'ı için `storage.objects` RLS politikaları (public read + admin-only write/update/delete) |
 
 ## Prod uygulaması
 
