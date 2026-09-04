@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import createIntlMiddleware from "next-intl/middleware";
 import { routing } from "@/i18n/routing";
+import { updateSession } from "@/lib/supabase/middleware";
 
 /**
  * Middleware - planning/03 §3.5. DELİBERE OLARAK İNCE tutulur; iki iş yapar:
@@ -9,46 +10,56 @@ import { routing } from "@/i18n/routing";
  *  1. DİL ÇÖZÜMÜ: "/" -> "/{varsayılan dil}" yönlendirmesi; geçersiz [locale]
  *     segmentini ele alma (next-intl middleware).
  *
- *  2. ADMIN KAPISI (ilk katman): /admin/** için oturum çerezi yoksa
- *     /admin/login'e yönlendir. Bu GÜVENLİK SINIRI DEĞİLDİR - yalnızca ilk
- *     eleme. Asıl yetki kontrolü admin layout'ta (is_admin()) ve veritabanında
- *     RLS'te yapılır (planning/10 §10.3).
- *
- * Faz 1 notu: Supabase henüz bağlı olmadığı için gerçek oturum kontrolü yerine
- * "Supabase yapılandırılana kadar admin erişimi kapalı" davranışı uygulanır;
- * herkes /admin/login'e yönlendirilir. Faz 2'de @supabase/ssr ile gerçek
- * çerez kontrolü eklenecek.
+ *  2. ADMIN KAPISI (ilk katman): /admin/** için Supabase oturum çerezi yoksa
+ *     /admin/login'e yönlendir + oturumu tazele. Bu GÜVENLİK SINIRI DEĞİLDİR -
+ *     yalnızca ilk eleme. Asıl yetki kontrolü admin (protected) layout'ta
+ *     (`is_admin()`) ve veritabanında RLS'te yapılır (planning/10 §10.3).
  */
 
 const intlMiddleware = createIntlMiddleware(routing);
 
-// Not: middleware Edge runtime'da çalışır ve @/lib/env (zod) ağını çekmemek için
-// process.env doğrudan okunur. Anahtar adı src/lib/env.ts ile aynı kalmalı.
 const SUPABASE_CONFIGURED =
   Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL) &&
   Boolean(process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY);
 
-export default function middleware(request: NextRequest) {
+// /admin ve /{locale}/admin yollarının ikisini de kapsar (dil öneki taşıyabilir).
+function isAdminPath(pathname: string): boolean {
+  return /^\/(?:tr\/|en\/)?admin(?:\/|$)/.test(pathname);
+}
+function isAdminLoginPath(pathname: string): boolean {
+  return /^\/(?:tr\/|en\/)?admin\/login\/?$/.test(pathname);
+}
+
+export default async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // --- Admin kapısı ---
-  const isAdminPath = pathname.startsWith("/admin");
-  const isLoginPath = pathname === "/admin/login";
+  if (isAdminPath(pathname)) {
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = pathname.startsWith("/tr/") ? "/tr/admin/login" : "/en/admin/login";
 
-  if (isAdminPath && !isLoginPath) {
-    // Faz 1: Supabase yoksa admin panele hiç girilemez.
     if (!SUPABASE_CONFIGURED) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/admin/login";
-      url.searchParams.set("next", pathname);
-      return NextResponse.redirect(url);
+      if (isAdminLoginPath(pathname)) return NextResponse.next();
+      loginUrl.searchParams.set("next", pathname);
+      return NextResponse.redirect(loginUrl);
     }
-    // Faz 2: burada Supabase oturum çerezi kontrol edilecek; yoksa
-    // /admin/login?next=... yönlendirmesi yapılacak.
+
+    // Oturum çerezini tazele (her admin isteğinde).
+    const { response, hasSession } = await updateSession(request);
+
+    // Login sayfası: oturum kontrolü yapılmaz (döngüyü önlemek için).
+    if (isAdminLoginPath(pathname)) return response;
+
+    // Korumalı admin yolu + oturum yok -> login'e.
+    if (!hasSession) {
+      loginUrl.searchParams.set("next", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+    return response;
   }
 
-  // Admin ve auth yolları next-intl'e girmez (dil öneki taşımazlar).
-  if (isAdminPath || pathname.startsWith("/auth") || pathname.startsWith("/api")) {
+  // Admin dışı teknik yollar next-intl'e girmez.
+  if (pathname.startsWith("/auth") || pathname.startsWith("/api")) {
     return NextResponse.next();
   }
 
@@ -57,7 +68,6 @@ export default function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Statik dosyalar, görseller ve _next dışındaki her yol middleware'den geçer.
   matcher: [
     "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\.(?:png|jpg|jpeg|gif|webp|avif|svg|ico|xml|txt|webmanifest)).*)",
   ],

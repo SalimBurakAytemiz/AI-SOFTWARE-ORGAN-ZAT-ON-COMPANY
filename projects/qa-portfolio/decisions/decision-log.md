@@ -266,3 +266,41 @@ production blockers: a shared rate-limit store, transactional publish, tightened
   check remain a Founder step.
 - **Consequences:** No production work; no `main` merge. The service-role key is
   still absent from `.env.local` and is never shipped to the browser.
+
+### ADR-0023 — Phase 4: real Supabase read layer + admin auth (controlled rollout)
+
+- **Context:** `SupabaseContentRepository` was a skeleton; the admin login was a
+  placeholder; the site served fixtures. Phase 4 needs a controlled move to real
+  Supabase data (Founder instruction, 2026-09-04).
+- **Decisions:**
+  1. **Read path first, behind the existing flag.** `SupabaseContentRepository`
+     is fully implemented with typed PostgREST queries. The public site uses a
+     new cookie-less anon client (`src/lib/supabase/public.ts`) so pages stay
+     cacheable and see only what RLS opens to `anon`. `getContentRepository()`
+     factory and `NEXT_PUBLIC_CONTENT_SOURCE` (`fixtures` | `supabase`) are kept;
+     the flag stays `fixtures` and the fixture fallback is not removed until the
+     write path is verified end to end.
+  2. **Two schema conventions introduced (revisit if a better model appears):**
+     `demo` (DEMO/SANITIZED marker) = slug starts with `demo-` (no column);
+     `coverage` meter data = `project_highlights` rows with `kind='coverage'` and
+     text `"<area>::<0-100>"`.
+  3. **Admin auth = email + password only** (ADR-0021 stands: no MFA). Generic
+     error message (no account enumeration), per-IP in-memory rate limit
+     (5 / 15 min — a shared store is a pre-production item), and **authorization
+     stays separate from authentication**: a valid sign-in that is not in
+     `admin_users` is immediately signed out. Middleware refreshes the session
+     and does first-layer redirect; `is_admin()` in the protected layout + RLS
+     are the real gates.
+  4. **STAGING seeded with DEMO/SANITIZED content** (`supabase/seed/demo-seed.mjs`,
+     idempotent, `pg` over `SUPABASE_DB_URL`) so the read path and RLS can be
+     verified against real data. `pg` / `@types/pg` added as **devDependencies**
+     for the staging scripts only — never imported by application code.
+- **Verification (STAGING):** `rls-test-matrix.mjs` 22/22, `content-parity-check.mjs`
+  14/14, `verify-storage-policies.mjs` 4/4 (anon); 108 web unit/component tests,
+  typecheck, lint, `next build`, and the public + admin-auth e2e subset all green.
+  The successful admin-login e2e path is deliberately NOT tested (the password is
+  a Founder secret); it is covered by unit tests + the RLS matrix.
+- **Consequences:** No production work; no `main` merge; no paid provider; no
+  service-role key. `NEXT_PUBLIC_CONTENT_SOURCE` stays `fixtures`. Next: admin
+  CRUD + transactional publish RPC + TR/EN editors + media upload + audit wiring,
+  then the flag flip.

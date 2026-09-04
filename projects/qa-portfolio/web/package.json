@@ -4,7 +4,9 @@
   "private": true,
   "description": "QA Engineer Portfolio Platform - Next.js uygulaması (public site + admin CMS). Yalnızca yerel geliştirme; dağıtım ve gerçek kimlik bilgileri Human Founder onayına tabidir.",
   "type": "module",
-  "engines": { "node": ">=20.11.0" },
+  "engines": {
+    "node": ">=20.11.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -39,12 +41,14 @@
     "@testing-library/dom": "^10.4.0",
     "@testing-library/react": "^16.1.0",
     "@types/node": "^22.10.5",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19.0.4",
     "@types/react-dom": "^19.0.2",
     "@vitejs/plugin-react": "^4.3.4",
     "eslint": "^9.17.0",
     "eslint-config-next": "^15.1.6",
     "jsdom": "^25.0.1",
+    "pg": "^8.23.0",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.7.3",
     "vitest": "^2.1.8"

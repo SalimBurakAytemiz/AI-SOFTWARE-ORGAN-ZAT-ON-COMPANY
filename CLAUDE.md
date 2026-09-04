@@ -271,17 +271,35 @@ Lighthouse CI budget; Supabase factory auto-switch prepared) are committed.
 Phase 3 also had a quality-hardening pass (SEO-validation + localization e2e
 suites, heading-order a11y fixes → Lighthouse a11y 100 on all routes,
 locale-switch preserves query params, Lighthouse CI resource budgets, expanded
-component tests). `projects/qa-portfolio/web/`: 89 unit/component tests + ~200
+component tests). `projects/qa-portfolio/web/`: 108 unit/component tests + ~200
 e2e (chromium + mobile: critical flows + SEO validation + localization + axe +
-visual regression) + typecheck + lint + `next build` all green. Lighthouse: perf
-100 (×5) / 87 (case study, from a Codespaces-only phantom CLS — real CLS 0.000
-verified), a11y 100, best-practices 96, SEO 100 (×5) / 91 (Codespaces-only
-phantom meta-description — verified present via curl). The DEVELOPMENT / STAGING
-Supabase database schema is now applied (see above); Supabase-gated *application*
-work (real query layer replacing the fixture repository, auth flows, CMS editors,
-media, publication RPCs, RLS test matrix) is still scaffolded behind typed
-interfaces and is the next phase. Generated DB types live in
+visual regression + admin auth) + typecheck + lint + `next build` all green.
+Lighthouse: perf 100 (×5) / 87 (case study, from a Codespaces-only phantom CLS —
+real CLS 0.000 verified), a11y 100, best-practices 96, SEO 100 (×5) / 91
+(Codespaces-only phantom meta-description — verified present via curl).
+
+**Phase 4 — real Supabase data layer (in progress).** The `media` Storage bucket
+is secured (`0003_storage_policies.sql`, applied to STAGING: public read;
+admin-only write/update/delete via `is_admin()`; RLS proven). The **read** path
+is real: `SupabaseContentRepository` implements every `ContentRepository` method
+with typed PostgREST queries via a cookie-less anon client (`supabase/public.ts`),
+mappers to the domain model, per-locale publish resolution. The factory + dual
+`NEXT_PUBLIC_CONTENT_SOURCE` flag + fixture fallback are kept; the flag stays
+`fixtures` until the write path lands. **Admin auth** is real: email+password
+Supabase Auth sign-in (`admin/login/actions.ts`), generic errors (no user
+enumeration), per-IP rate limit, allow-list authorization (`is_admin()` — a valid
+non-admin session is signed out), middleware session refresh + first-layer gate,
+logout. STAGING is seeded with DEMO/SANITIZED content (`supabase/seed/demo-seed.mjs`).
+Verified on STAGING: `supabase/scripts/rls-test-matrix.mjs` (22 checks: published
+visible, draft/hidden not leaked, featured/supported, admin-vs-anon, append-only
+audit, RLS on all tables) + `content-parity-check.mjs` (14 checks) + `verify-storage-policies.mjs`.
+**Still scaffolded (next):** admin CRUD (create/update/publish/unpublish/archive/
+restore + draft/featured/supported/display-order rules), the transactional publish
+RPC, TR/EN translation editors, media upload UI + server-side MIME/magic-byte
+validation, `content_audit` wired to real writes, then the
+`NEXT_PUBLIC_CONTENT_SOURCE="supabase"` flip. Generated DB types live in
 `src/lib/db/database.generated.ts` (wrapped by `database.types.ts`).
+`pg` is a devDependency for the staging RLS/seed scripts only (never imported by app code).
 
 Neither approval authorizes deploying anything, onboarding a *paid* model provider,
 a production cloud, real customer data, financial transactions, or starting Cleaning

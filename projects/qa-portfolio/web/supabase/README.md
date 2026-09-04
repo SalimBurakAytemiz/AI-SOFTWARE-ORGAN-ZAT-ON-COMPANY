@@ -18,7 +18,25 @@ değiştirilmedi; yalnızca politika eklendi.
 
 Uygulama **hâlâ** placeholder içerikle (`src/content/fixtures.ts`) çalışır:
 `NEXT_PUBLIC_CONTENT_SOURCE` `fixtures` olduğu sürece Supabase'e sorgu atılmaz.
-Gerçek sorgu katmanı (Faz 4, T-0411) yazılınca bayrak `supabase` yapılacak.
+
+**Faz 4 (devam ediyor):** gerçek OKUMA katmanı yazıldı
+(`SupabaseContentRepository`, tipli PostgREST sorguları, çerezsiz anon istemci
+`src/lib/supabase/public.ts`). Admin girişi gerçek Supabase Auth'a bağlandı
+(e-posta + parola, MFA yok, genel hata mesajı, IP hız sınırı, allow-list yetki).
+Bayrak **yine de `fixtures`**: yazma yolu (CMS CRUD, publish RPC, çeviri
+editörleri, medya yükleme, audit) bitip uçtan uca doğrulanana kadar `supabase`
+yapılmayacak.
+
+### Staging'e DEMO içerik yükleme ve doğrulama scriptleri
+
+`web/` klasöründen (`pg` devDependency + `.env.local` gerekir):
+
+```
+node supabase/seed/demo-seed.mjs            # DEMO/SANITIZED içeriği yükler (idempotent)
+node supabase/scripts/rls-test-matrix.mjs   # RLS görünürlük matrisi (22 kontrol)
+node supabase/scripts/content-parity-check.mjs  # okuma yolu / select doğrulama (14 kontrol)
+node supabase/scripts/verify-storage-policies.mjs  # media bucket RLS (anon; admin için ADMIN_EMAIL/PASSWORD)
+```
 
 Bu proje **production değildir**. Prod için ayrı bir Supabase projesi açılacak;
 prod'a migration uygulamak **ayrı, Human Founder onaylı** bir adımdır
